@@ -1,6 +1,6 @@
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { Search, GitBranch, Loader2, Gem, Linkedin, ExternalLink, Bookmark, BookmarkCheck, SlidersHorizontal } from "lucide-react";
-import { useState, useMemo } from "react";
+import { Search, GitBranch, Loader2, Gem, Linkedin, ExternalLink, Bookmark, BookmarkCheck, SlidersHorizontal, MapPin, X } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { searchDevelopers, type SearchResponse } from "@/lib/api";
 import DeveloperCard from "@/components/DeveloperCard";
@@ -17,6 +17,9 @@ const SearchResults = () => {
   });
   const [seniorityFilter, setSeniorityFilter] = useState<string>("all");
   const [showGemsOnly, setShowGemsOnly] = useState(false);
+  const [locationFilter, setLocationFilter] = useState("");
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const locationInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["github-search", query],
@@ -32,12 +35,32 @@ const SearchResults = () => {
   // Determine search phase for progress display
   const phase: SearchPhase = isLoading ? 'scoring' : 'done';
 
+  // Extract unique locations from results for autocomplete
+  const availableLocations = useMemo(() => {
+    const locs = results
+      .map((d: any) => d.location)
+      .filter((l: string) => l && l.trim());
+    return [...new Set(locs)] as string[];
+  }, [results]);
+
+  const locationSuggestions = useMemo(() => {
+    if (!locationFilter) return availableLocations;
+    return availableLocations.filter((l: string) =>
+      l.toLowerCase().includes(locationFilter.toLowerCase())
+    );
+  }, [availableLocations, locationFilter]);
+
   // Filters
   const filtered = useMemo(() => {
     let list = results;
     if (showGemsOnly) list = list.filter((d: any) => d.hiddenGem);
+    if (locationFilter) {
+      list = list.filter((d: any) =>
+        d.location && d.location.toLowerCase().includes(locationFilter.toLowerCase())
+      );
+    }
     return list;
-  }, [results, showGemsOnly]);
+  }, [results, showGemsOnly, locationFilter]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,11 +157,50 @@ const SearchResults = () => {
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
               <h1 className="font-display text-lg font-semibold text-foreground">
-                Found <span className="text-primary">{filtered.length}</span> engineers
+                {locationFilter || showGemsOnly ? (
+                  <>Showing <span className="text-primary">{filtered.length}</span> of {results.length} engineers</>
+                ) : (
+                  <>Found <span className="text-primary">{filtered.length}</span> engineers</>
+                )}
               </h1>
               <p className="text-xs text-muted-foreground mt-0.5 font-display">Sorted by AI relevance score</p>
             </div>
             <div className="flex items-center gap-2">
+              {/* Location filter */}
+              <div className="relative">
+                <div className="flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-full border border-border bg-secondary">
+                  <MapPin className="w-3 h-3 text-muted-foreground" />
+                  <input
+                    ref={locationInputRef}
+                    type="text"
+                    value={locationFilter}
+                    onChange={(e) => { setLocationFilter(e.target.value); setShowLocationSuggestions(true); }}
+                    onFocus={() => setShowLocationSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 150)}
+                    placeholder="Filter by location..."
+                    className="bg-transparent outline-none text-foreground placeholder:text-muted-foreground w-32"
+                  />
+                  {locationFilter && (
+                    <button onClick={() => setLocationFilter("")} className="text-muted-foreground hover:text-foreground">
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+                {showLocationSuggestions && locationSuggestions.length > 0 && (
+                  <div className="absolute top-full mt-1 left-0 right-0 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
+                    {locationSuggestions.map((loc) => (
+                      <button
+                        key={loc}
+                        onMouseDown={() => { setLocationFilter(loc); setShowLocationSuggestions(false); }}
+                        className="w-full text-left text-xs px-3 py-1.5 hover:bg-accent text-foreground font-display truncate"
+                      >
+                        {loc}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={() => setShowGemsOnly(!showGemsOnly)}
                 className={`flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-full border transition-colors ${

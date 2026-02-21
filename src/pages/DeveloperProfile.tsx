@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Star, GitFork, Users, MapPin, Calendar, ExternalLink, Gem, Zap, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, GitFork, Users, MapPin, Calendar, ExternalLink, Gem, Zap, Loader2, Linkedin } from "lucide-react";
 import { GitBranch } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getDeveloperProfile } from "@/lib/api";
@@ -96,11 +96,17 @@ const DeveloperProfile = () => {
                   Score: {developer.score}
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground font-display mb-2">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground font-display mb-2">
                 <a href={developer.githubUrl || `https://github.com/${developer.username}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
                   @{developer.username} ↗
                 </a>
-              </p>
+                {developer.linkedinUrl && (
+                  <a href={developer.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-info hover:text-info/80 transition-colors">
+                    <Linkedin className="w-3.5 h-3.5" />
+                    LinkedIn ↗
+                  </a>
+                )}
+              </div>
               <p className="text-text-secondary mb-4">{developer.bio}</p>
 
               <div className="flex flex-wrap gap-4 text-sm text-text-dim">
