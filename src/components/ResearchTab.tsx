@@ -4,20 +4,30 @@ import { Loader2, Briefcase, Building2 } from "lucide-react";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-const ResearchTab = () => {
-  const [jobTitle, setJobTitle] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [research, setResearch] = useState("");
+export interface ResearchState {
+  jobTitle: string;
+  companyName: string;
+  research: string;
+  error: string;
+}
+
+interface ResearchTabProps {
+  state: ResearchState;
+  onStateChange: (state: ResearchState) => void;
+}
+
+const ResearchTab = ({ state, onStateChange }: ResearchTabProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+
+  const update = (partial: Partial<ResearchState>) =>
+    onStateChange({ ...state, ...partial });
 
   const handleResearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!jobTitle.trim() || !companyName.trim()) return;
+    if (!state.jobTitle.trim() || !state.companyName.trim()) return;
 
     setIsLoading(true);
-    setError("");
-    setResearch("");
+    update({ error: "", research: "" });
 
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/research-role`, {
@@ -28,8 +38,8 @@ const ResearchTab = () => {
         },
         body: JSON.stringify({
           action: "start",
-          job_title: jobTitle,
-          company_name: companyName,
+          job_title: state.jobTitle,
+          company_name: state.companyName,
         }),
       });
 
@@ -39,9 +49,9 @@ const ResearchTab = () => {
         throw new Error(data.error || `HTTP ${res.status}`);
       }
 
-      setResearch(data.research);
+      update({ research: data.research });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Research failed');
+      update({ error: err instanceof Error ? err.message : 'Research failed' });
     } finally {
       setIsLoading(false);
     }
@@ -56,8 +66,8 @@ const ResearchTab = () => {
             <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              value={jobTitle}
-              onChange={(e) => setJobTitle(e.target.value)}
+              value={state.jobTitle}
+              onChange={(e) => update({ jobTitle: e.target.value })}
               placeholder="Job title (e.g. ML Engineer)"
               className="w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border border-border focus:border-primary/40 transition-colors font-body"
             />
@@ -66,8 +76,8 @@ const ResearchTab = () => {
             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
+              value={state.companyName}
+              onChange={(e) => update({ companyName: e.target.value })}
               placeholder="Company (e.g. Stripe)"
               className="w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border border-border focus:border-primary/40 transition-colors font-body"
             />
@@ -75,7 +85,7 @@ const ResearchTab = () => {
         </div>
         <button
           type="submit"
-          disabled={isLoading || !jobTitle.trim() || !companyName.trim()}
+          disabled={isLoading || !state.jobTitle.trim() || !state.companyName.trim()}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-display text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
@@ -83,13 +93,13 @@ const ResearchTab = () => {
         </button>
       </form>
 
-      {error && (
+      {state.error && (
         <div className="glass rounded-xl p-4 mb-6">
-          <p className="text-sm text-destructive font-display">{error}</p>
+          <p className="text-sm text-destructive font-display">{state.error}</p>
         </div>
       )}
 
-      {research && (
+      {state.research && (
         <div className="glass rounded-xl p-6">
           <div className="prose prose-invert prose-sm max-w-none
             prose-headings:font-display prose-headings:text-foreground
@@ -100,7 +110,7 @@ const ResearchTab = () => {
             prose-strong:text-foreground
             prose-ul:my-2 prose-ol:my-2
           ">
-            <MarkdownRenderer content={research} />
+            <MarkdownRenderer content={state.research} />
           </div>
         </div>
       )}
@@ -121,7 +131,6 @@ const MarkdownRenderer = ({ content }: { content: string }) => {
     } else if (line.startsWith('### ')) {
       elements.push(<h3 key={i}>{line.slice(4)}</h3>);
     } else if (line.startsWith('- ') || line.startsWith('* ')) {
-      // Collect list items
       const items: string[] = [line.slice(2)];
       while (i + 1 < lines.length && (lines[i + 1].startsWith('- ') || lines[i + 1].startsWith('* '))) {
         i++;

@@ -4,7 +4,7 @@ import { useState, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { searchDevelopers, type SearchResponse } from "@/lib/api";
 import DeveloperCard from "@/components/DeveloperCard";
-import ResearchTab from "@/components/ResearchTab";
+import ResearchTab, { type ResearchState } from "@/components/ResearchTab";
 
 type SearchPhase = 'parsing' | 'fetching' | 'scoring' | 'done';
 type TabMode = 'search' | 'research';
@@ -15,6 +15,9 @@ const SearchResults = () => {
   const query = searchParams.get("q") || "";
   const [searchInput, setSearchInput] = useState(query);
   const [tabMode, setTabMode] = useState<TabMode>('search');
+  const [researchState, setResearchState] = useState<ResearchState>({
+    jobTitle: "", companyName: "", research: "", error: "",
+  });
   const [shortlisted, setShortlisted] = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem('shortlisted') || '[]')); } catch { return new Set(); }
   });
@@ -27,7 +30,7 @@ const SearchResults = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["github-search", query],
     queryFn: () => searchDevelopers(query),
-    enabled: !!query && tabMode === 'search',
+    enabled: !!query,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -128,7 +131,7 @@ const SearchResults = () => {
         </div>
 
         {tabMode === 'research' ? (
-          <ResearchTab />
+          <ResearchTab state={researchState} onStateChange={setResearchState} />
         ) : (
           <>
             {/* Search Progress */}
