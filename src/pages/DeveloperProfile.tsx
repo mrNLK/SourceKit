@@ -107,7 +107,7 @@ const DeveloperProfile = () => {
                   </a>
                 )}
               </div>
-              <p className="text-text-secondary mb-4">{developer.bio}</p>
+              <p className="text-secondary-foreground mb-4">{developer.bio}</p>
 
               <div className="flex flex-wrap gap-4 text-sm text-text-dim">
                 {developer.location && (
@@ -156,30 +156,36 @@ const DeveloperProfile = () => {
             </div>
           </div>
 
-          {/* Activity chart */}
-          <div className="glass rounded-xl p-5">
-            <h3 className="font-display text-sm font-semibold text-foreground mb-4">Recent Activity</h3>
-            {recentActivity.length > 0 ? (
-              <div className="flex items-end gap-2 h-32">
-                {recentActivity.map((activity: any) => (
-                  <div key={activity.month} className="flex-1 flex flex-col items-center gap-1">
-                    <div
-                      className="w-full bg-primary/20 rounded-t-sm hover:bg-primary/40 transition-colors relative group"
-                      style={{ height: `${(activity.commits / maxCommits) * 100}%`, minHeight: activity.commits > 0 ? '4px' : '0px' }}
-                    >
-                      <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-display text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                        {activity.commits}
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-text-dim font-display">{activity.month}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">No recent public activity</p>
-            )}
-          </div>
+          {/* AI About */}
+          {developer.about && (
+            <div className="glass rounded-xl p-5">
+              <h3 className="font-display text-sm font-semibold text-foreground mb-3">About</h3>
+              <p className="text-sm text-secondary-foreground leading-relaxed">{developer.about}</p>
+            </div>
+          )}
         </div>
+
+        {/* Contributed Repos */}
+        {developer.contributedRepos && Object.keys(developer.contributedRepos).length > 0 && (
+          <div className="glass rounded-xl p-5 mb-6">
+            <h3 className="font-display text-sm font-semibold text-foreground mb-4">Contributed To</h3>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(developer.contributedRepos).map(([repo, count]) => (
+                <a
+                  key={repo}
+                  href={`https://github.com/${repo}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-lg bg-primary/8 text-primary/90 border border-primary/15 hover:bg-primary/15 hover:border-primary/30 transition-colors"
+                >
+                  <GitFork className="w-3 h-3" />
+                  {repo} · {count as number} commits
+                  <ExternalLink className="w-2.5 h-2.5 opacity-50" />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Highlights */}
         <div className="glass rounded-xl p-5">

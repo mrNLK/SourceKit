@@ -119,8 +119,9 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist }: Develope
           {/* Score */}
           <div className="flex flex-col items-center">
             <div className={`w-11 h-11 rounded-lg flex items-center justify-center font-display text-sm font-bold ${
-              developer.score >= 80 ? "bg-primary/15 text-primary border border-primary/30" :
-              developer.score >= 50 ? "bg-warning/15 text-warning border border-warning/30" :
+              developer.score >= 70 ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" :
+              developer.score >= 40 ? "bg-amber-500/15 text-amber-400 border border-amber-500/30" :
+              developer.score >= 1 ? "bg-red-500/15 text-red-400 border border-red-500/30" :
               "bg-secondary text-secondary-foreground border border-border"
             }`}>
               {developer.score}
