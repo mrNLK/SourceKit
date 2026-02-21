@@ -4,6 +4,7 @@ export interface Developer {
   name: string;
   avatarUrl: string;
   bio: string;
+  about?: string;
   location: string;
   totalContributions: number;
   publicRepos: number;
@@ -16,4 +17,8 @@ export interface Developer {
   joinedYear: number;
   recentActivity?: { month: string; commits: number }[];
   githubUrl?: string;
+  contributedRepos?: Record<string, number>;
+  linkedinUrl?: string | null;
+  twitterUsername?: string | null;
+  email?: string | null;
 }

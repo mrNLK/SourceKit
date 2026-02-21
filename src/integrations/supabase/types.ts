@@ -14,7 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      candidates: {
+        Row: {
+          about: string | null
+          avatar_url: string | null
+          bio: string | null
+          contributed_repos: Json | null
+          created_at: string
+          email: string | null
+          fetched_at: string
+          followers: number | null
+          github_url: string | null
+          github_username: string
+          highlights: string[] | null
+          id: string
+          is_hidden_gem: boolean | null
+          joined_year: number | null
+          linkedin_confidence: string | null
+          linkedin_url: string | null
+          location: string | null
+          name: string | null
+          public_repos: number | null
+          score: number | null
+          stars: number | null
+          summary: string | null
+          top_languages: Json | null
+          twitter_username: string | null
+          updated_at: string
+        }
+        Insert: {
+          about?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          contributed_repos?: Json | null
+          created_at?: string
+          email?: string | null
+          fetched_at?: string
+          followers?: number | null
+          github_url?: string | null
+          github_username: string
+          highlights?: string[] | null
+          id?: string
+          is_hidden_gem?: boolean | null
+          joined_year?: number | null
+          linkedin_confidence?: string | null
+          linkedin_url?: string | null
+          location?: string | null
+          name?: string | null
+          public_repos?: number | null
+          score?: number | null
+          stars?: number | null
+          summary?: string | null
+          top_languages?: Json | null
+          twitter_username?: string | null
+          updated_at?: string
+        }
+        Update: {
+          about?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          contributed_repos?: Json | null
+          created_at?: string
+          email?: string | null
+          fetched_at?: string
+          followers?: number | null
+          github_url?: string | null
+          github_username?: string
+          highlights?: string[] | null
+          id?: string
+          is_hidden_gem?: boolean | null
+          joined_year?: number | null
+          linkedin_confidence?: string | null
+          linkedin_url?: string | null
+          location?: string | null
+          name?: string | null
+          public_repos?: number | null
+          score?: number | null
+          stars?: number | null
+          summary?: string | null
+          top_languages?: Json | null
+          twitter_username?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

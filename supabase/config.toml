@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.github-profile]
 verify_jwt = false
+
+[functions.enrich-linkedin]
+verify_jwt = false
