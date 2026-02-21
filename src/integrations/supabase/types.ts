@@ -98,6 +98,45 @@ export type Database = {
         }
         Relationships: []
       }
+      outreach_history: {
+        Row: {
+          candidate_id: string | null
+          created_at: string
+          id: string
+          message: string
+          pipeline_id: string | null
+        }
+        Insert: {
+          candidate_id?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          pipeline_id?: string | null
+        }
+        Update: {
+          candidate_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          pipeline_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_history_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_history_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pipeline: {
         Row: {
           avatar_url: string | null
