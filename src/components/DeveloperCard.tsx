@@ -132,17 +132,27 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist }: Develope
 
       {/* Action buttons */}
       <div className="absolute top-3 right-3 flex items-center gap-1.5">
-        {/* LinkedIn button */}
-        <button
-          onClick={handleLinkedIn}
-          className={`p-1.5 rounded-md border transition-colors ${
-            linkedinUrl ? 'bg-info/10 text-info border-info/30 hover:bg-info/20' :
-            'border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
-          }`}
-          title={linkedinUrl ? 'Open LinkedIn' : 'Find LinkedIn'}
-        >
-          {linkedinLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Linkedin className="w-3.5 h-3.5" />}
-        </button>
+        {/* LinkedIn */}
+        {linkedinUrl ? (
+          <a
+            href={linkedinUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="p-1.5 rounded-md border bg-info/10 text-info border-info/30 hover:bg-info/20 transition-colors"
+            title="Open LinkedIn"
+          >
+            <Linkedin className="w-3.5 h-3.5" />
+          </a>
+        ) : (
+          <button
+            onClick={handleLinkedIn}
+            className="p-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+            title="Find LinkedIn"
+          >
+            {linkedinLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Linkedin className="w-3.5 h-3.5" />}
+          </button>
+        )}
 
         {/* Shortlist button */}
         {onToggleShortlist && (
