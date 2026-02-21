@@ -24,10 +24,10 @@ async function invokeFunction(name: string, params?: Record<string, string>, bod
 export interface SearchResponse {
   results: any[];
   parsedCriteria: {
-    repos: string[];
+    repos: { owner: string; name: string }[];
     skills: string[];
-    location: string;
-    seniority: string;
+    location: string | null;
+    seniority: string | null;
   };
   reposSearched: string[];
 }

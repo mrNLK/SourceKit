@@ -7,8 +7,37 @@ const corsHeaders = {
 };
 
 const GITHUB_API = "https://api.github.com";
-const AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const CACHE_DAYS = 7;
+
+async function claudeCall(system: string, userPrompt: string): Promise<string> {
+  const apiKey = Deno.env.get('PARALLEL_API_KEY');
+  if (!apiKey) throw new Error('PARALLEL_API_KEY not configured');
+
+  const res = await fetch(ANTHROPIC_API, {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2048,
+      system,
+      messages: [{ role: 'user', content: userPrompt }],
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error('Claude API error:', res.status, errText);
+    throw new Error(`Claude API error: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.content?.[0]?.text || '';
+}
 
 function getSupabase() {
   return createClient(
@@ -55,83 +84,50 @@ function getLangColor(lang: string): string {
   return langColors[lang] || `hsl(${Math.abs(lang.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 360}, 50%, 55%)`;
 }
 
-// Step 1: Parse query with AI
-async function parseQuery(query: string): Promise<{ repos: string[]; skills: string[]; location: string; seniority: string }> {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY');
-  if (!apiKey) throw new Error('LOVABLE_API_KEY not configured');
-
-  const res = await fetch(AI_GATEWAY, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'google/gemini-3-flash-preview',
-      messages: [
-        { role: 'system', content: 'You are a technical recruiting query parser. Extract structured search criteria from natural language recruiting queries. Always return valid JSON.' },
-        { role: 'user', content: `Parse this recruiting query into structured criteria. Return JSON only, no markdown:\n\nQuery: "${query}"\n\nReturn: { "repos": ["owner/repo"], "skills": ["skill1"], "location": "location or empty string", "seniority": "junior|mid|senior|any" }\n\nFor repos: infer relevant GitHub repos from the skills/domain. E.g. "React experts" → ["facebook/react", "vercel/next.js"]. "Rust systems" → ["rust-lang/rust", "tokio-rs/tokio"]. Include 3-6 repos.\nFor skills: extract programming languages, frameworks, tools mentioned.\nFor location: extract location if mentioned, empty string if not.\nFor seniority: infer from context, default to "any".` }
-      ],
-      tools: [{
-        type: "function",
-        function: {
-          name: "parse_query",
-          description: "Parse a recruiting query into structured criteria",
-          parameters: {
-            type: "object",
-            properties: {
-              repos: { type: "array", items: { type: "string" }, description: "GitHub repos in owner/repo format" },
-              skills: { type: "array", items: { type: "string" }, description: "Skills/technologies" },
-              location: { type: "string", description: "Location filter or empty string" },
-              seniority: { type: "string", enum: ["junior", "mid", "senior", "any"] }
-            },
-            required: ["repos", "skills", "location", "seniority"],
-            additionalProperties: false
-          }
-        }
-      }],
-      tool_choice: { type: "function", function: { name: "parse_query" } }
-    }),
-  });
-
-  if (!res.ok) {
-    console.error('AI parse error:', res.status, await res.text());
-    // Fallback: use query as skill
-    return { repos: [], skills: [query], location: '', seniority: 'any' };
-  }
-
-  const data = await res.json();
+// Step 1: Parse query with Claude
+async function parseQuery(query: string): Promise<{ repos: { owner: string; name: string }[]; skills: string[]; location: string | null; seniority: string | null }> {
   try {
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall) {
-      return JSON.parse(toolCall.function.arguments);
+    const text = await claudeCall(
+      'You are a technical recruiting assistant. Given a hiring query, identify the most relevant GitHub repositories where ideal candidates would be active contributors. Also generate 4 ranked skill criteria. Return valid JSON only, no markdown: { "repos": [{"owner": "string", "name": "string"}], "skills": ["string"], "location": "string | null", "seniority": "string | null" }',
+      `Parse this recruiting search query:\n\n"${query}"\n\nIdentify 3-6 GitHub repositories where the best candidates for this role would be active contributors. For example, "React experts" → repos like facebook/react, vercel/next.js. "ML infrastructure engineers" → pytorch/pytorch, huggingface/transformers, etc.`
+    );
+
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        repos: parsed.repos || [],
+        skills: parsed.skills || [query],
+        location: parsed.location || null,
+        seniority: parsed.seniority || null,
+      };
     }
-    // Fallback to content parsing
-    const content = data.choices?.[0]?.message?.content || '';
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) return JSON.parse(jsonMatch[0]);
   } catch (e) {
-    console.error('Failed to parse AI response:', e);
+    console.error('Claude parse error:', e);
   }
-  return { repos: [], skills: [query], location: '', seniority: 'any' };
+  return { repos: [], skills: [query], location: null, seniority: null };
 }
 
 // Step 2: Fetch contributors from repos
-async function fetchContributors(repos: string[], skills: string[]): Promise<Map<string, { username: string; commitCounts: Record<string, number> }>> {
+async function fetchContributors(repos: { owner: string; name: string }[], skills: string[]): Promise<Map<string, { username: string; commitCounts: Record<string, number> }>> {
   const contributorMap = new Map<string, { username: string; commitCounts: Record<string, number> }>();
 
   // Fetch contributors from each repo
   for (const repo of repos.slice(0, 6)) {
+    const repoFullName = `${repo.owner}/${repo.name}`;
     try {
-      const contributors = await githubFetch(`${GITHUB_API}/repos/${repo}/contributors?per_page=30`);
+      const contributors = await githubFetch(`${GITHUB_API}/repos/${repoFullName}/contributors?per_page=30`);
       if (!contributors || !Array.isArray(contributors)) continue;
 
       for (const c of contributors) {
         if (c.type !== 'User') continue;
         const existing = contributorMap.get(c.login);
         if (existing) {
-          existing.commitCounts[repo] = c.contributions;
+          existing.commitCounts[repoFullName] = c.contributions;
         } else {
           contributorMap.set(c.login, {
             username: c.login,
-            commitCounts: { [repo]: c.contributions },
+            commitCounts: { [repoFullName]: c.contributions },
           });
         }
       }
@@ -248,10 +244,9 @@ async function enrichCandidates(
   return allCandidates;
 }
 
-// Step 4: AI scoring and summarization
+// Step 4: AI scoring and summarization with Claude
 async function scoreCandidates(candidates: any[], query: string, parsedCriteria: any): Promise<any[]> {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY');
-  if (!apiKey || candidates.length === 0) return candidates;
+  if (candidates.length === 0) return candidates;
 
   // Process in batches of 12
   const batchSize = 12;
@@ -276,61 +271,14 @@ async function scoreCandidates(candidates: any[], query: string, parsedCriteria:
     }));
 
     try {
-      const res = await fetch(AI_GATEWAY, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'google/gemini-3-flash-preview',
-          messages: [
-            { role: 'system', content: 'You are a technical recruiting expert. Score and summarize GitHub contributors for relevance to the given search. Return valid JSON only.' },
-            { role: 'user', content: `Search query: "${query}"\nCriteria: ${JSON.stringify(parsedCriteria)}\n\nCandidates:\n${JSON.stringify(candidateInfo)}\n\nFor each candidate return JSON array (no markdown): [{ "username": string, "score": number (0-100 relevance to the search), "summary": string (1 concise line mentioning their key repos and commit counts), "about": string (2-3 sentences describing their expertise and contributions), "is_hidden_gem": boolean (true if significant contributions but under 500 followers) }]` }
-          ],
-          tools: [{
-            type: "function",
-            function: {
-              name: "score_candidates",
-              description: "Score and summarize candidates",
-              parameters: {
-                type: "object",
-                properties: {
-                  scored: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        username: { type: "string" },
-                        score: { type: "number" },
-                        summary: { type: "string" },
-                        about: { type: "string" },
-                        is_hidden_gem: { type: "boolean" }
-                      },
-                      required: ["username", "score", "summary", "about", "is_hidden_gem"],
-                      additionalProperties: false
-                    }
-                  }
-                },
-                required: ["scored"],
-                additionalProperties: false
-              }
-            }
-          }],
-          tool_choice: { type: "function", function: { name: "score_candidates" } }
-        }),
-      });
+      const text = await claudeCall(
+        'You are a technical recruiting expert. Score and summarize these GitHub contributors for the role described. For each, return JSON array (no markdown): [{ "username": "string", "score": 0-100, "summary": "1 concise line mentioning repos and commit counts", "about": "2-3 sentences", "is_hidden_gem": true/false (true if high contributions but under 500 followers) }]',
+        `Search query: "${query}"\nCriteria: ${JSON.stringify(parsedCriteria)}\n\nCandidates:\n${JSON.stringify(candidateInfo)}`
+      );
 
-      if (res.ok) {
-        const data = await res.json();
-        const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-        let scored: any[] = [];
-        if (toolCall) {
-          scored = JSON.parse(toolCall.function.arguments).scored;
-        } else {
-          const content = data.choices?.[0]?.message?.content || '';
-          const jsonMatch = content.match(/\[[\s\S]*\]/);
-          if (jsonMatch) scored = JSON.parse(jsonMatch[0]);
-        }
-
-        // Merge AI scores into candidates
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const scored: any[] = JSON.parse(jsonMatch[0]);
         for (const s of scored) {
           const candidate = batch.find((c: any) => c.github_username === s.username);
           if (candidate) {
@@ -342,8 +290,7 @@ async function scoreCandidates(candidates: any[], query: string, parsedCriteria:
         }
       }
     } catch (e) {
-      console.error('AI scoring error:', e);
-      // Keep existing scores if AI fails
+      console.error('Claude scoring error:', e);
     }
 
     allScored.push(...batch);
@@ -427,7 +374,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       results,
       parsedCriteria,
-      reposSearched: parsedCriteria.repos,
+      reposSearched: parsedCriteria.repos.map((r: any) => `${r.owner}/${r.name}`),
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
