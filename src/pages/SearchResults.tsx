@@ -23,6 +23,7 @@ const SearchResults = () => {
   });
   const [seniorityFilter, setSeniorityFilter] = useState<string>("all");
   const [showGemsOnly, setShowGemsOnly] = useState(false);
+  const [resultLimit, setResultLimit] = useState(20);
   const [locationFilter, setLocationFilter] = useState("");
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const locationInputRef = useRef<HTMLInputElement>(null);
@@ -56,8 +57,8 @@ const SearchResults = () => {
     if (locationFilter) {
       list = list.filter((d: any) => d.location && d.location.toLowerCase().includes(locationFilter.toLowerCase()));
     }
-    return list;
-  }, [results, showGemsOnly, locationFilter]);
+    return list.slice(0, resultLimit);
+  }, [results, showGemsOnly, locationFilter, resultLimit]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,6 +240,19 @@ const SearchResults = () => {
                     <Gem className="w-3 h-3" />
                     Hidden Gems
                   </button>
+                  {/* Result count */}
+                  <div className="flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-full border border-border bg-secondary">
+                    <span className="text-muted-foreground">Results</span>
+                    <select
+                      value={resultLimit}
+                      onChange={(e) => setResultLimit(Number(e.target.value))}
+                      className="bg-popover text-foreground border border-border rounded px-1.5 py-0.5 outline-none text-xs font-display cursor-pointer"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             )}
