@@ -7,37 +7,37 @@ const corsHeaders = {
 };
 
 const GITHUB_API = "https://api.github.com";
-const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
+const LOVABLE_AI = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const CACHE_DAYS = 7;
 
 async function aiCall(system: string, userPrompt: string): Promise<string> {
-  const apiKey = Deno.env.get('PARALLEL_API_KEY');
-  if (!apiKey) throw new Error('PARALLEL_API_KEY not configured');
+  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!apiKey) throw new Error('LOVABLE_API_KEY not configured');
 
-  const res = await fetch(ANTHROPIC_API, {
+  const res = await fetch(LOVABLE_AI, {
     method: 'POST',
     headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
-      system,
-      messages: [{ role: 'user', content: userPrompt }],
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: userPrompt },
+      ],
     }),
   });
 
   if (!res.ok) {
     const errText = await res.text();
-    console.error('Claude API error:', res.status, errText);
+    console.error('AI gateway error:', res.status, errText);
     if (res.status === 429) throw new Error('RATE_LIMITED');
-    throw new Error(`Claude API error: ${res.status}`);
+    throw new Error(`AI gateway error: ${res.status}`);
   }
 
   const data = await res.json();
-  return data.content?.[0]?.text || '';
+  return data.choices?.[0]?.message?.content || '';
 }
 
 function getSupabase() {
