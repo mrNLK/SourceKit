@@ -43,3 +43,7 @@ export async function getDeveloperProfile(username: string) {
 export async function enrichLinkedIn(username: string, name: string, location: string, bio: string) {
   return invokeFunction('enrich-linkedin', undefined, { username, name, location, bio });
 }
+
+export async function generateOutreach(githubUsername: string, candidateName?: string, roleContext?: string) {
+  return invokeFunction('generate-outreach', undefined, { github_username: githubUsername, candidate_name: candidateName, role_context: roleContext });
+}
