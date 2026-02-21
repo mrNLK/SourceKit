@@ -1,4 +1,4 @@
-import { Star, GitFork, MapPin, Gem, Bookmark, BookmarkCheck, Linkedin, Loader2, UserPlus, Check } from "lucide-react";
+import { Star, GitFork, MapPin, Gem, Bookmark, BookmarkCheck, Linkedin, Loader2, UserPlus, Check, Copy, ClipboardCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import type { Developer } from "@/types/developer";
@@ -16,6 +16,7 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
   const navigate = useNavigate();
   const [linkedinLoading, setLinkedinLoading] = useState(false);
   const [linkedinUrl, setLinkedinUrl] = useState(developer.linkedinUrl);
+  const [linkedinCopied, setLinkedinCopied] = useState(false);
   const [addedToPipeline, setAddedToPipeline] = useState(false);
   const [pipelineLoading, setPipelineLoading] = useState(false);
 
@@ -175,16 +176,32 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
         )}
         {/* LinkedIn */}
         {linkedinUrl ? (
-          <a
-            href={linkedinUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-md border bg-info/10 text-info border-info/30 hover:bg-info/20 transition-colors"
-            title="Open LinkedIn"
-          >
-            <Linkedin className="w-3.5 h-3.5" />
-          </a>
+          <>
+            <a
+              href={linkedinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="p-1.5 rounded-md border bg-info/10 text-info border-info/30 hover:bg-info/20 transition-colors"
+              title="Open LinkedIn"
+            >
+              <Linkedin className="w-3.5 h-3.5" />
+            </a>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(linkedinUrl);
+                setLinkedinCopied(true);
+                setTimeout(() => setLinkedinCopied(false), 1500);
+              }}
+              className={`p-1.5 rounded-md border transition-colors ${
+                linkedinCopied ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
+              }`}
+              title={linkedinCopied ? 'Copied!' : 'Copy LinkedIn URL'}
+            >
+              {linkedinCopied ? <ClipboardCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          </>
         ) : (
           <button
             onClick={handleLinkedIn}
