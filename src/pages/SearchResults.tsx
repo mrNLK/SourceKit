@@ -2,6 +2,7 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { Search, GitBranch, Loader2, Gem, Linkedin, ExternalLink, Bookmark, BookmarkCheck, SlidersHorizontal, MapPin, X, FlaskConical, Kanban, Zap } from "lucide-react";
 import { useState, useMemo, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { searchDevelopers, enrichLinkedIn, type SearchResponse } from "@/lib/api";
 import DeveloperCard from "@/components/DeveloperCard";
 import ResearchTab, { type ResearchState } from "@/components/ResearchTab";
@@ -40,6 +41,17 @@ const SearchResults = () => {
   const results = data?.results || [];
   const parsedCriteria = data?.parsedCriteria;
   const reposSearched = data?.reposSearched || [];
+
+  // Check which candidates are already in the pipeline
+  const { data: pipelineUsernames } = useQuery({
+    queryKey: ["pipeline-usernames"],
+    queryFn: async () => {
+      const { data } = await supabase.from('pipeline').select('github_username');
+      return new Set((data || []).map((r: any) => r.github_username));
+    },
+    staleTime: 1000 * 30,
+  });
+  const pipelineSet = pipelineUsernames || new Set<string>();
 
   const phase: SearchPhase = isLoading ? 'scoring' : 'done';
 
@@ -329,6 +341,7 @@ const SearchResults = () => {
                     isShortlisted={shortlisted.has(dev.username)}
                     onToggleShortlist={() => toggleShortlist(dev.username)}
                     showPipelineButton
+                    inPipeline={pipelineSet.has(dev.username)}
                   />
                 ))}
                 {results.length === 0 && (

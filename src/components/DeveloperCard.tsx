@@ -10,14 +10,15 @@ interface DeveloperCardProps {
   isShortlisted?: boolean;
   onToggleShortlist?: () => void;
   showPipelineButton?: boolean;
+  inPipeline?: boolean;
 }
 
-const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipelineButton }: DeveloperCardProps) => {
+const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipelineButton, inPipeline }: DeveloperCardProps) => {
   const navigate = useNavigate();
   const [linkedinLoading, setLinkedinLoading] = useState(false);
   const [linkedinUrl, setLinkedinUrl] = useState(developer.linkedinUrl);
   const [linkedinCopied, setLinkedinCopied] = useState(false);
-  const [addedToPipeline, setAddedToPipeline] = useState(false);
+  const [addedToPipeline, setAddedToPipeline] = useState(!!inPipeline);
   const [pipelineLoading, setPipelineLoading] = useState(false);
 
   const handleAddToPipeline = async (e: React.MouseEvent) => {
@@ -84,6 +85,11 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
                 <span className="flex items-center gap-1 text-warning text-xs font-display">
                   <Gem className="w-3 h-3" />
                   Hidden Gem
+                </span>
+              )}
+              {inPipeline && (
+                <span className="text-[10px] font-display px-1.5 py-0.5 rounded bg-info/10 text-info border border-info/20">
+                  In Pipeline
                 </span>
               )}
             </div>
