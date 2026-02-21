@@ -1,8 +1,8 @@
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { Search, GitBranch, Loader2, Gem, Linkedin, ExternalLink, Bookmark, BookmarkCheck, SlidersHorizontal, MapPin, X, FlaskConical, Kanban } from "lucide-react";
-import { useState, useMemo, useRef } from "react";
+import { Search, GitBranch, Loader2, Gem, Linkedin, ExternalLink, Bookmark, BookmarkCheck, SlidersHorizontal, MapPin, X, FlaskConical, Kanban, Zap } from "lucide-react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { searchDevelopers, type SearchResponse } from "@/lib/api";
+import { searchDevelopers, enrichLinkedIn, type SearchResponse } from "@/lib/api";
 import DeveloperCard from "@/components/DeveloperCard";
 import ResearchTab, { type ResearchState } from "@/components/ResearchTab";
 
@@ -27,6 +27,8 @@ const SearchResults = () => {
   const [locationFilter, setLocationFilter] = useState("");
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const locationInputRef = useRef<HTMLInputElement>(null);
+  const [enrichProgress, setEnrichProgress] = useState<{ current: number; total: number; skipped: number } | null>(null);
+  const [enrichedUsernames, setEnrichedUsernames] = useState<Set<string>>(new Set());
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["github-search", query],
@@ -59,6 +61,27 @@ const SearchResults = () => {
     }
     return list.slice(0, resultLimit);
   }, [results, showGemsOnly, locationFilter, resultLimit]);
+
+  const handleBatchEnrich = useCallback(async () => {
+    if (enrichProgress) return;
+    const toEnrich = filtered.filter((d: any) => !d.linkedinUrl && !enrichedUsernames.has(d.username));
+    const alreadyHave = filtered.length - toEnrich.length;
+    setEnrichProgress({ current: 0, total: toEnrich.length, skipped: alreadyHave });
+
+    for (let i = 0; i < toEnrich.length; i++) {
+      const dev = toEnrich[i];
+      setEnrichProgress({ current: i + 1, total: toEnrich.length, skipped: alreadyHave });
+      try {
+        const result = await enrichLinkedIn(dev.username, dev.name, dev.location, dev.bio);
+        if (result.linkedin_url) {
+          setEnrichedUsernames(prev => new Set([...prev, dev.username]));
+        }
+      } catch {
+        // skip failures
+      }
+    }
+    setTimeout(() => setEnrichProgress(null), 2000);
+  }, [filtered, enrichedUsernames, enrichProgress]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,6 +276,29 @@ const SearchResults = () => {
                       <option value={50}>50</option>
                     </select>
                   </div>
+                  {/* Enrich All */}
+                  <button
+                    onClick={handleBatchEnrich}
+                    disabled={!!enrichProgress}
+                    className={`flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-full border transition-colors ${
+                      enrichProgress ? 'bg-info/10 text-info border-info/30' : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
+                    } disabled:cursor-not-allowed`}
+                  >
+                    {enrichProgress ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        {enrichProgress.current}/{enrichProgress.total}
+                        {enrichProgress.skipped > 0 && (
+                          <span className="text-muted-foreground">· {enrichProgress.skipped} skipped</span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-3 h-3" />
+                        Enrich All
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             )}
