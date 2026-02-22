@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { GripVertical, Trash2, Loader2, ChevronDown, ChevronUp, Copy, ClipboardCheck, Sparkles, MessageSquare, Clock } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import CandidateProfile from "@/components/CandidateProfile";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -15,115 +16,10 @@ const STAGES = [
   { id: 'offer', label: 'Offer', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
 ] as const;
 
-const OutreachSection = ({ pipelineId, candidateName, githubUsername }: { pipelineId: string; candidateName: string; githubUsername: string }) => {
-  const queryClient = useQueryClient();
-  const [generating, setGenerating] = useState(false);
-  const [generatedMsg, setGeneratedMsg] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const { data: history = [], isLoading } = useQuery({
-    queryKey: ['outreach-history', pipelineId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('outreach_history')
-        .select('*')
-        .eq('pipeline_id', pipelineId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const handleGenerate = async () => {
-    setGenerating(true);
-    setGeneratedMsg(null);
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-outreach`, {
-        method: 'POST',
-        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ candidate_name: candidateName, github_username: githubUsername }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed');
-      const msg = data.message;
-      setGeneratedMsg(msg);
-      await supabase.from('outreach_history').insert({ pipeline_id: pipelineId, message: msg });
-      queryClient.invalidateQueries({ queryKey: ['outreach-history', pipelineId] });
-    } catch (e) {
-      console.error('Outreach generation failed:', e);
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const handleCopy = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 1500);
-  };
-
-  return (
-    <div className="mt-3 space-y-3">
-      <button
-        onClick={handleGenerate}
-        disabled={generating}
-        className="w-full flex items-center justify-center gap-1.5 text-[11px] font-display font-semibold px-2 py-1.5 rounded-md border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
-      >
-        {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-        {generating ? 'Generating...' : 'Generate Outreach'}
-      </button>
-
-      {generatedMsg && (
-        <div className="p-2 rounded-md bg-primary/5 border border-primary/15 text-[11px] text-foreground leading-relaxed">
-          {generatedMsg}
-        </div>
-      )}
-
-      <div>
-        <div className="flex items-center gap-1.5 mb-2">
-          <MessageSquare className="w-3 h-3 text-muted-foreground" />
-          <span className="text-[10px] font-display font-semibold text-muted-foreground uppercase tracking-wider">
-            Outreach History ({history.length})
-          </span>
-        </div>
-
-        {isLoading ? (
-          <div className="flex justify-center py-2">
-            <Loader2 className="w-3 h-3 text-muted-foreground animate-spin" />
-          </div>
-        ) : history.length === 0 ? (
-          <p className="text-[10px] text-muted-foreground italic">No messages yet</p>
-        ) : (
-          <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
-            {history.map((h: any) => (
-              <div key={h.id} className="group/msg p-2 rounded-md bg-secondary/50 border border-border text-[11px] text-secondary-foreground leading-relaxed relative">
-                <p className="pr-6">{h.message}</p>
-                <div className="flex items-center justify-between mt-1.5">
-                  <span className="flex items-center gap-1 text-[9px] text-muted-foreground">
-                    <Clock className="w-2.5 h-2.5" />
-                    {new Date(h.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleCopy(h.id, h.message)}
-                  className="absolute top-2 right-2 p-1 rounded text-muted-foreground hover:text-foreground opacity-0 group-hover/msg:opacity-100 transition-opacity"
-                  title="Copy message"
-                >
-                  {copiedId === h.id ? <ClipboardCheck className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 const PipelineTab = () => {
   const queryClient = useQueryClient();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
-  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
 
   const { data: candidates = [], isLoading } = useQuery({
     queryKey: ['pipeline'],
@@ -157,6 +53,13 @@ const PipelineTab = () => {
     }
   };
 
+  const handleBack = useCallback(() => setSelectedCandidate(null), []);
+
+  // If a candidate is selected, show the profile view
+  if (selectedCandidate) {
+    return <CandidateProfile pipelineCandidate={selectedCandidate} onBack={handleBack} />;
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -185,62 +88,44 @@ const PipelineTab = () => {
                 <span className="text-xs font-display text-muted-foreground">{items.length}</span>
               </div>
               <div className="space-y-2">
-                {items.map((c: any) => {
-                  const isExpanded = expandedCard === c.id;
-                  return (
+                {items.map((c: any) => (
+                  <div
+                    key={c.id}
+                    draggable
+                    onDragStart={() => setDraggedItem(c.id)}
+                    className="glass rounded-lg p-3 cursor-grab active:cursor-grabbing hover:glow-border transition-all group"
+                  >
                     <div
-                      key={c.id}
-                      draggable={!isExpanded}
-                      onDragStart={() => setDraggedItem(c.id)}
-                      className="glass rounded-lg p-3 cursor-grab active:cursor-grabbing hover:glow-border transition-all group"
+                      className="flex items-start gap-2 cursor-pointer"
+                      onClick={() => setSelectedCandidate(c)}
                     >
-                      <div className="flex items-start gap-2">
-                        <GripVertical className="w-3 h-3 text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                        {c.avatar_url ? (
-                          <img
-                            src={c.avatar_url}
-                            alt=""
-                            className="w-7 h-7 rounded-full bg-secondary border border-border shrink-0 object-cover"
-                            onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
-                          />
-                        ) : null}
-                        <div className={`${c.avatar_url ? 'hidden' : 'flex'} w-7 h-7 rounded-full bg-primary/15 border border-primary/30 items-center justify-center font-display text-[10px] font-bold text-primary shrink-0`}>
-                          {(c.name || c.github_username)?.charAt(0)?.toUpperCase() || '?'}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <Link
-                            to={`/developer/${c.github_username}`}
-                            className="font-display text-xs font-semibold text-foreground hover:text-primary transition-colors truncate block"
-                          >
-                            {c.name || c.github_username}
-                          </Link>
-                          <p className="text-[10px] text-muted-foreground font-display truncate">@{c.github_username}</p>
-                        </div>
-                        <div className="flex items-center gap-0.5 shrink-0">
-                          <button
-                            onClick={() => setExpandedCard(isExpanded ? null : c.id)}
-                            className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                          </button>
-                          <button
-                            onClick={() => removeMutation.mutate(c.id)}
-                            className="p-1 rounded text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all shrink-0"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                      {isExpanded && (
-                        <OutreachSection
-                          pipelineId={c.id}
-                          candidateName={c.name || c.github_username}
-                          githubUsername={c.github_username}
+                      <GripVertical className="w-3 h-3 text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      {c.avatar_url ? (
+                        <img
+                          src={c.avatar_url}
+                          alt=""
+                          className="w-7 h-7 rounded-full bg-secondary border border-border shrink-0 object-cover"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
                         />
-                      )}
+                      ) : null}
+                      <div className={`${c.avatar_url ? 'hidden' : 'flex'} w-7 h-7 rounded-full bg-primary/15 border border-primary/30 items-center justify-center font-display text-[10px] font-bold text-primary shrink-0`}>
+                        {(c.name || c.github_username)?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-display text-xs font-semibold text-foreground hover:text-primary transition-colors truncate block">
+                          {c.name || c.github_username}
+                        </span>
+                        <p className="text-[10px] text-muted-foreground font-display truncate">@{c.github_username}</p>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeMutation.mutate(c.id); }}
+                        className="p-1 rounded text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
           );
