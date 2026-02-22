@@ -4,6 +4,7 @@ import SearchTab from "@/components/SearchTab";
 import PipelineTab from "@/components/PipelineTab";
 import HistoryTab from "@/components/HistoryTab";
 import WatchlistTab from "@/components/WatchlistTab";
+import BulkActionsTab from "@/components/BulkActionsTab";
 import { Clock } from "lucide-react";
 
 const PlaceholderTab = ({ icon: Icon, title, subtitle }: { icon: React.ElementType; title: string; subtitle: string }) => (
@@ -52,6 +53,7 @@ const Index = () => {
       {activeTab === "watchlist" && (
         <WatchlistTab onNavigateToSearch={() => setActiveTab("search")} />
       )}
+      {activeTab === "bulk" && <BulkActionsTab />}
       {activeTab === "settings" && <SettingsTab />}
     </DashboardLayout>
   );
