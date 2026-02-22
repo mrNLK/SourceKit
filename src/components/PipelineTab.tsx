@@ -72,6 +72,12 @@ const PipelineTab = () => {
   return (
     <div>
       <h1 className="font-display text-lg font-semibold text-foreground mb-6">Candidate Pipeline</h1>
+          {(!candidates || candidates.length === 0) && (
+            <div className="text-center py-8 mb-4 rounded-xl border border-dashed border-muted-foreground/20">
+              <p className="text-sm text-muted-foreground/60 mb-1">No candidates in your pipeline yet</p>
+              <p className="text-xs text-muted-foreground/40">Search for candidates and save them to start building your pipeline</p>
+            </div>
+          )}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {STAGES.map((stage) => {
           const items = candidates.filter((c: any) => c.stage === stage.id);
@@ -98,7 +104,10 @@ const PipelineTab = () => {
                   >
                     <div
                       className="flex items-start gap-2 cursor-pointer"
-                      onClick={() => setSelectedCandidate(c)}
+                          {items.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground/30 text-center py-4">Drop candidates here</p>
+                )}
+            onClick={() => setSelectedCandidate(c)}
                     >
                       <GripVertical className="w-3 h-3 text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                       {c.avatar_url ? (
