@@ -22,10 +22,10 @@ const SettingsTab = () => {
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase.from("settings").select("key, value");
+      const { data } = await (supabase as any).from("settings").select("key, value");
       if (data) {
         const map: Record<string, string> = {};
-        data.forEach((r: { key: string; value: string }) => {
+        data.forEach((r: any) => {
           map[r.key] = r.value;
         });
         setForm((prev) => ({
@@ -46,7 +46,7 @@ const SettingsTab = () => {
     setSaved(false);
     const entries = Object.entries(form);
     for (const [key, value] of entries) {
-      await supabase.from("settings").upsert({ key, value }, { onConflict: "key" });
+      await (supabase as any).from("settings").upsert({ key, value }, { onConflict: "key" });
     }
     setSaving(false);
     setSaved(true);
