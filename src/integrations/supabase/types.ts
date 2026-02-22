@@ -170,6 +170,33 @@ export type Database = {
         }
         Relationships: []
       }
+      search_history: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          query: string
+          result_count: number | null
+        }
+        Insert: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          query: string
+          result_count?: number | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          query?: string
+          result_count?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

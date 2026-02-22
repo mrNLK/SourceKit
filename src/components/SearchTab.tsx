@@ -1,13 +1,36 @@
-import { Search, Loader2, Gem, ExternalLink, SlidersHorizontal, MapPin, X, Zap } from "lucide-react";
-import { useState, useMemo, useRef, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { Search, Loader2, Gem, ExternalLink, SlidersHorizontal, MapPin, X, Zap, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { searchDevelopers, enrichLinkedIn } from "@/lib/api";
 import DeveloperCard from "@/components/DeveloperCard";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const SearchTab = () => {
-  const [query, setQuery] = useState("");
+interface SearchTabProps {
+  initialQuery?: string;
+  initialExpandedQuery?: string;
+  autoSubmit?: boolean;
+}
+
+interface SuggestionChip {
+  label: string;
+  expandedQuery: string;
+}
+
+const DEFAULT_SUGGESTIONS: SuggestionChip[] = [
+  { label: "Rust systems engineers", expandedQuery: "Rust systems engineers with experience in low-level programming, memory safety, performance optimization, and systems-level software development including operating systems, compilers, or embedded systems" },
+  { label: "React accessibility experts", expandedQuery: "React frontend engineers specializing in web accessibility (a11y), WCAG compliance, ARIA attributes, screen reader compatibility, and inclusive design patterns using React and TypeScript" },
+  { label: "ML infrastructure", expandedQuery: "Machine learning infrastructure engineers experienced with ML pipelines, model serving, distributed training, MLOps, Kubernetes for ML workloads, feature stores, and tools like Ray, Kubeflow, or MLflow" },
+  { label: "Kubernetes contributors", expandedQuery: "Kubernetes contributors and cloud-native engineers with experience in container orchestration, Helm charts, operators, service mesh, cloud infrastructure automation, and Go programming" },
+  { label: "Security researchers", expandedQuery: "Security researchers and application security engineers with expertise in vulnerability research, penetration testing, cryptography, secure coding practices, and CVE discovery" },
+];
+
+const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit }: SearchTabProps) => {
+  const queryClient = useQueryClient();
+  const [query, setQuery] = useState(initialQuery || "");
   const [activeQuery, setActiveQuery] = useState("");
+  const [expandedQuery, setExpandedQuery] = useState(initialExpandedQuery || "");
+  const [showExpandedQuery, setShowExpandedQuery] = useState(false);
   const [shortlisted, setShortlisted] = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem('shortlisted') || '[]')); } catch { return new Set(); }
   });
@@ -18,6 +41,18 @@ const SearchTab = () => {
   const locationInputRef = useRef<HTMLInputElement>(null);
   const [enrichProgress, setEnrichProgress] = useState<{ current: number; total: number; skipped: number } | null>(null);
   const [enrichedUsernames, setEnrichedUsernames] = useState<Set<string>>(new Set());
+  const autoSubmitDone = useRef(false);
+
+  // Auto-submit for re-run from history
+  useEffect(() => {
+    if (autoSubmit && initialQuery && !autoSubmitDone.current) {
+      autoSubmitDone.current = true;
+      const q = initialExpandedQuery || initialQuery;
+      setActiveQuery(q);
+      setQuery(initialQuery);
+      setExpandedQuery(initialExpandedQuery || "");
+    }
+  }, [autoSubmit, initialQuery, initialExpandedQuery]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["github-search", activeQuery],
@@ -29,6 +64,31 @@ const SearchTab = () => {
   const results = data?.results || [];
   const parsedCriteria = data?.parsedCriteria;
   const reposSearched = data?.reposSearched || [];
+
+  // Save to search_history when results arrive
+  useEffect(() => {
+    if (data && activeQuery && results.length >= 0) {
+      const saveHistory = async () => {
+        try {
+          await supabase.from("search_history").insert({
+            query: query || activeQuery,
+            action_type: "search",
+            result_count: results.length,
+            metadata: {
+              expanded_query: expandedQuery || activeQuery,
+              skills: parsedCriteria?.skills || [],
+              location: parsedCriteria?.location || null,
+              seniority: parsedCriteria?.seniority || null,
+            },
+          } as any);
+          queryClient.invalidateQueries({ queryKey: ["search-history"] });
+        } catch { /* silent */ }
+      };
+      saveHistory();
+    }
+    // Only run when data changes (new search completes)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const { data: pipelineUsernames } = useQuery({
     queryKey: ["pipeline-usernames"],
@@ -77,7 +137,22 @@ const SearchTab = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) setActiveQuery(query.trim());
+    if (query.trim()) {
+      const searchQuery = expandedQuery.trim() || query.trim();
+      setActiveQuery(searchQuery);
+    }
+  };
+
+  const handleChipClick = (chip: SuggestionChip) => {
+    setQuery(chip.label);
+    setExpandedQuery(chip.expandedQuery);
+    setShowExpandedQuery(true);
+  };
+
+  const handleChipSubmit = (chip: SuggestionChip) => {
+    setQuery(chip.label);
+    setExpandedQuery(chip.expandedQuery);
+    setActiveQuery(chip.expandedQuery);
   };
 
   const toggleShortlist = (username: string) => {
@@ -89,18 +164,16 @@ const SearchTab = () => {
     });
   };
 
-  const suggestions = ["Rust systems engineers", "React accessibility experts", "ML infrastructure", "Kubernetes contributors", "Security researchers"];
-
   return (
     <div>
       {/* Search bar */}
-      <form onSubmit={handleSearch} className="relative mb-6">
+      <form onSubmit={handleSearch} className="relative mb-2">
         <div className="relative glass rounded-xl glow-border transition-all duration-300 focus-within:glow-sm">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); if (!expandedQuery) setShowExpandedQuery(false); }}
             placeholder="Search by skill, language, or domain..."
             className="w-full bg-transparent text-foreground placeholder:text-muted-foreground py-3.5 pl-12 pr-28 text-sm outline-none font-body"
           />
@@ -113,16 +186,41 @@ const SearchTab = () => {
         </div>
       </form>
 
+      {/* Expanded query details (collapsible) */}
+      {expandedQuery && (
+        <Collapsible open={showExpandedQuery} onOpenChange={setShowExpandedQuery} className="mb-4">
+          <CollapsibleTrigger className="flex items-center gap-1.5 text-[11px] font-display text-muted-foreground hover:text-foreground transition-colors px-1 py-1">
+            {showExpandedQuery ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            Query details
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="mt-1 p-3 rounded-lg bg-secondary/50 border border-border">
+              <textarea
+                value={expandedQuery}
+                onChange={(e) => setExpandedQuery(e.target.value)}
+                rows={3}
+                className="w-full bg-transparent text-xs text-foreground font-body outline-none resize-none leading-relaxed"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1 font-display">
+                This expanded query will be sent to the search engine for better results. Edit before submitting.
+              </p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
       {/* Suggestion chips when no active query */}
-      {!activeQuery && (
-        <div className="flex flex-wrap gap-2 mb-8">
-          {suggestions.map((s) => (
+      {!activeQuery && !expandedQuery && (
+        <div className="flex flex-wrap gap-2 mb-8 mt-4">
+          {DEFAULT_SUGGESTIONS.map((chip) => (
             <button
-              key={s}
-              onClick={() => { setQuery(s); setActiveQuery(s); }}
+              key={chip.label}
+              onClick={() => handleChipClick(chip)}
+              onDoubleClick={() => handleChipSubmit(chip)}
               className="text-xs font-display px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+              title="Click to preview expanded query, double-click to search"
             >
-              {s}
+              {chip.label}
             </button>
           ))}
         </div>

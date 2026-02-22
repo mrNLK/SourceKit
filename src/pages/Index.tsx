@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import DashboardLayout, { type ActiveTab } from "@/components/DashboardLayout";
 import SearchTab from "@/components/SearchTab";
 import PipelineTab from "@/components/PipelineTab";
-import ResearchTab, { type ResearchState } from "@/components/ResearchTab";
+import HistoryTab from "@/components/HistoryTab";
 import { Clock, Bookmark } from "lucide-react";
 
 const PlaceholderTab = ({ icon: Icon, title, subtitle }: { icon: React.ElementType; title: string; subtitle: string }) => (
@@ -21,16 +21,32 @@ const SettingsTab = () => (
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("search");
-  const [researchState, setResearchState] = useState<ResearchState>({
-    jobTitle: "", companyName: "", research: "", error: "",
-  });
+  const [rerunQuery, setRerunQuery] = useState<string | undefined>();
+  const [rerunExpanded, setRerunExpanded] = useState<string | undefined>();
+  const [rerunKey, setRerunKey] = useState(0);
+
+  const handleRerun = useCallback((query: string, expandedQuery?: string) => {
+    if (!query) {
+      setActiveTab("search");
+      return;
+    }
+    setRerunQuery(query);
+    setRerunExpanded(expandedQuery);
+    setRerunKey(k => k + 1);
+    setActiveTab("search");
+  }, []);
 
   return (
     <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab}>
-      {activeTab === "search" && <SearchTab />}
-      {activeTab === "history" && (
-        <PlaceholderTab icon={Clock} title="Search History" subtitle="Search history coming soon" />
+      {activeTab === "search" && (
+        <SearchTab
+          key={rerunKey}
+          initialQuery={rerunQuery}
+          initialExpandedQuery={rerunExpanded}
+          autoSubmit={!!rerunQuery && rerunKey > 0}
+        />
       )}
+      {activeTab === "history" && <HistoryTab onRerun={handleRerun} />}
       {activeTab === "pipeline" && <PipelineTab />}
       {activeTab === "watchlist" && (
         <PlaceholderTab icon={Bookmark} title="Watchlist" subtitle="Watchlist coming soon" />
