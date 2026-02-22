@@ -1,4 +1,4 @@
-import { Star, GitFork, MapPin, Gem, Bookmark, BookmarkCheck, Linkedin, Loader2, UserPlus, Check, Copy, ClipboardCheck } from "lucide-react";
+import { Star, GitFork, MapPin, Gem, Bookmark, BookmarkCheck, Linkedin, Loader2, UserPlus, Check, Copy, ClipboardCheck, Github, Mail, Twitter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import type { Developer } from "@/types/developer";
@@ -83,6 +83,40 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
               <h3 className="font-display text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                 {developer.name}
               </h3>
+              <div className="flex items-center gap-1 shrink-0">
+                <a
+                  href={developer.githubUrl || `https://github.com/${developer.username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  title="GitHub profile"
+                >
+                  <Github className="w-3.5 h-3.5" />
+                </a>
+                {developer.email && (
+                  <a
+                    href={`mailto:${developer.email}`}
+                    onClick={e => e.stopPropagation()}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    title={developer.email}
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                {developer.twitterUsername && (
+                  <a
+                    href={`https://twitter.com/${developer.twitterUsername}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    title={`@${developer.twitterUsername}`}
+                  >
+                    <Twitter className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </div>
               {developer.hiddenGem && (
                 <span className="flex items-center gap-1 text-warning text-xs font-display">
                   <Gem className="w-3 h-3" />
@@ -97,10 +131,8 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
             </div>
             <p className="text-xs text-muted-foreground font-display mb-2">@{developer.username}</p>
             
-            {/* AI-generated summary */}
             <p className="text-sm text-secondary-foreground line-clamp-2 mb-2">{developer.bio}</p>
             
-            {/* Contributed repos tags */}
             {developer.contributedRepos && Object.keys(developer.contributedRepos).length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {Object.entries(developer.contributedRepos).map(([repo, count]) => (
@@ -111,16 +143,11 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
               </div>
             )}
 
-            {/* Language bars */}
             {developer.topLanguages.length > 0 && (
               <>
                 <div className="flex gap-0.5 h-1.5 rounded-full overflow-hidden mb-3">
                   {developer.topLanguages.map((lang) => (
-                    <div
-                      key={lang.name}
-                      style={{ width: `${lang.percentage}%`, backgroundColor: lang.color }}
-                      className="rounded-full"
-                    />
+                    <div key={lang.name} style={{ width: `${lang.percentage}%`, backgroundColor: lang.color }} className="rounded-full" />
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -134,21 +161,11 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
               </>
             )}
 
-            {/* Stats */}
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Star className="w-3.5 h-3.5" />
-                {developer.stars.toLocaleString()}
-              </span>
-              <span className="flex items-center gap-1">
-                <GitFork className="w-3.5 h-3.5" />
-                {developer.publicRepos} repos
-              </span>
+              <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5" />{developer.stars.toLocaleString()}</span>
+              <span className="flex items-center gap-1"><GitFork className="w-3.5 h-3.5" />{developer.publicRepos} repos</span>
               {developer.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5" />
-                  {developer.location}
-                </span>
+                <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{developer.location}</span>
               )}
             </div>
           </div>
@@ -170,7 +187,19 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
 
       {/* Action buttons */}
       <div className="absolute top-3 right-3 flex items-center gap-1.5">
-        {/* Add to Pipeline */}
+        {/* Shortlist star */}
+        {onToggleShortlist && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleShortlist(); }}
+            className={`p-1.5 rounded-md border transition-colors ${
+              isShortlisted ? 'bg-warning/10 text-warning border-warning/30' : 'border-border text-muted-foreground hover:text-warning hover:border-warning/30'
+            }`}
+            title={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
+          >
+            <Star className={`w-3.5 h-3.5 ${isShortlisted ? 'fill-current' : ''}`} />
+          </button>
+        )}
+
         {showPipelineButton && (
           <button
             onClick={handleAddToPipeline}
@@ -182,50 +211,28 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
             {pipelineLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : addedToPipeline ? <Check className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
           </button>
         )}
-        {/* LinkedIn */}
         {linkedinUrl ? (
           <>
-            <a
-              href={linkedinUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="p-1.5 rounded-md border bg-info/10 text-info border-info/30 hover:bg-info/20 transition-colors"
-              title="Open LinkedIn"
-            >
+            <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+              className="p-1.5 rounded-md border bg-info/10 text-info border-info/30 hover:bg-info/20 transition-colors" title="Open LinkedIn">
               <Linkedin className="w-3.5 h-3.5" />
             </a>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(linkedinUrl);
-                setLinkedinCopied(true);
-                setTimeout(() => setLinkedinCopied(false), 1500);
-              }}
-              className={`p-1.5 rounded-md border transition-colors ${
-                linkedinCopied ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
-              }`}
+              onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(linkedinUrl); setLinkedinCopied(true); setTimeout(() => setLinkedinCopied(false), 1500); }}
+              className={`p-1.5 rounded-md border transition-colors ${linkedinCopied ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30'}`}
               title={linkedinCopied ? 'Copied!' : 'Copy LinkedIn URL'}
             >
               {linkedinCopied ? <ClipboardCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           </>
         ) : (
-          <button
-            onClick={handleLinkedIn}
-            className="p-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
-            title="Find LinkedIn"
-          >
+          <button onClick={handleLinkedIn} className="p-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors" title="Find LinkedIn">
             {linkedinLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Linkedin className="w-3.5 h-3.5" />}
           </button>
         )}
 
-        {/* Watchlist button */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleWatchlist(developer.username, developer.name, developer.avatarUrl);
-          }}
+          onClick={(e) => { e.stopPropagation(); toggleWatchlist(developer.username, developer.name, developer.avatarUrl); }}
           className={`p-1.5 rounded-md border transition-colors ${
             isWatched(developer.username) ? 'bg-primary/10 text-primary border-primary/30' : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
           }`}
