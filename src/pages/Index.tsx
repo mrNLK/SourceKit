@@ -5,6 +5,7 @@ import PipelineTab from "@/components/PipelineTab";
 import HistoryTab from "@/components/HistoryTab";
 import WatchlistTab from "@/components/WatchlistTab";
 import BulkActionsTab from "@/components/BulkActionsTab";
+import SettingsTab from "@/components/SettingsTab";
 import { Clock } from "lucide-react";
 
 const PlaceholderTab = ({ icon: Icon, title, subtitle }: { icon: React.ElementType; title: string; subtitle: string }) => (
@@ -18,9 +19,6 @@ const PlaceholderTab = ({ icon: Icon, title, subtitle }: { icon: React.ElementTy
 );
 
 const SettingsTab = () => (
-  <PlaceholderTab icon={Clock} title="Settings" subtitle="Settings coming soon" />
-);
-
 const Index = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("search");
   const [rerunQuery, setRerunQuery] = useState<string | undefined>();
