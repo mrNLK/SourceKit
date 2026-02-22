@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.enrich-linkedin]
 verify_jwt = false
+
+[functions.generate-outreach]
+verify_jwt = false
+
+[functions.research-role]
+verify_jwt = false
+
+[functions.bulk-actions]
+verify_jwt = false
