@@ -76,7 +76,9 @@ serve(async (req) => {
       });
     }
 
-    const repoList = (repos || []).filter((r: any) => !r.fork);
+    const allRepos = repos || [];
+    const repoList = allRepos.filter((r: any) => !r.fork);
+    const forkedRepos = allRepos.filter((r: any) => r.fork);
     const totalStars = repoList.reduce((sum: number, r: any) => sum + r.stargazers_count, 0);
 
     // Aggregate languages
@@ -89,7 +91,7 @@ serve(async (req) => {
     const totalLangRepos = Object.values(langCount).reduce((a, b) => a + b, 0) || 1;
     const topLanguages = Object.entries(langCount)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 4)
+      .slice(0, 6)
       .map(([name, count]) => ({
         name,
         percentage: Math.round((count / totalLangRepos) * 100),
@@ -99,6 +101,9 @@ serve(async (req) => {
     // Recent activity from events - group push events by month
     const eventList = events || [];
     const pushEvents = eventList.filter((e: any) => e.type === 'PushEvent');
+    const prEvents = eventList.filter((e: any) => e.type === 'PullRequestEvent');
+    const issueEvents = eventList.filter((e: any) => e.type === 'IssuesEvent');
+    const reviewEvents = eventList.filter((e: any) => e.type === 'PullRequestReviewEvent');
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthCounts: Record<string, number> = {};
     
@@ -123,6 +128,15 @@ serve(async (req) => {
       return { month: monthNames[parseInt(month)], commits };
     });
 
+    // Contribution breakdown
+    const totalCommits = pushEvents.reduce((sum: number, e: any) => sum + (e.payload?.commits?.length || 1), 0);
+    const contributionBreakdown = {
+      commits: totalCommits || profile.public_repos * 50,
+      pullRequests: prEvents.length || null,
+      issues: issueEvents.length || null,
+      reviews: reviewEvents.length || null,
+    };
+
     // Score calculation
     const starScore = Math.min(totalStars / 100, 30);
     const repoScore = Math.min(profile.public_repos / 5, 20);
@@ -141,6 +155,44 @@ serve(async (req) => {
 
     const joinedYear = new Date(profile.created_at).getFullYear();
 
+    // Derive skills from languages + repo topics/descriptions
+    const skillSet = new Set<string>();
+    for (const lang of Object.keys(langCount)) skillSet.add(lang);
+    for (const repo of repoList) {
+      if (repo.topics) repo.topics.forEach((t: string) => skillSet.add(t));
+    }
+    const skills = Array.from(skillSet).slice(0, 15);
+
+    // Group forked repos by theme
+    const forkGroups: Record<string, string[]> = {};
+    for (const repo of forkedRepos) {
+      const desc = repo.description || repo.name;
+      const lang = repo.language || 'Other';
+      // Simple grouping by language
+      if (!forkGroups[lang]) forkGroups[lang] = [];
+      forkGroups[lang].push(repo.full_name);
+    }
+    const interests = Object.entries(forkGroups)
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 5)
+      .map(([theme, repos]) => ({ theme, count: repos.length, repos: repos.slice(0, 3) }));
+
+    // Top repos with more detail
+    const topRepos = repoList
+      .sort((a: any, b: any) => b.stargazers_count - a.stargazers_count)
+      .slice(0, 6)
+      .map((r: any) => ({
+        name: r.name,
+        fullName: r.full_name,
+        description: r.description || '',
+        stars: r.stargazers_count,
+        forks: r.forks_count,
+        language: r.language,
+        languageColor: r.language ? getLangColor(r.language) : null,
+        url: r.html_url,
+        topics: r.topics || [],
+      }));
+
     const result = {
       id: profile.login,
       username: profile.login,
@@ -148,9 +200,10 @@ serve(async (req) => {
       avatarUrl: profile.avatar_url,
       bio: profile.bio || `GitHub user with ${profile.public_repos} public repositories.`,
       location: profile.location || "",
-      totalContributions: profile.public_repos * 50,
+      totalContributions: contributionBreakdown.commits,
       publicRepos: profile.public_repos,
       followers: profile.followers,
+      following: profile.following,
       stars: totalStars,
       topLanguages,
       highlights: highlights.length ? highlights : [`${profile.public_repos} public repositories`],
@@ -159,6 +212,14 @@ serve(async (req) => {
       joinedYear,
       recentActivity,
       githubUrl: profile.html_url,
+      contributionBreakdown,
+      skills,
+      interests,
+      topRepos,
+      website: profile.blog || null,
+      twitterUsername: profile.twitter_username || null,
+      email: profile.email || null,
+      company: profile.company || null,
     };
 
     return new Response(JSON.stringify(result), {
