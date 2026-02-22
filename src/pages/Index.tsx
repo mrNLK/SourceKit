@@ -25,10 +25,7 @@ const PlaceholderTab = ({
   </div>
 );
 
-const SettingsTab = () => (
-    <PlaceholderTab icon={Clock} title="Settings" subtitle="Settings coming soon" />
-  );
-)
+const SettingsTab = () => <PlaceholderTab icon={Clock} title="Settings" subtitle="Settings coming soon" />;
 const Index = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("search");
   const [rerunQuery, setRerunQuery] = useState<string | undefined>();
