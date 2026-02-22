@@ -197,6 +197,36 @@ export type Database = {
         }
         Relationships: []
       }
+      watchlist_items: {
+        Row: {
+          candidate_avatar_url: string | null
+          candidate_name: string | null
+          candidate_username: string
+          created_at: string
+          id: string
+          list_name: string
+          notes: string | null
+        }
+        Insert: {
+          candidate_avatar_url?: string | null
+          candidate_name?: string | null
+          candidate_username: string
+          created_at?: string
+          id?: string
+          list_name?: string
+          notes?: string | null
+        }
+        Update: {
+          candidate_avatar_url?: string | null
+          candidate_name?: string | null
+          candidate_username?: string
+          created_at?: string
+          id?: string
+          list_name?: string
+          notes?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

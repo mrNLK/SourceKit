@@ -1,9 +1,9 @@
-import { Link } from "react-router-dom";
-import { GripVertical, Trash2, Loader2, ChevronDown, ChevronUp, Copy, ClipboardCheck, Sparkles, MessageSquare, Clock } from "lucide-react";
+import { GripVertical, Trash2, Loader2, Bookmark, BookmarkCheck } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import CandidateProfile from "@/components/CandidateProfile";
+import { useWatchlist } from "@/hooks/useWatchlist";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -20,6 +20,7 @@ const PipelineTab = () => {
   const queryClient = useQueryClient();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
+  const { isWatched, toggle: toggleWatchlist } = useWatchlist();
 
   const { data: candidates = [], isLoading } = useQuery({
     queryKey: ['pipeline'],
@@ -117,6 +118,20 @@ const PipelineTab = () => {
                         </span>
                         <p className="text-[10px] text-muted-foreground font-display truncate">@{c.github_username}</p>
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleWatchlist(c.github_username, c.name, c.avatar_url);
+                        }}
+                        className={`p-1 rounded transition-all shrink-0 ${
+                          isWatched(c.github_username)
+                            ? "text-primary opacity-100"
+                            : "text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100"
+                        }`}
+                        title={isWatched(c.github_username) ? "In watchlist" : "Add to watchlist"}
+                      >
+                        {isWatched(c.github_username) ? <BookmarkCheck className="w-3 h-3" /> : <Bookmark className="w-3 h-3" />}
+                      </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); removeMutation.mutate(c.id); }}
                         className="p-1 rounded text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all shrink-0"

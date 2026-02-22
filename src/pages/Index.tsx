@@ -3,7 +3,8 @@ import DashboardLayout, { type ActiveTab } from "@/components/DashboardLayout";
 import SearchTab from "@/components/SearchTab";
 import PipelineTab from "@/components/PipelineTab";
 import HistoryTab from "@/components/HistoryTab";
-import { Clock, Bookmark } from "lucide-react";
+import WatchlistTab from "@/components/WatchlistTab";
+import { Clock } from "lucide-react";
 
 const PlaceholderTab = ({ icon: Icon, title, subtitle }: { icon: React.ElementType; title: string; subtitle: string }) => (
   <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -49,7 +50,7 @@ const Index = () => {
       {activeTab === "history" && <HistoryTab onRerun={handleRerun} />}
       {activeTab === "pipeline" && <PipelineTab />}
       {activeTab === "watchlist" && (
-        <PlaceholderTab icon={Bookmark} title="Watchlist" subtitle="Watchlist coming soon" />
+        <WatchlistTab onNavigateToSearch={() => setActiveTab("search")} />
       )}
       {activeTab === "settings" && <SettingsTab />}
     </DashboardLayout>

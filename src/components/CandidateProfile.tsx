@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import {
-  ArrowLeft, MessageSquare, Bookmark, Link as LinkIcon, Briefcase, GraduationCap, BookOpen,
+  ArrowLeft, MessageSquare, Bookmark, BookmarkCheck, Link as LinkIcon, Briefcase, GraduationCap, BookOpen,
   CheckCircle2, XCircle, Star, MapPin, Clock, ExternalLink, Loader2, Sparkles, Copy, ClipboardCheck,
   ChevronDown
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useWatchlist } from "@/hooks/useWatchlist";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -37,6 +38,9 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [linkedinCopied, setLinkedinCopied] = useState(false);
   const [stageOpen, setStageOpen] = useState(false);
+
+  const { isWatched, toggle: toggleWatchlist, listNames: watchlistNames } = useWatchlist();
+  const [watchlistDropdownOpen, setWatchlistDropdownOpen] = useState(false);
 
   const pc = pipelineCandidate;
   const username = pc.github_username;
@@ -196,10 +200,51 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
                     {generating ? "Generating..." : "Generate Outreach"}
                   </button>
 
-                  <button className="flex items-center gap-1.5 text-xs font-display px-3 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors">
-                    <Bookmark className="w-3.5 h-3.5" />
-                    Watchlist
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => {
+                        if (isWatched(username)) {
+                          setWatchlistDropdownOpen(!watchlistDropdownOpen);
+                        } else {
+                          toggleWatchlist(username, displayName, pc.avatar_url);
+                        }
+                      }}
+                      className={`flex items-center gap-1.5 text-xs font-display px-3 py-2 rounded-lg border transition-colors ${
+                        isWatched(username)
+                          ? "bg-primary/10 text-primary border-primary/30"
+                          : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+                      }`}
+                    >
+                      {isWatched(username) ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+                      {isWatched(username) ? "In Watchlist" : "Watchlist"}
+                      {isWatched(username) && <ChevronDown className="w-3 h-3" />}
+                    </button>
+                    {watchlistDropdownOpen && isWatched(username) && (
+                      <div className="absolute top-full mt-1 left-0 bg-popover border border-border rounded-lg shadow-lg z-50 min-w-[160px]">
+                        {watchlistNames.map((name) => (
+                          <button
+                            key={name}
+                            onClick={() => {
+                              toggleWatchlist(username, displayName, pc.avatar_url, name);
+                              setWatchlistDropdownOpen(false);
+                            }}
+                            className="w-full text-left text-xs font-display px-3 py-2 hover:bg-accent transition-colors text-foreground"
+                          >
+                            {name}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => {
+                            toggleWatchlist(username, displayName, pc.avatar_url, "Default");
+                            setWatchlistDropdownOpen(false);
+                          }}
+                          className="w-full text-left text-xs font-display px-3 py-2 hover:bg-accent transition-colors text-destructive border-t border-border"
+                        >
+                          Remove from Default
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   {linkedinUrl && (
                     <button

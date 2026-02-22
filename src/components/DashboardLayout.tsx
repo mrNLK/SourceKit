@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Zap, Menu, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useWatchlist } from "@/hooks/useWatchlist";
 
 export type ActiveTab = "search" | "history" | "pipeline" | "watchlist" | "settings";
 
@@ -21,6 +22,7 @@ const NAV_ITEMS: { id: ActiveTab; label: string; icon: React.ElementType }[] = [
 const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutProps) => {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { count: watchlistCount } = useWatchlist();
 
   const handleNav = (tab: ActiveTab) => {
     onTabChange(tab);
@@ -54,7 +56,12 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
               }`}
             >
               <item.icon className="w-4 h-4 shrink-0" />
-              <span className="font-display text-xs tracking-wide">{item.label}</span>
+              <span className="font-display text-xs tracking-wide flex-1 text-left">{item.label}</span>
+              {item.id === "watchlist" && watchlistCount > 0 && (
+                <span className="ml-auto text-[10px] font-display font-semibold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20">
+                  {watchlistCount}
+                </span>
+              )}
             </button>
           );
         })}

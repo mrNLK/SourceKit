@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Developer } from "@/types/developer";
 import { enrichLinkedIn } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
+import { useWatchlist } from "@/hooks/useWatchlist";
 
 interface DeveloperCardProps {
   developer: Developer;
@@ -15,6 +16,7 @@ interface DeveloperCardProps {
 
 const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipelineButton, inPipeline }: DeveloperCardProps) => {
   const navigate = useNavigate();
+  const { isWatched, toggle: toggleWatchlist } = useWatchlist();
   const [linkedinLoading, setLinkedinLoading] = useState(false);
   const [linkedinUrl, setLinkedinUrl] = useState(developer.linkedinUrl);
   const [linkedinCopied, setLinkedinCopied] = useState(false);
@@ -218,18 +220,19 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
           </button>
         )}
 
-        {/* Shortlist button */}
-        {onToggleShortlist && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleShortlist(); }}
-            className={`p-1.5 rounded-md border transition-colors ${
-              isShortlisted ? 'bg-primary/10 text-primary border-primary/30' : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
-            }`}
-            title={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
-          >
-            {isShortlisted ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
-          </button>
-        )}
+        {/* Watchlist button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleWatchlist(developer.username, developer.name, developer.avatarUrl);
+          }}
+          className={`p-1.5 rounded-md border transition-colors ${
+            isWatched(developer.username) ? 'bg-primary/10 text-primary border-primary/30' : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
+          }`}
+          title={isWatched(developer.username) ? 'Remove from watchlist' : 'Add to watchlist'}
+        >
+          {isWatched(developer.username) ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+        </button>
       </div>
     </div>
   );
