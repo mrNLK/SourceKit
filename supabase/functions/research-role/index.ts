@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, job_title, company_name } = await req.json();
+    const { action, job_title, company_name, job_description } = await req.json();
 
     if (action !== 'start') {
       return new Response(JSON.stringify({ error: 'Invalid action' }), {
@@ -21,8 +21,12 @@ serve(async (req) => {
       });
     }
 
-    if (!job_title || !company_name) {
-      return new Response(JSON.stringify({ error: 'Missing job_title or company_name' }), {
+    // Either job_description OR (job_title + company_name) must be provided
+    const hasJD = job_description && typeof job_description === 'string' && job_description.trim().length > 50;
+    const hasManual = job_title && company_name;
+
+    if (!hasJD && !hasManual) {
+      return new Response(JSON.stringify({ error: 'Provide either job_description text, or both job_title and company_name' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -38,7 +42,24 @@ Think like a senior recruiter who:
 
 Be extremely specific with real company names, real GitHub repo names, and actionable intelligence. No generic advice.`;
 
-    const userPrompt = `Build a complete sourcing strategy for: "${job_title}" at "${company_name}"
+    let userPrompt: string;
+
+    if (hasJD) {
+      userPrompt = `Analyze this job description and build a complete sourcing strategy to find ideal candidates for this role.
+
+<job_description>
+${job_description.trim().substring(0, 12000)}
+</job_description>
+
+Based on the job description above, I need:
+1. A natural language search query optimized for a GitHub-based talent search tool — should capture the ideal candidate profile
+2. 8-15 specific GitHub repositories whose contributors would be strong candidates (real repos, owner/name format)
+3. 8-12 companies to poach from — direct competitors AND adjacent companies with transferable skills
+4. Key technical skills extracted from the JD (the must-haves and nice-to-haves)
+5. EEA signals specific to this role — what would make someone exceptional vs. just qualified
+6. A brief overview of the role and why someone would want it (based on the JD but written as a compelling pitch)`;
+    } else {
+      userPrompt = `Build a complete sourcing strategy for: "${job_title}" at "${company_name}"
 
 I need:
 1. A natural language search query optimized for a GitHub-based talent search tool
@@ -47,6 +68,7 @@ I need:
 4. Key technical skills (the must-haves and nice-to-haves)
 5. EEA signals specific to this role — what would make someone exceptional vs. just qualified
 6. A brief overview of the role and why someone would want it`;
+    }
 
     const tools = [{
       name: "build_search_strategy",
@@ -138,8 +160,9 @@ I need:
 
     return new Response(JSON.stringify({
       strategy,
-      job_title,
-      company_name,
+      job_title: job_title || '',
+      company_name: company_name || '',
+      source: hasJD ? 'job_description' : 'manual',
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

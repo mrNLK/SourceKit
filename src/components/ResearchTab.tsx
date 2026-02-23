@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   Loader2, Briefcase, Building2, ExternalLink, X, Plus,
   Search, GitBranch, Target, Sparkles, Shield, ArrowRight,
-  Pencil, Check, ChevronDown, ChevronUp, Copy
+  Pencil, Check, ChevronDown, ChevronUp, Copy, FileText, Link
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -39,12 +39,17 @@ interface SearchStrategy {
   role_overview: string;
 }
 
+export type InputMode = "manual" | "jd";
+
 export interface ResearchState {
   jobTitle: string;
   companyName: string;
   research: string; // kept for backward compat
   error: string;
   strategy?: SearchStrategy;
+  inputMode?: InputMode;
+  jdUrl?: string;
+  jdText?: string;
 }
 
 interface ResearchTabProps {
@@ -69,9 +74,12 @@ const CATEGORY_STYLES: Record<string, { label: string; bg: string; text: string;
 
 const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTabProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState("");
   const [editingQuery, setEditingQuery] = useState(false);
   const [localQuery, setLocalQuery] = useState("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["query", "repos", "companies", "skills", "eea", "overview"]));
+
+  const inputMode = state.inputMode || "manual";
 
   const update = (partial: Partial<ResearchState>) =>
     onStateChange({ ...state, ...partial });
@@ -85,28 +93,74 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
   };
 
   // -------------------------------------------------------------------------
-  // Research API call
+  // Fetch JD from URL (calls parse-jd edge function)
+  // -------------------------------------------------------------------------
+
+  const fetchJdFromUrl = async (url: string): Promise<string> => {
+    setLoadingStep("Fetching job description...");
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/parse-jd`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || `Failed to fetch JD: HTTP ${res.status}`);
+    }
+    return data.text;
+  };
+
+  // -------------------------------------------------------------------------
+  // Research API call (handles both manual and JD modes)
   // -------------------------------------------------------------------------
 
   const handleResearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!state.jobTitle.trim() || !state.companyName.trim()) return;
+
+    if (inputMode === "manual") {
+      if (!state.jobTitle.trim() || !state.companyName.trim()) return;
+    } else {
+      if (!state.jdUrl?.trim() && !state.jdText?.trim()) return;
+    }
 
     setIsLoading(true);
     update({ error: "", research: "", strategy: undefined });
 
     try {
+      let jdContent = state.jdText?.trim() || "";
+
+      // If URL is provided, fetch the JD text first
+      if (inputMode === "jd" && state.jdUrl?.trim() && !jdContent) {
+        jdContent = await fetchJdFromUrl(state.jdUrl.trim());
+        // Save the fetched text so user can see/edit it
+        update({ jdText: jdContent, error: "", research: "", strategy: undefined });
+      }
+
+      setLoadingStep("Building sourcing strategy...");
+
+      const body: Record<string, string> = { action: "start" };
+
+      if (inputMode === "jd" && jdContent) {
+        body.job_description = jdContent;
+        // Also pass title/company if user filled them in
+        if (state.jobTitle.trim()) body.job_title = state.jobTitle;
+        if (state.companyName.trim()) body.company_name = state.companyName;
+      } else {
+        body.job_title = state.jobTitle;
+        body.company_name = state.companyName;
+      }
+
       const res = await fetch(`${SUPABASE_URL}/functions/v1/research-role`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_KEY,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          action: "start",
-          job_title: state.jobTitle,
-          company_name: state.companyName,
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -117,15 +171,19 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
 
       if (data.strategy) {
         setLocalQuery(data.strategy.search_query || "");
-        update({ strategy: data.strategy, research: "" });
+        // If we came from JD mode, try to extract title from the role_overview
+        const updatedState: Partial<ResearchState> = { strategy: data.strategy, research: "" };
+        if (data.job_title && !state.jobTitle) updatedState.jobTitle = data.job_title;
+        if (data.company_name && !state.companyName) updatedState.companyName = data.company_name;
+        update(updatedState);
       } else if (data.research) {
-        // Fallback for old format
         update({ research: data.research });
       }
     } catch (err) {
       update({ error: err instanceof Error ? err.message : 'Research failed' });
     } finally {
       setIsLoading(false);
+      setLoadingStep("");
     }
   };
 
@@ -220,7 +278,10 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
 
   const handleSearchWithStrategy = () => {
     if (!s || !onSearchWithStrategy) return;
-    const shortQuery = `${state.jobTitle} at ${state.companyName}`;
+    // Build a short label — use title+company if we have them, otherwise extract from the query
+    const shortQuery = state.jobTitle && state.companyName
+      ? `${state.jobTitle} at ${state.companyName}`
+      : (localQuery || s.search_query).substring(0, 80);
     const expandedQuery = buildFinalQuery();
     onSearchWithStrategy(shortQuery, expandedQuery);
   };
@@ -253,36 +314,103 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-display text-xl font-bold text-foreground mb-1">Research & Strategy</h1>
-        <p className="text-sm text-muted-foreground font-body">Enter a role and company to generate a sourcing strategy. Edit anything, then search.</p>
+        <p className="text-sm text-muted-foreground font-body">Generate a sourcing strategy from a role, or paste a job description. Edit anything, then search.</p>
       </div>
 
       {/* Input form */}
       <form onSubmit={handleResearch} className="glass rounded-xl p-5 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          <div className="relative">
-            <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={state.jobTitle}
-              onChange={(e) => update({ jobTitle: e.target.value })}
-              placeholder="Job title (e.g. ML Engineer)"
-              className="w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border border-border focus:border-primary/40 transition-colors font-body"
-            />
-          </div>
-          <div className="relative">
-            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={state.companyName}
-              onChange={(e) => update({ companyName: e.target.value })}
-              placeholder="Company (e.g. Stripe)"
-              className="w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border border-border focus:border-primary/40 transition-colors font-body"
-            />
-          </div>
+        {/* Mode toggle */}
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-secondary mb-4 w-fit">
+          <button
+            type="button"
+            onClick={() => update({ inputMode: "manual" })}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-display font-semibold transition-colors ${
+              inputMode === "manual"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Briefcase className="w-3.5 h-3.5" />
+            Role + Company
+          </button>
+          <button
+            type="button"
+            onClick={() => update({ inputMode: "jd" })}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-display font-semibold transition-colors ${
+              inputMode === "jd"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Job Description
+          </button>
         </div>
+
+        {/* Manual mode: job title + company */}
+        {inputMode === "manual" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <div className="relative">
+              <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={state.jobTitle}
+                onChange={(e) => update({ jobTitle: e.target.value })}
+                placeholder="Job title (e.g. ML Engineer)"
+                className="w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border border-border focus:border-primary/40 transition-colors font-body"
+              />
+            </div>
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={state.companyName}
+                onChange={(e) => update({ companyName: e.target.value })}
+                placeholder="Company (e.g. Stripe)"
+                className="w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border border-border focus:border-primary/40 transition-colors font-body"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* JD mode: URL + paste */}
+        {inputMode === "jd" && (
+          <div className="space-y-3 mb-4">
+            <div className="relative">
+              <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="url"
+                value={state.jdUrl || ""}
+                onChange={(e) => update({ jdUrl: e.target.value })}
+                placeholder="Paste job posting URL (Greenhouse, Lever, LinkedIn, etc.)"
+                className="w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border border-border focus:border-primary/40 transition-colors font-body"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-[10px] font-display text-muted-foreground uppercase tracking-wider">or paste text</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            <textarea
+              value={state.jdText || ""}
+              onChange={(e) => update({ jdText: e.target.value })}
+              placeholder="Paste the full job description here..."
+              rows={6}
+              className="w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground p-3 outline-none border border-border focus:border-primary/40 transition-colors font-body resize-none leading-relaxed"
+            />
+            {state.jdText && (
+              <p className="text-[10px] text-muted-foreground font-display">
+                {state.jdText.length.toLocaleString()} characters
+              </p>
+            )}
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={isLoading || !state.jobTitle.trim() || !state.companyName.trim()}
+          disabled={isLoading || (inputMode === "manual" ? (!state.jobTitle.trim() || !state.companyName.trim()) : (!state.jdUrl?.trim() && !state.jdText?.trim()))}
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-display text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
@@ -295,10 +423,13 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
         <div className="glass rounded-xl p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
             <Loader2 className="w-5 h-5 text-primary animate-spin" />
-            <span className="font-display text-sm font-semibold text-foreground">Building your sourcing strategy...</span>
+            <span className="font-display text-sm font-semibold text-foreground">{loadingStep || "Building your sourcing strategy..."}</span>
           </div>
           <div className="space-y-2">
-            {["Analyzing role requirements...", "Identifying target repositories...", "Mapping competitor landscape...", "Evaluating EEA signals..."].map(l => (
+            {(inputMode === "jd"
+              ? ["Parsing job description...", "Extracting requirements & skills...", "Identifying target repositories...", "Mapping competitor landscape...", "Evaluating EEA signals..."]
+              : ["Analyzing role requirements...", "Identifying target repositories...", "Mapping competitor landscape...", "Evaluating EEA signals..."]
+            ).map(l => (
               <div key={l} className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 <span className="text-xs font-display text-foreground">{l}</span>
@@ -585,7 +716,9 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
       {!s && !isLoading && !state.error && !state.research && (
         <div className="glass rounded-xl p-8 text-center border border-dashed border-border">
           <Sparkles className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="font-display text-sm text-muted-foreground mb-1">Enter a role and company above</p>
+          <p className="font-display text-sm text-muted-foreground mb-1">
+            {inputMode === "jd" ? "Paste a job description URL or text above" : "Enter a role and company above"}
+          </p>
           <p className="text-xs text-muted-foreground/60 font-body">AI will build a complete sourcing strategy with target repos, companies to poach from, skills, and EEA signals</p>
         </div>
       )}
