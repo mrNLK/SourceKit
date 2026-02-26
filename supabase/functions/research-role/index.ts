@@ -53,8 +53,8 @@ ${job_description.trim().substring(0, 12000)}
 
 Based on the job description above, I need:
 1. A natural language search query optimized for a GitHub-based talent search tool — should capture the ideal candidate profile
-2. 8-15 specific GitHub repositories whose contributors would be strong candidates (real repos, owner/name format)
-3. 8-12 companies to poach from — direct competitors AND adjacent companies with transferable skills
+2. 8-10 specific GitHub repositories whose contributors would be strong candidates (real repos, owner/name format)
+3. 6-8 companies to poach from — direct competitors AND adjacent companies with transferable skills
 4. Key technical skills extracted from the JD (the must-haves and nice-to-haves)
 5. EEA signals specific to this role — what would make someone exceptional vs. just qualified
 6. A brief overview of the role and why someone would want it (based on the JD but written as a compelling pitch)`;
@@ -63,8 +63,8 @@ Based on the job description above, I need:
 
 I need:
 1. A natural language search query optimized for a GitHub-based talent search tool
-2. 8-15 specific GitHub repositories whose contributors would be strong candidates
-3. 8-12 companies to poach from — direct competitors AND adjacent companies with transferable skills
+2. 8-10 specific GitHub repositories whose contributors would be strong candidates
+3. 6-8 companies to poach from — direct competitors AND adjacent companies with transferable skills
 4. Key technical skills (the must-haves and nice-to-haves)
 5. EEA signals specific to this role — what would make someone exceptional vs. just qualified
 6. A brief overview of the role and why someone would want it`;
@@ -82,7 +82,7 @@ I need:
           },
           target_repos: {
             type: "array",
-            description: "8-15 specific GitHub repositories (owner/name format) whose contributors would be strong candidates. Include a mix of: the company's own repos, competitor repos, key open-source projects in the domain, and foundational tools. Each with a brief reason.",
+            description: "8-10 specific GitHub repositories (owner/name format) whose contributors would be strong candidates. Include a mix of: the company's own repos, competitor repos, key open-source projects in the domain, and foundational tools. Each with a brief reason.",
             items: {
               type: "object",
               properties: {
@@ -94,7 +94,7 @@ I need:
           },
           poach_companies: {
             type: "array",
-            description: "8-12 companies to source from. Mix of direct competitors, adjacent companies with transferable talent, and companies known for strong engineering in this domain.",
+            description: "6-8 companies to source from. Mix of direct competitors, adjacent companies with transferable talent, and companies known for strong engineering in this domain.",
             items: {
               type: "object",
               properties: {
@@ -149,7 +149,7 @@ I need:
       userPrompt,
       tools,
       { type: "tool", name: "build_search_strategy" },
-      { model: 'claude-sonnet-4-6', maxTokens: 4096 }
+      { maxTokens: 4096 }
     );
 
     if (!result) {
