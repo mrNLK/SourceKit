@@ -99,7 +99,7 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
   return (
     <div className="w-full text-left glass rounded-xl p-5 hover:glow-border transition-all duration-300 hover:glow-sm group relative">
       <button
-        onClick={() => onCardClick ? onCardClick(developer) : navigate(`/developer/${developer.username}`)}
+        onClick={() => onCardClick ? onCardClick(developer) : navigate(`/developer/${developer.username}`, { state: { developer } })}
         className="w-full text-left"
       >
         <div className="flex items-start gap-4">

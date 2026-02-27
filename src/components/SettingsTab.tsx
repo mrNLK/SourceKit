@@ -17,7 +17,11 @@ const SettingsTab = () => {
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await (supabase as any).from("settings").select("key, value");
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      let query = (supabase as any).from("settings").select("key, value");
+      if (userId) query = query.eq("user_id", userId);
+      const { data } = await query;
       if (data) {
         const map: Record<string, string> = {};
         data.forEach((r: any) => { map[r.key] = r.value; });

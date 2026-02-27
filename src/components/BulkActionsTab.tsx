@@ -439,7 +439,7 @@ const BulkActionsTab = () => {
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`relative max-w-[90%] rounded-xl px-3.5 py-2.5 text-sm ${
+                  className={`group relative max-w-[90%] rounded-xl px-3.5 py-2.5 text-sm ${
                     msg.role === "user"
                       ? "bg-primary/10 text-foreground border border-primary/20"
                       : "bg-secondary/60 text-foreground border border-border"

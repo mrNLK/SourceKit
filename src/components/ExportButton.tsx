@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download, ChevronDown, FileJson, FileSpreadsheet } from "lucide-react";
 
 interface ExportColumn {
@@ -40,6 +40,15 @@ function escapeCSV(val: string | number): string {
 
 const ExportButton = ({ data, filename = "sourcekit-export", columns = DEFAULT_COLUMNS, label = "Export" }: ExportButtonProps) => {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open]);
 
   if (data.length === 0) return null;
 

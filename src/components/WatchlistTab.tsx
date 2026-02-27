@@ -24,7 +24,10 @@ const WatchlistTab = ({ onNavigateToSearch }: WatchlistTabProps) => {
   const [newListName, setNewListName] = useState("");
   const [newListError, setNewListError] = useState("");
   // B4 fix: track user-created list names so they appear even when empty
-  const [customLists, setCustomLists] = useState<string[]>([]);
+  // FIX-04: persist to localStorage so they survive tab unmount
+  const [customLists, setCustomLists] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("sourcekit_watchlist_lists") || "[]"); } catch { return []; }
+  });
 
   // Fetch all watchlist items
   const { data: items = [], isLoading } = useQuery({
@@ -80,7 +83,11 @@ const WatchlistTab = ({ onNavigateToSearch }: WatchlistTabProps) => {
       return;
     }
     // B4 fix: add to custom lists so tab appears immediately
-    setCustomLists(prev => [...prev, name]);
+    setCustomLists(prev => {
+      const next = [...prev, name];
+      localStorage.setItem("sourcekit_watchlist_lists", JSON.stringify(next));
+      return next;
+    });
     setActiveList(name);
     setNewListOpen(false);
     setNewListName("");

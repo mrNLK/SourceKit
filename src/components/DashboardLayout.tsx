@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Menu, X, Users, Sparkles, Crown } from "lucide-react";
 import sourcekitLogo from "@/assets/sourcekit-bare.svg";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -30,6 +30,13 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
   const [mobileOpen, setMobileOpen] = useState(false);
   const { count: watchlistCount } = useWatchlist();
   const { subscription } = useSubscription();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserEmail(session?.user?.email ?? null);
+    });
+  }, []);
 
   const handleNav = (tab: ActiveTab) => {
     onTabChange(tab);
@@ -107,7 +114,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
       <div className="border-t border-border px-3 py-4 space-y-2">
         <div className="px-3 py-1.5">
           <p className="text-[11px] font-display text-muted-foreground truncate">
-            user@sourcekit.dev
+            {userEmail || "Signed in"}
           </p>
         </div>
         <button

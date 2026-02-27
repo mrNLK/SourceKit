@@ -407,6 +407,7 @@ function PipelineCard({ c, score, stage, onDragStart, onClick, onRemove, onWatch
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const tags: string[] = (c as any).tags || [];
   const stageTime = daysInStage(c.updated_at || c.created_at);
+  const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 
   useEffect(() => { setNotesValue(c.notes || ""); }, [c.notes]);
 
@@ -442,12 +443,12 @@ function PipelineCard({ c, score, stage, onDragStart, onClick, onRemove, onWatch
 
   return (
     <div
-      draggable
-      onDragStart={onDragStart}
-      className="glass rounded-lg p-3 cursor-grab active:cursor-grabbing hover:glow-border transition-all group"
+      draggable={!isTouch}
+      onDragStart={isTouch ? undefined : onDragStart}
+      className={`glass rounded-lg p-3 hover:glow-border transition-all group ${isTouch ? "" : "cursor-grab active:cursor-grabbing"}`}
     >
       <div className="flex items-start gap-2 cursor-pointer" onClick={onClick}>
-        <GripVertical className="w-3 h-3 text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+        {!isTouch && <GripVertical className="w-3 h-3 text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />}
         {c.avatar_url ? (
           <img
             src={c.avatar_url}
@@ -531,8 +532,23 @@ function PipelineCard({ c, score, stage, onDragStart, onClick, onRemove, onWatch
         </div>
       )}
 
+      {/* Mobile stage select */}
+      {isTouch && (
+        <div className="mt-2 ml-5" onClick={(e) => e.stopPropagation()}>
+          <select
+            value={c.stage}
+            onChange={(e) => onMove(e.target.value)}
+            className="w-full bg-secondary/50 border border-border rounded-md px-2 py-1.5 text-[11px] text-foreground font-display outline-none focus:border-primary/40"
+          >
+            {STAGES.map((s) => (
+              <option key={s.id} value={s.id}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Action buttons row */}
-      <div className="flex items-center justify-between gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className={`flex items-center justify-between gap-1 mt-1.5 transition-opacity ${isTouch ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
         <div className="flex items-center gap-1 ml-5">
           <button onClick={(e) => { e.stopPropagation(); setShowNotes(!showNotes); }} className="p-1 rounded text-muted-foreground hover:text-foreground" title="Notes">
             <StickyNote className="w-3 h-3" />

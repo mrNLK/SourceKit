@@ -60,13 +60,21 @@ export async function generateOutreach(githubUsername: string, candidateName?: s
 let settingsCache: Record<string, string> | null = null;
 
 export async function loadSettings(): Promise<Record<string, string>> {
-  const { data } = await (supabase as any).from('settings').select('key, value');
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id;
+  let query = (supabase as any).from('settings').select('key, value');
+  if (userId) query = query.eq('user_id', userId);
+  const { data } = await query;
   const map: Record<string, string> = {};
   if (data) {
     data.forEach((r: any) => { map[r.key] = r.value; });
   }
   settingsCache = map;
   return map;
+}
+
+export function clearSettingsCache() {
+  settingsCache = null;
 }
 
 export async function getSetting(key: string): Promise<string> {

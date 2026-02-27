@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Star, GitFork, Users, MapPin, Calendar, ExternalLink, Gem, Zap, Loader2, Linkedin, GitCommit, GitPullRequest, CircleDot, Eye, Globe, Twitter, Building2, Code2, Sparkles, TrendingUp, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { GitBranch } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -11,18 +11,22 @@ import { Button } from "@/components/ui/button";
 const DeveloperProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const routeStateDeveloper = (location.state as any)?.developer ?? null;
   const [lookupUsername, setLookupUsername] = useState("");
   const [expandedSkills, setExpandedSkills] = useState<Record<string, boolean>>({});
   const [skillTab, setSkillTab] = useState<"technical" | "domain">("technical");
 
-  const { data: developer, isLoading, error } = useQuery({
+  const { data: fetchedDeveloper, isLoading, error } = useQuery({
     queryKey: ["github-profile", id],
     queryFn: () => getDeveloperProfile(id!),
     enabled: !!id,
     staleTime: 1000 * 60 * 5,
   });
 
-  if (isLoading) {
+  const developer = fetchedDeveloper || routeStateDeveloper;
+
+  if (isLoading && !developer) {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b border-border glass sticky top-0 z-50">

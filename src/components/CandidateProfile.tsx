@@ -7,6 +7,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useWatchlist } from "@/hooks/useWatchlist";
+import { toast } from "@/hooks/use-toast";
 import { EEAFull } from "@/components/EEASignals";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -39,6 +40,8 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [linkedinCopied, setLinkedinCopied] = useState(false);
   const [stageOpen, setStageOpen] = useState(false);
+  const [localNotes, setLocalNotes] = useState(pipelineCandidate.notes || "");
+  const [savingNotes, setSavingNotes] = useState(false);
 
   const { isWatched, toggle: toggleWatchlist, listNames: watchlistNames } = useWatchlist();
   const [watchlistDropdownOpen, setWatchlistDropdownOpen] = useState(false);
@@ -431,11 +434,31 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
           {/* ===== NOTES ===== */}
           <div className="glass rounded-xl p-5">
             <h2 className="font-display text-sm font-semibold text-foreground mb-3">Notes</h2>
-            {pc.notes ? (
-              <p className="text-sm text-secondary-foreground leading-relaxed">{pc.notes}</p>
-            ) : (
-              <p className="text-sm text-muted-foreground italic">No notes yet.</p>
-            )}
+            <textarea
+              value={localNotes}
+              onChange={(e) => setLocalNotes(e.target.value)}
+              placeholder="Add notes about this candidate..."
+              rows={4}
+              className="w-full bg-secondary/50 border border-border rounded-lg py-2 px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/30 transition-colors font-body resize-y"
+            />
+            <button
+              onClick={async () => {
+                setSavingNotes(true);
+                try {
+                  await supabase.from("pipeline").update({ notes: localNotes }).eq("id", pc.id);
+                  queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+                  toast({ title: "Notes saved" });
+                } catch {
+                  toast({ title: "Failed to save notes", variant: "destructive" });
+                } finally {
+                  setSavingNotes(false);
+                }
+              }}
+              disabled={savingNotes}
+              className="mt-2 text-xs font-display px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+            >
+              {savingNotes ? "Saving..." : "Save Notes"}
+            </button>
           </div>
 
           {/* Stats footer */}

@@ -76,7 +76,9 @@ const Index = () => {
       )}
       {activeTab === "history" && <HistoryTab onRerun={handleRerun} />}
       {activeTab === "pipeline" && <PipelineTab onNavigateToSearch={() => setActiveTab("search")} />}
-      {activeTab === "watchlist" && <WatchlistTab onNavigateToSearch={() => setActiveTab("search")} />}
+      <div style={{ display: activeTab === "watchlist" ? undefined : "none" }}>
+        <WatchlistTab onNavigateToSearch={() => setActiveTab("search")} />
+      </div>
       {activeTab === "bulk" && <BulkActionsTab />}
       {activeTab === "settings" && <SettingsTab />}
     </DashboardLayout>
