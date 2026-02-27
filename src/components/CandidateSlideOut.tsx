@@ -44,6 +44,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
   const [outreachTone, setOutreachTone] = useState<string>("professional");
   const [copiedMsg, setCopiedMsg] = useState(false);
   const [toneOpen, setToneOpen] = useState(false);
+  const [showPipelinePrompt, setShowPipelinePrompt] = useState(false);
 
   const dev = developer;
 
@@ -153,11 +154,48 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
     setOutreachEditing(false);
   };
 
-  const handleCopyOutreach = () => {
+  const handleCopyOutreach = async () => {
     navigator.clipboard.writeText(outreachEditing ? outreachDraft : (outreachMsg || ""));
     setCopiedMsg(true);
     toast({ title: "Copied to clipboard" });
     setTimeout(() => setCopiedMsg(false), 1500);
+
+    // Auto-move to Contacted if already in pipeline
+    if (pipelineRow?.id) {
+      try {
+        await supabase.from("pipeline").update({ stage: "contacted", updated_at: new Date().toISOString() }).eq("id", pipelineRow.id);
+        queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+        queryClient.invalidateQueries({ queryKey: ["pipeline-check", dev.username] });
+        toast({ title: `Moved ${dev.name || dev.username} to Contacted` });
+      } catch (err) {
+        console.error("Failed to move to Contacted:", err);
+      }
+    } else if (!addedToPipeline) {
+      // Prompt to add to pipeline as Contacted
+      setShowPipelinePrompt(true);
+    }
+  };
+
+  const handleAddAsContacted = async () => {
+    setShowPipelinePrompt(false);
+    setPipelineLoading(true);
+    try {
+      await supabase.from("pipeline").upsert({
+        github_username: dev.username,
+        name: dev.name,
+        avatar_url: dev.avatarUrl,
+        stage: "contacted",
+      }, { onConflict: "github_username" });
+      setAddedToPipeline(true);
+      queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-usernames"] });
+      toast({ title: `Added ${dev.name || dev.username} to pipeline as Contacted` });
+    } catch (err) {
+      console.error("Failed to add to pipeline:", err);
+      toast({ title: "Failed to add to pipeline", variant: "destructive" });
+    } finally {
+      setPipelineLoading(false);
+    }
   };
 
   const topLanguages = (candidate?.top_languages as any[]) || dev.topLanguages || [];
@@ -392,6 +430,22 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
                 <p className="text-[10px] text-muted-foreground mt-1.5 font-display">
                   {(outreachEditing ? outreachDraft : outreachMsg || "").length} characters
                 </p>
+              </div>
+            )}
+
+            {showPipelinePrompt && (
+              <div className="mt-3 p-3 rounded-lg bg-primary/5 border border-primary/20 flex items-center justify-between gap-2">
+                <p className="text-xs font-display text-foreground">Add to pipeline as Contacted?</p>
+                <div className="flex items-center gap-1.5">
+                  <button onClick={handleAddAsContacted}
+                    className="text-[11px] font-display px-2.5 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                    Yes, add
+                  </button>
+                  <button onClick={() => setShowPipelinePrompt(false)}
+                    className="text-[11px] font-display px-2.5 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground transition-colors">
+                    Skip
+                  </button>
+                </div>
               </div>
             )}
 

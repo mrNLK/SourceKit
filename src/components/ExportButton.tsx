@@ -4,7 +4,7 @@ import { Download, ChevronDown, FileJson, FileSpreadsheet } from "lucide-react";
 interface ExportColumn {
   key: string;
   label: string;
-  extract: (item: any) => string | number;
+  extract: (item: any, index: number) => string | number;
 }
 
 const DEFAULT_COLUMNS: ExportColumn[] = [
@@ -54,7 +54,7 @@ const ExportButton = ({ data, filename = "sourcekit-export", columns = DEFAULT_C
 
   const exportCSV = () => {
     const header = columns.map(c => c.label).join(",");
-    const rows = data.map(item => columns.map(c => escapeCSV(c.extract(item))).join(","));
+    const rows = data.map((item, idx) => columns.map(c => escapeCSV(c.extract(item, idx))).join(","));
     const csv = [header, ...rows].join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -68,10 +68,10 @@ const ExportButton = ({ data, filename = "sourcekit-export", columns = DEFAULT_C
   };
 
   const exportJSON = () => {
-    const json = data.map(item => {
+    const json = data.map((item, idx) => {
       const obj: Record<string, string | number> = {};
       for (const c of columns) {
-        obj[c.key] = c.extract(item);
+        obj[c.key] = c.extract(item, idx);
       }
       return obj;
     });

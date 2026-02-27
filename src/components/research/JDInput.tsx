@@ -60,16 +60,16 @@ const JDInput = ({ state, inputMode, isLoading, validationErrors, onUpdate, onCl
           <div className="relative">
             <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input type="url" value={state.jdUrl || ""}
-              onChange={(e) => onUpdate({ jdUrl: e.target.value })}
+              onChange={(e) => { onUpdate({ jdUrl: e.target.value }); if (validationErrors.jd) onClearValidation("jd"); }}
               placeholder="Paste job posting URL (Greenhouse, Lever, LinkedIn, etc.)"
-              className="w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border border-border focus:border-primary/40 transition-colors font-body" />
+              className={`w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border transition-colors font-body ${validationErrors.jd && state.jdUrl?.trim() ? 'border-destructive' : 'border-border focus:border-primary/40'}`} />
           </div>
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-border" />
             <span className="text-[10px] font-display text-muted-foreground uppercase tracking-wider">or paste text</span>
             <div className="h-px flex-1 bg-border" />
           </div>
-          <textarea value={state.jdText || ""} onChange={(e) => onUpdate({ jdText: e.target.value })}
+          <textarea value={state.jdText || ""} onChange={(e) => { onUpdate({ jdText: e.target.value }); if (validationErrors.jd) onClearValidation("jd"); }}
             placeholder="Paste the full job description here..." rows={6}
             className="w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground p-3 outline-none border border-border focus:border-primary/40 transition-colors font-body resize-none leading-relaxed" />
           {state.jdText && <p className="text-[10px] text-muted-foreground font-display">{state.jdText.length.toLocaleString()} characters</p>}

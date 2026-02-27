@@ -3,20 +3,37 @@ import { supabase } from '@/integrations/supabase/client';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+const API_TIMEOUT_MS = 90_000;
+
 async function invokeFunction(name: string, params?: Record<string, string>, body?: Record<string, any>) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token || SUPABASE_KEY;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
   const query = params ? `?${new URLSearchParams(params).toString()}` : '';
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}${query}`, {
-    method: body ? 'POST' : 'GET',
-    headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${SUPABASE_URL}/functions/v1/${name}${query}`, {
+      method: body ? 'POST' : 'GET',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Request timed out after 90 seconds. Please try again.');
+    }
+    throw err;
+  }
+  clearTimeout(timeoutId);
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }));
     if (res.status === 429 || err.rateLimited) {

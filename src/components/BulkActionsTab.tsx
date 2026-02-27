@@ -248,6 +248,22 @@ const BulkActionsTab = () => {
     );
   }
 
+  if (pipelineCandidates.length === 0) {
+    return (
+      <div>
+        <h1 className="font-display text-lg font-semibold text-foreground mb-6">Bulk Actions</h1>
+        <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl border border-dashed border-muted-foreground/20">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
+            <Users className="w-6 h-6 text-primary" />
+          </div>
+          <h2 className="font-display text-sm font-semibold text-foreground mb-1">No candidates in pipeline</h2>
+          <p className="text-xs text-muted-foreground mb-1 max-w-sm">Add candidates from Search to your pipeline first, then use Bulk Actions to compare, rank, draft outreach, and analyze them with AI.</p>
+          <p className="text-xs text-muted-foreground/70">Use the Search tab to find candidates and add them to your pipeline.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">

@@ -1,6 +1,22 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { SlidersHorizontal, MapPin, X, Gem, Zap, Loader2 } from "lucide-react";
 import ExportButton from "@/components/ExportButton";
+
+const SEARCH_EXPORT_COLUMNS = [
+  { key: "rank", label: "Rank", extract: (_d: any, i: number) => i + 1 },
+  { key: "name", label: "Name", extract: (d: any) => d.name || "" },
+  { key: "score", label: "Score", extract: (d: any) => d.score || 0 },
+  { key: "githubUrl", label: "GitHub URL", extract: (d: any) => d.githubUrl || `https://github.com/${d.username || d.github_username || ""}` },
+  { key: "linkedinUrl", label: "LinkedIn URL", extract: (d: any) => d.linkedinUrl || d.linkedin_url || "" },
+  { key: "bio", label: "Summary", extract: (d: any) => d.bio || d.about || "" },
+  { key: "contributedRepos", label: "Contributed Repos", extract: (d: any) => Object.keys(d.contributedRepos || {}).join(", ") },
+  { key: "languages", label: "Languages", extract: (d: any) => (d.topLanguages || []).map((l: any) => l.name).join(", ") },
+  { key: "stars", label: "Stars", extract: (d: any) => d.stars || 0 },
+  { key: "hiddenGem", label: "Hidden Gem", extract: (d: any) => d.hiddenGem ? "true" : "false" },
+  { key: "location", label: "Location", extract: (d: any) => d.location || "" },
+  { key: "followers", label: "Followers", extract: (d: any) => d.followers || 0 },
+  { key: "publicRepos", label: "Public Repos", extract: (d: any) => d.publicRepos || 0 },
+];
 
 type SeniorityFilter = "any" | "junior" | "mid" | "senior";
 
@@ -40,6 +56,9 @@ interface SearchFiltersProps {
   // Seniority
   seniorityFilter: SeniorityFilter;
   onSeniorityChange: (val: SeniorityFilter) => void;
+  // Sort
+  sortBy: string;
+  onSortChange: (val: string) => void;
 }
 
 const SearchFilters = ({
@@ -52,6 +71,7 @@ const SearchFilters = ({
   availableLanguages, languageFilter, onLanguageChange,
   minScore, onMinScoreChange,
   seniorityFilter, onSeniorityChange,
+  sortBy, onSortChange,
 }: SearchFiltersProps) => {
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [locationHighlight, setLocationHighlight] = useState(-1);
@@ -161,7 +181,18 @@ const SearchFilters = ({
             </select>
           </div>
 
-          <ExportButton data={filtered} filename="sourcekit-search" />
+          <div className="flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-full border border-border bg-secondary">
+            <span className="text-muted-foreground">Sort</span>
+            <select value={sortBy} onChange={(e) => onSortChange(e.target.value)}
+              className="bg-popover text-foreground border border-border rounded px-1.5 py-0.5 outline-none text-xs font-display cursor-pointer">
+              <option value="score-desc">Score (High to Low)</option>
+              <option value="score-asc">Score (Low to High)</option>
+              <option value="stars-desc">Stars (High to Low)</option>
+              <option value="name-asc">Name (A-Z)</option>
+            </select>
+          </div>
+
+          <ExportButton data={filtered} filename={`sourcekit-search-${new Date().toISOString().slice(0, 10)}`} columns={SEARCH_EXPORT_COLUMNS} />
         </div>
       </div>
 

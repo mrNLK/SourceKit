@@ -76,10 +76,19 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
     if (inputMode === "manual") {
       const errors: Record<string, string> = {};
       if (!state.jobTitle.trim()) errors.jobTitle = "Job title is required";
+      else if (state.jobTitle.trim().length < 3) errors.jobTitle = "Job title must be at least 3 characters";
       if (!state.companyName.trim()) errors.companyName = "Company name is required";
       if (Object.keys(errors).length > 0) { setValidationErrors(errors); toast({ title: "Please fill in required fields", variant: "destructive" }); return; }
     } else {
-      if (!state.jdUrl?.trim() && !state.jdText?.trim()) { setValidationErrors({ jd: "Please provide a job description URL or paste the text" }); toast({ title: "Please provide a job description", variant: "destructive" }); return; }
+      const errors: Record<string, string> = {};
+      if (state.jdUrl?.trim()) {
+        try { new URL(state.jdUrl.trim()); } catch { errors.jd = "Please enter a valid URL (e.g. https://boards.greenhouse.io/...)"; }
+      } else if (state.jdText?.trim()) {
+        if (state.jdText.trim().length < 50) errors.jd = "Job description must be at least 50 characters";
+      } else {
+        errors.jd = "Please provide a job description URL or paste the text";
+      }
+      if (Object.keys(errors).length > 0) { setValidationErrors(errors); toast({ title: "Please fix the errors below", variant: "destructive" }); return; }
     }
     setValidationErrors({});
     setIsLoading(true);
@@ -88,8 +97,26 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
     try {
       let jdContent = state.jdText?.trim() || "";
       if (inputMode === "jd" && state.jdUrl?.trim() && !jdContent) {
-        jdContent = await fetchJdFromUrl(state.jdUrl.trim());
-        update({ jdText: jdContent, error: "", research: "", strategy: undefined });
+        try {
+          jdContent = await fetchJdFromUrl(state.jdUrl.trim());
+          update({ jdText: jdContent, error: "", research: "", strategy: undefined });
+        } catch (urlErr) {
+          // Auto-switch to text paste mode on URL extraction failure
+          setIsLoading(false);
+          setLoadingStep("");
+          update({
+            error: "",
+            jdUrl: "",
+          });
+          setValidationErrors({ jd: `Could not extract job description from this URL. Paste the text below instead.` });
+          toast({ title: "Could not extract job description from URL", description: "Please paste the job description text directly.", variant: "destructive" });
+          // Focus the textarea after a brief delay
+          setTimeout(() => {
+            const textarea = document.querySelector('textarea[placeholder="Paste the full job description here..."]') as HTMLTextAreaElement;
+            textarea?.focus();
+          }, 100);
+          return;
+        }
       }
 
       setLoadingStep("Building sourcing strategy...");

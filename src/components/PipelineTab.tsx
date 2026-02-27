@@ -181,7 +181,8 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
       } else {
         toast({ title: "Failed to share to Slack", variant: "destructive" });
       }
-    } catch {
+    } catch (err) {
+      console.error("Slack share failed:", err);
       toast({ title: "Failed to share to Slack", variant: "destructive" });
     }
   };

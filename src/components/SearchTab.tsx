@@ -1,4 +1,4 @@
-import { Search, Loader2, ExternalLink, SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Loader2, ExternalLink, SlidersHorizontal, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,6 +93,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
   const [resultLimit, setResultLimit] = useState(20);
   const [locationFilter, setLocationFilter] = useState("");
   const [languageFilter, setLanguageFilter] = useState(sf.language || "");
+  const [sortBy, setSortBy] = useState(sf.sortBy || "score-desc");
   const [minScore, setMinScore] = useState(sf.minScore || 0);
 
   // -- UI state --
@@ -111,8 +112,8 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
 
   // Persist filters
   useEffect(() => {
-    localStorage.setItem('sourcekit-filters', JSON.stringify({ seniority: seniorityFilter, skills: skillFilters, language: languageFilter, minScore }));
-  }, [seniorityFilter, skillFilters, languageFilter, minScore]);
+    localStorage.setItem('sourcekit-filters', JSON.stringify({ seniority: seniorityFilter, skills: skillFilters, language: languageFilter, minScore, sortBy }));
+  }, [seniorityFilter, skillFilters, languageFilter, minScore, sortBy]);
 
   // Auto-submit for re-run from history
   useEffect(() => {
@@ -179,7 +180,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
           await supabase.from("search_history").insert({ query: query || activeQuery, action_type: "search", result_count: baseResults.length, metadata: { expanded_query: expandedQuery || activeQuery, skills: parsedCriteria?.skills || [], location: parsedCriteria?.location || null, seniority: parsedCriteria?.seniority || null } } as any);
           queryClient.invalidateQueries({ queryKey: ["search-history"] });
           window.dispatchEvent(new Event("sourcekit-search-complete"));
-        } catch { /* silent */ }
+        } catch (err) { console.error("Failed to save search history:", err); }
       })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -216,8 +217,17 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
     if (seniorityFilter !== "any") list = list.filter((d: any) => estimateSeniority(d) === seniorityFilter);
     if (languageFilter) list = list.filter((d: any) => (d.topLanguages || []).some((l: any) => l.name === languageFilter));
     if (minScore > 0) list = list.filter((d: any) => (d.score || 0) >= minScore);
+    // Apply sort
+    if (sortBy !== "score-desc") {
+      list = [...list].sort((a: any, b: any) => {
+        if (sortBy === "score-asc") return (a.score || 0) - (b.score || 0);
+        if (sortBy === "stars-desc") return (b.stars || 0) - (a.stars || 0);
+        if (sortBy === "name-asc") return (a.name || "").localeCompare(b.name || "");
+        return 0;
+      });
+    }
     return list.slice(0, resultLimit);
-  }, [resultsWithSkillMatch, showGemsOnly, locationFilter, resultLimit, seniorityFilter, estimateSeniority, languageFilter, minScore]);
+  }, [resultsWithSkillMatch, showGemsOnly, locationFilter, resultLimit, seniorityFilter, estimateSeniority, languageFilter, minScore, sortBy]);
 
   const funnelCounts = useMemo(() => {
     const total = results.length;
@@ -238,6 +248,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     if (!query.trim()) { toast({ title: "Enter a search query", description: "Type a skill, language, or domain to search for engineers." }); return; }
     setActiveQuery(buildSearchQuery());
   };
@@ -285,7 +296,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
     setBatchAdding(true);
     const toAdd = filtered.filter((d: any) => batchSelected.has(d.username) && !pipelineSet.has(d.username));
     let added = 0;
-    for (const dev of toAdd) { try { const { error } = await supabase.from('pipeline').upsert({ github_username: dev.username, name: dev.name, avatar_url: dev.avatarUrl, stage: 'sourced' }, { onConflict: 'github_username' }); if (!error) added++; } catch {} }
+    for (const dev of toAdd) { try { const { error } = await supabase.from('pipeline').upsert({ github_username: dev.username, name: dev.name, avatar_url: dev.avatarUrl, stage: 'sourced' }, { onConflict: 'github_username' }); if (!error) added++; } catch (err) { console.error("Failed to add candidate to pipeline:", err); } }
     queryClient.invalidateQueries({ queryKey: ["pipeline-usernames"] });
     toast({ title: `Added ${added} candidate${added !== 1 ? 's' : ''} to pipeline`, description: `${added} candidate${added !== 1 ? 's' : ''} added to Sourced stage.` });
     setBatchSelected(new Set());
@@ -319,7 +330,10 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input type="text" value={query} onChange={(e) => { setQuery(e.target.value); if (!expandedQuery) setShowExpandedQuery(false); }}
               placeholder="Search by skill, language, or domain..." className="w-full bg-transparent text-foreground placeholder:text-muted-foreground py-3.5 pl-12 pr-28 text-sm outline-none font-body" />
-            <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-5 py-2 rounded-lg font-display text-xs font-medium hover:opacity-90 transition-opacity">Search</button>
+            <button type="submit" disabled={isLoading}
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-5 py-2 rounded-lg font-display text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">
+              {isLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Searching...</> : "Search"}
+            </button>
           </div>
         </form>
 
@@ -391,6 +405,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
               availableLanguages={availableLanguages} languageFilter={languageFilter} onLanguageChange={setLanguageFilter}
               minScore={minScore} onMinScoreChange={setMinScore}
               seniorityFilter={seniorityFilter} onSeniorityChange={setSeniorityFilter}
+              sortBy={sortBy} onSortChange={setSortBy}
             />
             {hasActiveFilters && <SearchFunnel counts={funnelCounts} locationFilter={locationFilter} />}
           </>
