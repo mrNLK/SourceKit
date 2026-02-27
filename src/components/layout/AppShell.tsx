@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { Search, FlaskConical, GitBranch, Settings, MessageSquare } from 'lucide-react'
+import { useCandidates } from '@/hooks/useCandidates'
 
 const NAV_HINTS_KEY = 'sourcekit-nav-hints-dismissed'
 
@@ -22,6 +23,8 @@ function loadHintsDismissed(): boolean {
 export function AppShell() {
   const [hintsDismissed, setHintsDismissed] = useState(loadHintsDismissed)
   const location = useLocation()
+  const { allCandidates } = useCandidates()
+  const pipelineCount = allCandidates.length
 
   const dismissHints = useCallback(() => {
     if (!hintsDismissed) {
@@ -69,6 +72,11 @@ export function AppShell() {
               >
                 <Icon className="w-5 h-5" />
                 <span>{label}</span>
+                {to === '/pipeline' && pipelineCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground px-1">
+                    {pipelineCount}
+                  </span>
+                )}
                 {showPulse && (
                   <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary animate-pulse" />
                 )}

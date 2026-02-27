@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { FlaskConical, Play, RefreshCw, AlertCircle } from 'lucide-react'
+import { FlaskConical, Play, RefreshCw, AlertCircle, RotateCcw, Copy, Check } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -121,6 +122,37 @@ export function ResearchPage() {
     track('strategy_built', { job_title: s.jobTitle, company: s.companyName, query_count: s.searchQueries.length })
   }
 
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyStrategy = useCallback(() => {
+    if (!strategy) return
+    const text = [
+      `Role: ${strategy.jobTitle}`,
+      strategy.companyName ? `Company: ${strategy.companyName}` : '',
+      '',
+      `Keywords: ${strategy.keywords.join(', ')}`,
+      strategy.targetCompanies.length > 0 ? `Target Companies: ${strategy.targetCompanies.join(', ')}` : '',
+      '',
+      'Search Queries:',
+      ...strategy.searchQueries.map((q, i) => `  ${i + 1}. ${q}`),
+    ].filter(Boolean).join('\n')
+
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      toast.success('Strategy copied to clipboard')
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }, [strategy])
+
+  const handleNewSearch = useCallback(() => {
+    setJobTitle('')
+    setCompanyName('')
+    setStrategy(null)
+    setResults([])
+    setError(null)
+    setIsRunning(false)
+  }, [])
+
   const handleSearchWithStrategy = useCallback(async () => {
     if (!strategy) return
     setIsRunning(true)
@@ -206,9 +238,17 @@ export function ResearchPage() {
 
       {/* Strategy Builder */}
       <div className="p-4 space-y-3">
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <FlaskConical className="w-4 h-4 text-primary" />
-          Research Strategy Builder
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            Research Strategy Builder
+          </div>
+          {(strategy || results.length > 0) && (
+            <Button size="sm" variant="ghost" onClick={handleNewSearch} className="gap-1 text-xs text-muted-foreground">
+              <RotateCcw className="w-3 h-3" />
+              Start New
+            </Button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -239,6 +279,13 @@ export function ResearchPage() {
                 <h3 className="text-sm font-semibold text-foreground">
                   {strategy.jobTitle} {strategy.companyName && `@ ${strategy.companyName}`}
                 </h3>
+                <button
+                  onClick={handleCopyStrategy}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-secondary"
+                >
+                  {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
               </div>
 
               <div>

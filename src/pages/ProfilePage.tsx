@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Github, Globe, MapPin, Calendar, Star, GitFork, Users, Code2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
 import { ScoreCircle } from '@/components/ui/ScoreCircle'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useCandidates } from '@/hooks/useCandidates'
@@ -13,9 +15,20 @@ import { SIGNAL_COLORS } from '@/lib/signals'
 export function ProfilePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { allCandidates } = useCandidates()
+  const { allCandidates, updateNotes } = useCandidates()
 
   const candidate = allCandidates.find(c => c.id === id)
+  const [notes, setNotes] = useState(candidate?.notes || '')
+
+  useEffect(() => {
+    setNotes(candidate?.notes || '')
+  }, [candidate?.notes])
+
+  const handleNotesBlur = () => {
+    if (candidate && notes !== candidate.notes) {
+      updateNotes(candidate.id, notes)
+    }
+  }
 
   if (!candidate) {
     return (
@@ -267,16 +280,20 @@ export function ProfilePage() {
         )}
 
         {/* Notes */}
-        {candidate.notes && (
-          <Card>
-            <CardHeader>
-              <h2 className="text-base font-semibold">Notes</h2>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{candidate.notes}</p>
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardHeader>
+            <h2 className="text-base font-semibold">Notes</h2>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              onBlur={handleNotesBlur}
+              placeholder="Add recruiter notes about this candidate..."
+              className="min-h-[100px] text-sm resize-none"
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

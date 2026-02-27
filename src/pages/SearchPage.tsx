@@ -6,6 +6,7 @@ import { CandidateCard } from '@/components/search/CandidateCard'
 import { FilterBar } from '@/components/search/FilterBar'
 import { SearchHistory } from '@/components/search/SearchHistory'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { OnboardingBanner } from '@/components/OnboardingBanner'
 import { useCandidates } from '@/hooks/useCandidates'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 import { useSettings } from '@/hooks/useSettings'
@@ -213,6 +214,7 @@ export function SearchPage() {
 
   return (
     <div className="flex flex-col">
+      <OnboardingBanner />
       <SearchForm onSearch={handleSearch} isLoading={isLoading} />
 
       {results.length > 0 && (
