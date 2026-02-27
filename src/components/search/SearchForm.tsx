@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Search, Github, Sparkles } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import type { SearchQuery } from '@/types'
 
 interface SearchFormProps {

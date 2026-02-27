@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Clock, RotateCcw, X, Trash2, FlaskConical, Building2, Briefcase } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/components/ui/button'
 import type { SearchHistoryEntry, SearchQuery } from '@/types'
 
 interface SearchHistoryProps {
