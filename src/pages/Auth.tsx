@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
 import sourcekitStacked from "@/assets/sourcekit-stacked.svg";
 import { Button } from "@/components/ui/button";
 
@@ -10,8 +10,11 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setError(null);
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
     });
     if (error) {
       setError(error.message || "Sign-in failed");
