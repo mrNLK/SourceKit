@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react'
 import { ChevronDown, MessageSquare, Trash2, Hash, X, Send } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { AvailabilityBadge } from '@/components/ui/AvailabilityBadge'
-import { Textarea } from '@/components/ui/Textarea'
+import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import type { Candidate, CandidateStage } from '@/types'
 

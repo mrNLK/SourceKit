@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, Copy, Check, RefreshCw, Clock } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import type { Candidate, OutreachEntry } from '@/types'
 
