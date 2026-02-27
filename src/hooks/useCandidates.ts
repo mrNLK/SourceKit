@@ -3,6 +3,7 @@ import type { Candidate, CandidateStage } from '@/types'
 import { calculateScore } from '@/lib/scoring'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { addSyncError } from '@/lib/syncErrors'
 
 const STORAGE_KEY = 'sourcekit_candidates'
 
@@ -93,7 +94,7 @@ export function useCandidates() {
 
     if (user) {
       supabase.from('candidates').insert(mapCandidateToDb(newCandidate, user.id)).then(({ error }) => {
-        if (error) console.error('Failed to save candidate to Supabase:', error)
+        if (error) { console.error('Failed to save candidate to Supabase:', error); addSyncError('Failed to sync candidate to cloud') }
       })
     }
 
@@ -116,7 +117,7 @@ export function useCandidates() {
         dbUpdates[key] = value
       }
       supabase.from('candidates').update(dbUpdates).eq('id', id).eq('created_by', user.id).then(({ error }) => {
-        if (error) console.error('Failed to update candidate in Supabase:', error)
+        if (error) { console.error('Failed to update candidate in Supabase:', error); addSyncError('Failed to sync candidate update to cloud') }
       })
     }
   }, [user])
@@ -126,7 +127,7 @@ export function useCandidates() {
 
     if (user) {
       supabase.from('candidates').delete().eq('id', id).eq('created_by', user.id).then(({ error }) => {
-        if (error) console.error('Failed to delete candidate from Supabase:', error)
+        if (error) { console.error('Failed to delete candidate from Supabase:', error); addSyncError('Failed to sync deletion to cloud') }
       })
     }
   }, [user])
@@ -146,7 +147,7 @@ export function useCandidates() {
       const updated = { ...c, tags: [...c.tags, normalized] }
       if (user) {
         supabase.from('candidates').update({ tags: updated.tags }).eq('id', id).eq('created_by', user.id).then(({ error }) => {
-          if (error) console.error('Failed to update tags in Supabase:', error)
+          if (error) { console.error('Failed to update tags in Supabase:', error); addSyncError('Failed to sync tags to cloud') }
         })
       }
       return updated
@@ -159,7 +160,7 @@ export function useCandidates() {
       const updated = { ...c, tags: c.tags.filter(t => t !== tag) }
       if (user) {
         supabase.from('candidates').update({ tags: updated.tags }).eq('id', id).eq('created_by', user.id).then(({ error }) => {
-          if (error) console.error('Failed to update tags in Supabase:', error)
+          if (error) { console.error('Failed to update tags in Supabase:', error); addSyncError('Failed to sync tags to cloud') }
         })
       }
       return updated

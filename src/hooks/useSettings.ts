@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, useSyncExternalStore } from '
 import type { Settings } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { addSyncError } from '@/lib/syncErrors'
 
 const STORAGE_KEY = 'sourcekit_settings'
 
@@ -98,7 +99,7 @@ export function useSettings() {
             { key, value: JSON.stringify(value), user_id: user.id },
             { onConflict: 'key,user_id' }
           ).then(({ error }) => {
-            if (error) console.error('Failed to save setting to Supabase:', error)
+            if (error) { console.error('Failed to save setting to Supabase:', error); addSyncError('Failed to sync settings to cloud') }
           })
         }
       }
@@ -112,7 +113,7 @@ export function useSettings() {
 
     if (user) {
       supabase.from('settings').delete().eq('user_id', user.id).then(({ error }) => {
-        if (error) console.error('Failed to reset settings in Supabase:', error)
+        if (error) { console.error('Failed to reset settings in Supabase:', error); addSyncError('Failed to sync settings reset to cloud') }
       })
     }
   }, [user])

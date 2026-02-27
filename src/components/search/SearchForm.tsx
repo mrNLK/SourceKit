@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Github, Sparkles } from 'lucide-react'
+import { Search, Github, Sparkles, Link as LinkIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { SearchQuery } from '@/types'
@@ -18,22 +18,69 @@ function validateGithubHandle(value: string): string | null {
   return null
 }
 
+/**
+ * Extract a GitHub handle from a URL like:
+ * - https://github.com/username
+ * - https://github.com/username/repo
+ * Returns the handle or null if not a GitHub URL.
+ */
+function extractGitHubHandle(url: string): string | null {
+  try {
+    const parsed = new URL(url)
+    if (parsed.hostname === 'github.com' || parsed.hostname === 'www.github.com') {
+      const parts = parsed.pathname.split('/').filter(Boolean)
+      if (parts.length >= 1 && /^[a-zA-Z0-9-]+$/.test(parts[0])) {
+        return parts[0]
+      }
+    }
+  } catch {
+    // Not a valid URL
+  }
+  return null
+}
+
 export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
   const [name, setName] = useState('')
   const [company, setCompany] = useState('')
   const [role, setRole] = useState('')
   const [githubHandle, setGithubHandle] = useState('')
   const [capabilityQuery, setCapabilityQuery] = useState('')
+  const [profileUrl, setProfileUrl] = useState('')
   const [ghError, setGhError] = useState<string | null>(null)
+  const [urlError, setUrlError] = useState<string | null>(null)
 
   const handleGithubChange = (value: string) => {
     setGithubHandle(value)
     setGhError(validateGithubHandle(value))
   }
 
+  const handleUrlChange = (value: string) => {
+    setProfileUrl(value)
+    setUrlError(null)
+    // Auto-detect GitHub URL and extract handle
+    if (value.trim()) {
+      const handle = extractGitHubHandle(value.trim())
+      if (handle) {
+        setGithubHandle(handle)
+        setGhError(null)
+      }
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name && !company && !githubHandle && !capabilityQuery) return
+
+    // If URL is provided but not recognized, show error
+    if (profileUrl.trim() && !extractGitHubHandle(profileUrl.trim())) {
+      if (profileUrl.includes('linkedin.com')) {
+        setUrlError('LinkedIn URLs are noted but search uses GitHub. Add a GitHub handle for best results.')
+      } else if (!profileUrl.startsWith('http')) {
+        setUrlError('Please enter a valid URL starting with https://')
+        return
+      }
+    }
+
+    if (!name && !company && !githubHandle && !capabilityQuery && !profileUrl) return
 
     // Validate GitHub handle before submit
     const ghValidation = validateGithubHandle(githubHandle)
@@ -63,7 +110,23 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
           value={capabilityQuery}
           onChange={e => setCapabilityQuery(e.target.value)}
           className="pl-10 border-primary/30 focus-visible:ring-primary"
+          aria-label="Search by capability"
         />
+      </div>
+
+      {/* URL Input */}
+      <div>
+        <div className="relative">
+          <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Paste a GitHub or LinkedIn URL..."
+            value={profileUrl}
+            onChange={e => handleUrlChange(e.target.value)}
+            className={`pl-10 ${urlError ? 'border-amber-500' : ''}`}
+            aria-label="Profile URL"
+          />
+        </div>
+        {urlError && <p className="text-[10px] text-amber-500 mt-1">{urlError}</p>}
       </div>
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -73,11 +136,11 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Input placeholder="Name" value={name} onChange={e => setName(e.target.value)} />
-        <Input placeholder="Company" value={company} onChange={e => setCompany(e.target.value)} />
+        <Input placeholder="Name" value={name} onChange={e => setName(e.target.value)} aria-label="Candidate name" />
+        <Input placeholder="Company" value={company} onChange={e => setCompany(e.target.value)} aria-label="Company name" />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Input placeholder="Role (optional)" value={role} onChange={e => setRole(e.target.value)} />
+        <Input placeholder="Role (optional)" value={role} onChange={e => setRole(e.target.value)} aria-label="Role" />
         <div>
           <div className="relative">
             <Github className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -86,13 +149,14 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
               value={githubHandle}
               onChange={e => handleGithubChange(e.target.value)}
               className={`pl-10 ${ghError ? 'border-destructive' : ''}`}
+              aria-label="GitHub handle"
             />
           </div>
           {ghError && <p className="text-[10px] text-destructive mt-1">{ghError}</p>}
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading || Boolean(ghError)}>
+      <Button type="submit" className="w-full" disabled={isLoading || Boolean(ghError)} aria-label="Search candidates">
         {isLoading ? (
           <span className="flex items-center gap-2">
             <div className="w-4 h-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />

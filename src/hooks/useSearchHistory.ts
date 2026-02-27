@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import type { SearchHistoryEntry, SearchQuery, SearchHistoryMetadata } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { addSyncError } from '@/lib/syncErrors'
 
 const STORAGE_KEY = 'sourcekit_search_history'
 const MAX_HISTORY = 50
@@ -30,14 +31,19 @@ export function useSearchHistory() {
       .limit(MAX_HISTORY)
       .then(({ data, error }) => {
         if (!error && data && data.length > 0) {
-          const mapped: SearchHistoryEntry[] = data.map(row => ({
-            id: row.id,
-            query_params: row.query_params as SearchQuery,
-            result_count: row.result_count,
-            metadata: (row.query_params as Record<string, unknown>)?.metadata as SearchHistoryMetadata | undefined,
-            created_by: row.created_by,
-            created_at: row.created_at,
-          }))
+          const mapped: SearchHistoryEntry[] = data.map(row => {
+            // metadata is stored inside query_params in Supabase — extract it cleanly
+            const rawParams = row.query_params as Record<string, unknown>
+            const { metadata: rawMeta, ...cleanQuery } = rawParams
+            return {
+              id: row.id,
+              query_params: cleanQuery as SearchQuery,
+              result_count: row.result_count,
+              metadata: rawMeta as SearchHistoryMetadata | undefined,
+              created_by: row.created_by,
+              created_at: row.created_at,
+            }
+          })
           setHistory(mapped)
           localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped))
         }
@@ -67,7 +73,7 @@ export function useSearchHistory() {
         created_by: user.id,
         created_at: entry.created_at,
       }).then(({ error }) => {
-        if (error) console.error('Failed to save search history to Supabase:', error)
+        if (error) { console.error('Failed to save search history to Supabase:', error); addSyncError('Failed to sync search history to cloud') }
       })
     }
   }, [user])
@@ -77,7 +83,7 @@ export function useSearchHistory() {
 
     if (user) {
       supabase.from('search_history').delete().eq('id', id).eq('created_by', user.id).then(({ error }) => {
-        if (error) console.error('Failed to delete search history from Supabase:', error)
+        if (error) { console.error('Failed to delete search history from Supabase:', error); addSyncError('Failed to sync history deletion to cloud') }
       })
     }
   }, [user])
@@ -87,7 +93,7 @@ export function useSearchHistory() {
 
     if (user) {
       supabase.from('search_history').delete().eq('created_by', user.id).then(({ error }) => {
-        if (error) console.error('Failed to clear search history from Supabase:', error)
+        if (error) { console.error('Failed to clear search history from Supabase:', error); addSyncError('Failed to sync history clear to cloud') }
       })
     }
   }, [user])

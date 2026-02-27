@@ -323,9 +323,12 @@ export function SearchPage() {
       track('search_executed', { result_count: newResults.length, has_github: Boolean(query.github_handle), has_capability: Boolean(query.capability_query) })
 
       // Background: fetch GitHub profiles for candidates with github_handle but no profile
-      const needsProfile = newResults.filter(c => c.github_handle && !c.github_profile)
-      if (needsProfile.length > 0) {
-        enrichWithGitHubProfiles(needsProfile, settings.github_token || undefined)
+      // Only runs when auto_enrich_github is enabled in settings
+      if (settings.auto_enrich_github) {
+        const needsProfile = newResults.filter(c => c.github_handle && !c.github_profile)
+        if (needsProfile.length > 0) {
+          enrichWithGitHubProfiles(needsProfile, settings.github_token || undefined)
+        }
       }
 
       if (errors.length > 0) {
@@ -337,7 +340,7 @@ export function SearchPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [settings.github_token, addEntry, enrichWithGitHubProfiles])
+  }, [settings.github_token, settings.auto_enrich_github, addEntry, enrichWithGitHubProfiles])
 
   const handleSave = useCallback((candidate: Candidate) => {
     addCandidate(candidate)

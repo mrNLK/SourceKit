@@ -1,5 +1,3 @@
-import { supabase } from '@/lib/supabase'
-
 interface ExaCandidate {
   name: string
   bio: string

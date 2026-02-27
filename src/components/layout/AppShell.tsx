@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
-import { Search, FlaskConical, GitBranch, Settings, Clock, Bookmark, CheckSquare, List, Menu, X, LogOut } from 'lucide-react'
+import { Search, FlaskConical, GitBranch, Settings, Clock, Bookmark, CheckSquare, Menu, X, LogOut } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useWatchlist } from '@/hooks/useWatchlist'
+import { SyncStatusBanner } from '@/components/SyncStatusBanner'
 
 const sidebarItems = [
   { to: '/search', icon: Search, label: 'New Search' },
@@ -144,6 +145,7 @@ export function AppShell() {
           <div className="w-7" /> {/* spacer */}
         </header>
 
+        <SyncStatusBanner />
         <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
