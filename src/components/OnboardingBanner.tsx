@@ -59,7 +59,7 @@ export function OnboardingBanner() {
       )}
     >
       <div className="flex items-start justify-between mb-3">
-        <p className="text-sm font-medium text-foreground">How SourceKit works</p>
+        <p className="text-sm font-medium text-foreground">How <span style={{ fontFamily: 'var(--font-mono)', color: '#9E9E9E' }}>Source</span><span style={{ fontFamily: 'var(--font-mono)', color: '#00BFA5' }}>Kit</span> works</p>
         <button
           onClick={dismiss}
           className="px-3 py-1 rounded-lg text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
