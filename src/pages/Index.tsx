@@ -57,7 +57,8 @@ const Index = () => {
 
   return (
     <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab}>
-      {activeTab === "search" && (
+      {/* Keep SearchTab always mounted to preserve results across tab switches (B1 fix) */}
+      <div style={{ display: activeTab === "search" ? undefined : "none" }}>
         <SearchTab
           key={rerunKey}
           initialQuery={rerunQuery}
@@ -65,7 +66,7 @@ const Index = () => {
           autoSubmit={!!rerunQuery && rerunKey > 0}
           onNavigate={(tab) => setActiveTab(tab as ActiveTab)}
         />
-      )}
+      </div>
       {activeTab === "research" && (
         <ResearchTab
           state={researchState}

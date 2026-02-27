@@ -460,14 +460,18 @@ function PipelineCard({ c, score, stage, onDragStart, onClick, onRemove, onWatch
           {(c.name || c.github_username)?.charAt(0)?.toUpperCase() || "?"}
         </div>
         <div className="min-w-0 flex-1">
-          <span className="font-display text-xs font-semibold text-foreground hover:text-primary transition-colors truncate block">
+          <span className="font-display text-xs font-semibold text-foreground hover:text-primary transition-colors block break-words" title={c.name || c.github_username}>
             {c.name || c.github_username}
           </span>
           <p className="text-[10px] text-muted-foreground font-display truncate">@{c.github_username}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {score > 0 && (
-            <span className={`text-[10px] font-display font-bold ${scoreColor}`}>{score}</span>
+            <span className={`text-[10px] font-display font-bold px-1.5 py-0.5 rounded ${
+              score >= 70 ? "bg-emerald-500/15 text-emerald-400" :
+              score >= 40 ? "bg-amber-500/15 text-amber-400" :
+              "bg-red-500/15 text-red-400"
+            }`}>{score}</span>
           )}
           <span className={`flex items-center gap-0.5 text-[9px] font-display font-semibold ${stageTime.color}`} title={`${stageTime.days} day${stageTime.days !== 1 ? 's' : ''} in ${stage.label}`}>
             <Clock className="w-2.5 h-2.5" />

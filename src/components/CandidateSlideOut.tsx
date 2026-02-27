@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { EEAFull } from "@/components/EEASignals";
+import { toast } from "@/hooks/use-toast";
 import type { Developer } from "@/types/developer";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -99,8 +100,10 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
       setAddedToPipeline(true);
       queryClient.invalidateQueries({ queryKey: ["pipeline"] });
       queryClient.invalidateQueries({ queryKey: ["pipeline-usernames"] });
+      toast({ title: `Added ${dev.name || dev.username} to pipeline` });
     } catch (err) {
       console.error("Failed to add to pipeline:", err);
+      toast({ title: "Failed to add to pipeline", variant: "destructive" });
     } finally {
       setPipelineLoading(false);
     }
@@ -131,8 +134,10 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
       if (!res.ok) throw new Error(data.error || "Failed");
       setOutreachMsg(data.message);
       setOutreachDraft(data.message);
+      toast({ title: "Outreach message generated" });
     } catch (e) {
       console.error("Outreach generation failed:", e);
+      toast({ title: "Outreach generation failed", variant: "destructive" });
     } finally {
       setGenerating(false);
     }
@@ -151,6 +156,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
   const handleCopyOutreach = () => {
     navigator.clipboard.writeText(outreachEditing ? outreachDraft : (outreachMsg || ""));
     setCopiedMsg(true);
+    toast({ title: "Copied to clipboard" });
     setTimeout(() => setCopiedMsg(false), 1500);
   };
 
@@ -359,7 +365,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
                     <p className="text-sm text-foreground leading-relaxed pr-8">{outreachMsg}</p>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {outreachEditing ? (
                     <button onClick={handleSaveOutreach}
                       className="text-[11px] font-display px-2.5 py-1 rounded-md bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors">
@@ -375,7 +381,17 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
                     className={`text-[11px] font-display px-2.5 py-1 rounded-md border transition-colors ${copiedMsg ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'border-border text-muted-foreground hover:text-foreground'}`}>
                     {copiedMsg ? <><ClipboardCheck className="w-3 h-3 inline mr-1" />Copied</> : <><Copy className="w-3 h-3 inline mr-1" />Copy</>}
                   </button>
+                  {/* U3: Regenerate button */}
+                  <button onClick={handleGenerate} disabled={generating}
+                    className="text-[11px] font-display px-2.5 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50">
+                    {generating ? <Loader2 className="w-3 h-3 inline mr-1 animate-spin" /> : <Sparkles className="w-3 h-3 inline mr-1" />}
+                    Regenerate
+                  </button>
                 </div>
+                {/* U3: Character count */}
+                <p className="text-[10px] text-muted-foreground mt-1.5 font-display">
+                  {(outreachEditing ? outreachDraft : outreachMsg || "").length} characters
+                </p>
               </div>
             )}
 

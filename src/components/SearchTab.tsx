@@ -36,6 +36,14 @@ const DEFAULT_SUGGESTIONS: SuggestionChip[] = [
   { label: "Security researchers", expandedQuery: "Security researchers and application security engineers with expertise in vulnerability research, penetration testing, cryptography, secure coding practices, and CVE discovery" },
 ];
 
+// B6 fix: filter out bot/automated accounts from search results
+const BOT_USERNAME_PATTERN = /\b(bot|dependabot|renovate|greenkeeper|snyk|codecov|github-actions|automator|copilot)\b/i;
+function isLikelyBot(dev: any): boolean {
+  if (BOT_USERNAME_PATTERN.test(dev.username || "")) return true;
+  if ((dev.username || "").endsWith("-bot") || (dev.username || "").endsWith("[bot]")) return true;
+  return false;
+}
+
 function computeSkillMatch(dev: any, skills: SkillFilter[]): number {
   if (skills.length === 0) return -1;
   const activeSkills = skills.filter(s => s.text.trim());
@@ -128,6 +136,9 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
   const [isExpanding, setIsExpanding] = useState(false);
   const [expandCount, setExpandCount] = useState(0);
 
+  // Track which queries have been saved to history (B10 fix: prevent duplicate saves)
+  const historySavedForQuery = useRef<string>("");
+
 
   // Auto-submit for re-run from history
   useEffect(() => {
@@ -157,14 +168,21 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
   const reposSearched = data?.reposSearched || [];
 
   const results = useMemo(() => {
-    if (expandedResults.length === 0) return baseResults;
-    const seen = new Set(baseResults.map((d: any) => d.username));
-    const unique = expandedResults.filter((d: any) => !seen.has(d.username));
-    return [...baseResults, ...unique];
+    let combined: any[];
+    if (expandedResults.length === 0) {
+      combined = baseResults;
+    } else {
+      const seen = new Set(baseResults.map((d: any) => d.username));
+      const unique = expandedResults.filter((d: any) => !seen.has(d.username));
+      combined = [...baseResults, ...unique];
+    }
+    // B6 fix: filter out bot/automated accounts
+    return combined.filter((d: any) => !isLikelyBot(d));
   }, [baseResults, expandedResults]);
 
   useEffect(() => {
-    if (data && activeQuery && baseResults.length >= 0) {
+    if (data && activeQuery && historySavedForQuery.current !== activeQuery) {
+      historySavedForQuery.current = activeQuery;
       const saveHistory = async () => {
         try {
           await supabase.from("search_history").insert({
@@ -179,6 +197,8 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
             },
           } as any);
           queryClient.invalidateQueries({ queryKey: ["search-history"] });
+          // B2 fix: notify subscription hook to refresh search counter
+          window.dispatchEvent(new Event("sourcekit-search-complete"));
         } catch { /* silent */ }
       };
       saveHistory();
@@ -268,14 +288,35 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
     const toEnrich = filtered.filter((d: any) => !d.linkedinUrl && !enrichedUsernames.has(d.username));
     const alreadyHave = filtered.length - toEnrich.length;
     setEnrichProgress({ current: 0, total: toEnrich.length, skipped: alreadyHave });
-    for (let i = 0; i < toEnrich.length; i++) {
-      const dev = toEnrich[i];
-      setEnrichProgress({ current: i + 1, total: toEnrich.length, skipped: alreadyHave });
-      try {
-        const result = await enrichLinkedIn(dev.username, dev.name, dev.location, dev.bio);
-        if (result.linkedin_url) setEnrichedUsernames(prev => new Set([...prev, dev.username]));
-      } catch { /* skip */ }
+
+    // P1: Process in concurrent chunks of 4 instead of sequentially
+    const CONCURRENCY = 4;
+    let completed = 0;
+
+    for (let i = 0; i < toEnrich.length; i += CONCURRENCY) {
+      const chunk = toEnrich.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(
+        chunk.map(dev =>
+          enrichLinkedIn(dev.username, dev.name, dev.location, dev.bio)
+            .then(result => ({ dev, result }))
+        )
+      );
+
+      const successful = results
+        .filter((r): r is PromiseFulfilledResult<{ dev: any; result: any }> =>
+          r.status === 'fulfilled'
+        )
+        .filter(r => r.value.result.linkedin_url)
+        .map(r => r.value.dev.username);
+
+      if (successful.length > 0) {
+        setEnrichedUsernames(prev => new Set([...prev, ...successful]));
+      }
+
+      completed += chunk.length;
+      setEnrichProgress({ current: completed, total: toEnrich.length, skipped: alreadyHave });
     }
+
     setTimeout(() => setEnrichProgress(null), 2000);
   }, [filtered, enrichedUsernames, enrichProgress]);
 
@@ -291,9 +332,12 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      setActiveQuery(buildSearchQuery());
+    if (!query.trim()) {
+      // B8 fix: show feedback for empty search instead of stale results
+      toast({ title: "Enter a search query", description: "Type a skill, language, or domain to search for engineers." });
+      return;
     }
+    setActiveQuery(buildSearchQuery());
   };
 
   const handleChipClick = (chip: SuggestionChip) => {
@@ -497,7 +541,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
             </div>
             <div className="flex flex-wrap gap-2">
               {parsedCriteria.skills.map((s: string) => (
-                <span key={s} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-display">{s}</span>
+                <span key={s} title={s} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-display max-w-[200px] truncate">{s}</span>
               ))}
               {parsedCriteria.location && (
                 <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground border border-border font-display">📍 {parsedCriteria.location}</span>

@@ -81,6 +81,8 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
   const [localQuery, setLocalQuery] = useState("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["query", "repos", "companies", "skills", "eea", "overview"]));
   const [showUpgrade, setShowUpgrade] = useState(false);
+  // B3 fix: form validation state
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const inputMode = state.inputMode || "manual";
 
@@ -127,11 +129,24 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
   const handleResearch = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // B3 fix: validate form inputs with inline error messages
     if (inputMode === "manual") {
-      if (!state.jobTitle.trim() || !state.companyName.trim()) return;
+      const errors: Record<string, string> = {};
+      if (!state.jobTitle.trim()) errors.jobTitle = "Job title is required";
+      if (!state.companyName.trim()) errors.companyName = "Company name is required";
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        toast({ title: "Please fill in required fields", variant: "destructive" });
+        return;
+      }
     } else {
-      if (!state.jdUrl?.trim() && !state.jdText?.trim()) return;
+      if (!state.jdUrl?.trim() && !state.jdText?.trim()) {
+        setValidationErrors({ jd: "Please provide a job description URL or paste the text" });
+        toast({ title: "Please provide a job description", variant: "destructive" });
+        return;
+      }
     }
+    setValidationErrors({});
 
     setIsLoading(true);
     update({ error: "", research: "", strategy: undefined });
@@ -336,7 +351,7 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
         <div className="flex items-center gap-1 p-1 rounded-lg bg-secondary mb-4 w-fit">
           <button
             type="button"
-            onClick={() => update({ inputMode: "manual" })}
+            onClick={() => { update({ inputMode: "manual", strategy: undefined, research: "", error: "" }); setValidationErrors({}); }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-display font-semibold transition-colors ${
               inputMode === "manual"
                 ? "bg-card text-foreground shadow-sm"
@@ -348,7 +363,7 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
           </button>
           <button
             type="button"
-            onClick={() => update({ inputMode: "jd" })}
+            onClick={() => { update({ inputMode: "jd", strategy: undefined, research: "", error: "" }); setValidationErrors({}); }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-display font-semibold transition-colors ${
               inputMode === "jd"
                 ? "bg-card text-foreground shadow-sm"
@@ -363,25 +378,31 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
         {/* Manual mode: job title + company */}
         {inputMode === "manual" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            <div className="relative">
-              <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={state.jobTitle}
-                onChange={(e) => update({ jobTitle: e.target.value })}
-                placeholder="Job title (e.g. ML Engineer)"
-                className="w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border border-border focus:border-primary/40 transition-colors font-body"
-              />
+            <div>
+              <div className="relative">
+                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={state.jobTitle}
+                  onChange={(e) => { update({ jobTitle: e.target.value }); if (validationErrors.jobTitle) setValidationErrors(prev => { const { jobTitle: _, ...rest } = prev; return rest; }); }}
+                  placeholder="Job title (e.g. ML Engineer)"
+                  className={`w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border transition-colors font-body ${validationErrors.jobTitle ? 'border-destructive' : 'border-border focus:border-primary/40'}`}
+                />
+              </div>
+              {validationErrors.jobTitle && <p className="text-xs text-destructive mt-1 font-display">{validationErrors.jobTitle}</p>}
             </div>
-            <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={state.companyName}
-                onChange={(e) => update({ companyName: e.target.value })}
-                placeholder="Company (e.g. Stripe)"
-                className="w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border border-border focus:border-primary/40 transition-colors font-body"
-              />
+            <div>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={state.companyName}
+                  onChange={(e) => { update({ companyName: e.target.value }); if (validationErrors.companyName) setValidationErrors(prev => { const { companyName: _, ...rest } = prev; return rest; }); }}
+                  placeholder="Company (e.g. Stripe)"
+                  className={`w-full bg-secondary rounded-lg text-sm text-foreground placeholder:text-muted-foreground py-2.5 pl-10 pr-4 outline-none border transition-colors font-body ${validationErrors.companyName ? 'border-destructive' : 'border-border focus:border-primary/40'}`}
+                />
+              </div>
+              {validationErrors.companyName && <p className="text-xs text-destructive mt-1 font-display">{validationErrors.companyName}</p>}
             </div>
           </div>
         )}
@@ -418,17 +439,44 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
                 {state.jdText.length.toLocaleString()} characters
               </p>
             )}
+            {validationErrors.jd && <p className="text-xs text-destructive mt-1 font-display">{validationErrors.jd}</p>}
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={isLoading || (inputMode === "manual" ? (!state.jobTitle.trim() || !state.companyName.trim()) : (!state.jdUrl?.trim() && !state.jdText?.trim()))}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-display text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-          {isLoading ? 'Building strategy...' : 'Build Sourcing Strategy'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-display text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            {isLoading ? 'Building strategy...' : 'Build Sourcing Strategy'}
+          </button>
+          {/* U8: Clear/reset button */}
+          {(state.jobTitle || state.companyName || state.jdUrl || state.jdText || state.strategy) && !isLoading && (
+            <button
+              type="button"
+              onClick={() => {
+                onStateChange({
+                  jobTitle: "",
+                  companyName: "",
+                  research: "",
+                  error: "",
+                  strategy: undefined,
+                  inputMode: state.inputMode,
+                  jdUrl: "",
+                  jdText: "",
+                });
+                setValidationErrors({});
+                setLocalQuery("");
+                setEditingQuery(false);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-border text-muted-foreground hover:text-foreground font-display text-xs transition-colors"
+            >
+              <X className="w-3.5 h-3.5" /> Clear
+            </button>
+          )}
+        </div>
       </form>
 
       {/* Loading state */}

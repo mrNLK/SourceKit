@@ -80,18 +80,34 @@ const SearchResults = () => {
     const alreadyHave = filtered.length - toEnrich.length;
     setEnrichProgress({ current: 0, total: toEnrich.length, skipped: alreadyHave });
 
-    for (let i = 0; i < toEnrich.length; i++) {
-      const dev = toEnrich[i];
-      setEnrichProgress({ current: i + 1, total: toEnrich.length, skipped: alreadyHave });
-      try {
-        const result = await enrichLinkedIn(dev.username, dev.name, dev.location, dev.bio);
-        if (result.linkedin_url) {
-          setEnrichedUsernames(prev => new Set([...prev, dev.username]));
-        }
-      } catch {
-        // skip failures
+    // P1: Process in concurrent chunks of 4 instead of sequentially
+    const CONCURRENCY = 4;
+    let completed = 0;
+
+    for (let i = 0; i < toEnrich.length; i += CONCURRENCY) {
+      const chunk = toEnrich.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(
+        chunk.map(dev =>
+          enrichLinkedIn(dev.username, dev.name, dev.location, dev.bio)
+            .then(result => ({ dev, result }))
+        )
+      );
+
+      const successful = results
+        .filter((r): r is PromiseFulfilledResult<{ dev: any; result: any }> =>
+          r.status === 'fulfilled'
+        )
+        .filter(r => r.value.result.linkedin_url)
+        .map(r => r.value.dev.username);
+
+      if (successful.length > 0) {
+        setEnrichedUsernames(prev => new Set([...prev, ...successful]));
       }
+
+      completed += chunk.length;
+      setEnrichProgress({ current: completed, total: toEnrich.length, skipped: alreadyHave });
     }
+
     setTimeout(() => setEnrichProgress(null), 2000);
   }, [filtered, enrichedUsernames, enrichProgress]);
 

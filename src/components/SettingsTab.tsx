@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Settings, Save, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const SettingsTab = () => {
   const [loading, setLoading] = useState(true);
@@ -42,6 +43,7 @@ const SettingsTab = () => {
     }
     setSaving(false);
     setSaved(true);
+    toast({ title: "Settings saved" });
     setTimeout(() => setSaved(false), 2000);
   };
 

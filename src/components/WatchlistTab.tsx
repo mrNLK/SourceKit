@@ -10,6 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 interface WatchlistTabProps {
   onNavigateToSearch?: () => void;
@@ -21,6 +22,9 @@ const WatchlistTab = ({ onNavigateToSearch }: WatchlistTabProps) => {
   const [filterText, setFilterText] = useState("");
   const [newListOpen, setNewListOpen] = useState(false);
   const [newListName, setNewListName] = useState("");
+  const [newListError, setNewListError] = useState("");
+  // B4 fix: track user-created list names so they appear even when empty
+  const [customLists, setCustomLists] = useState<string[]>([]);
 
   // Fetch all watchlist items
   const { data: items = [], isLoading } = useQuery({
@@ -35,8 +39,11 @@ const WatchlistTab = ({ onNavigateToSearch }: WatchlistTabProps) => {
     },
   });
 
-  // Get unique list names
-  const listNames = ["Default", ...Array.from(new Set(items.map((i: any) => i.list_name).filter((n: string) => n !== "Default")))];
+  // B4 fix: include custom-created lists even if they have no items yet
+  const listNames = ["Default", ...Array.from(new Set([
+    ...items.map((i: any) => i.list_name).filter((n: string) => n !== "Default"),
+    ...customLists,
+  ]))];
 
   // Filter items by active list and search text
   const filteredItems = items.filter((i: any) => {
@@ -60,13 +67,25 @@ const WatchlistTab = ({ onNavigateToSearch }: WatchlistTabProps) => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["watchlist"] }),
   });
 
-  // Create new list by inserting a placeholder (user will add candidates to it)
+  // Create new list
   const handleCreateList = () => {
     const name = newListName.trim();
-    if (!name || listNames.includes(name)) return;
+    // B5 fix: validate empty names with error message
+    if (!name) {
+      setNewListError("List name is required");
+      return;
+    }
+    if (listNames.includes(name)) {
+      setNewListError("A list with this name already exists");
+      return;
+    }
+    // B4 fix: add to custom lists so tab appears immediately
+    setCustomLists(prev => [...prev, name]);
     setActiveList(name);
     setNewListOpen(false);
     setNewListName("");
+    setNewListError("");
+    toast({ title: `List "${name}" created` });
   };
 
   if (isLoading) {
@@ -190,23 +209,26 @@ const WatchlistTab = ({ onNavigateToSearch }: WatchlistTabProps) => {
       )}
 
       {/* New List Dialog */}
-      <Dialog open={newListOpen} onOpenChange={setNewListOpen}>
+      <Dialog open={newListOpen} onOpenChange={(open) => { setNewListOpen(open); if (!open) { setNewListError(""); setNewListName(""); } }}>
         <DialogContent className="sm:max-w-[360px]">
           <DialogHeader>
             <DialogTitle className="font-display">Create New List</DialogTitle>
           </DialogHeader>
-          <input
-            type="text"
-            value={newListName}
-            onChange={(e) => setNewListName(e.target.value)}
-            placeholder="e.g. Frontend, ML Team, Q2 Hires..."
-            className="w-full bg-secondary/50 border border-border rounded-lg py-2 px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/30 transition-colors font-body"
-            autoFocus
-            onKeyDown={(e) => e.key === "Enter" && handleCreateList()}
-          />
+          <div>
+            <input
+              type="text"
+              value={newListName}
+              onChange={(e) => { setNewListName(e.target.value); if (newListError) setNewListError(""); }}
+              placeholder="e.g. Frontend, ML Team, Q2 Hires..."
+              className={`w-full bg-secondary/50 border rounded-lg py-2 px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors font-body ${newListError ? 'border-destructive' : 'border-border focus:border-primary/30'}`}
+              autoFocus
+              onKeyDown={(e) => e.key === "Enter" && handleCreateList()}
+            />
+            {newListError && <p className="text-xs text-destructive mt-1.5 font-display">{newListError}</p>}
+          </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setNewListOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleCreateList} disabled={!newListName.trim()}>Create</Button>
+            <Button size="sm" onClick={handleCreateList}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

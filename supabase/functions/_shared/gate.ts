@@ -79,31 +79,12 @@ export async function checkSearchGate(authHeader: string | null): Promise<GateRe
 
 /**
  * Increment the search count for a user after a successful search.
+ * Uses a single atomic RPC call to avoid race conditions under concurrent requests.
  */
 export async function incrementSearchCount(userId: string): Promise<void> {
   const supabase = getSupabase();
-  await supabase.rpc('increment_searches_used', { p_user_id: userId }).catch(() => {
-    // Fallback: manual increment
-    supabase
-      .from('user_subscriptions')
-      .update({ searches_used: (supabase as any).raw?.('searches_used + 1') })
-      .eq('user_id', userId);
-  });
-  
-  // Direct SQL increment since rpc may not exist yet
-  const { data: current } = await supabase
-    .from('user_subscriptions')
-    .select('searches_used')
-    .eq('user_id', userId)
-    .single();
-  
-  if (current) {
-    await supabase
-      .from('user_subscriptions')
-      .update({ 
-        searches_used: current.searches_used + 1,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', userId);
+  const { error } = await supabase.rpc('increment_searches_used', { p_user_id: userId });
+  if (error) {
+    console.error('Failed to increment search count:', error.message);
   }
 }

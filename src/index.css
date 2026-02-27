@@ -125,4 +125,30 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-10px); }
   }
+
+  /* U4: Markdown table styles for Bulk Actions AI output */
+  .prose table {
+    @apply w-full border-collapse text-xs my-3;
+  }
+  .prose thead th {
+    @apply px-3 py-2 text-left font-display font-semibold text-foreground bg-secondary border border-border;
+  }
+  .prose tbody td {
+    @apply px-3 py-2 text-secondary-foreground border border-border;
+  }
+  .prose tbody tr:nth-child(even) {
+    @apply bg-secondary/30;
+  }
+  .prose tbody tr:hover {
+    @apply bg-secondary/50;
+  }
+
+  /* Scrollbar hide utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

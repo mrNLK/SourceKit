@@ -140,7 +140,8 @@ const HistoryTab = ({ onRerun }: HistoryTabProps) => {
                 return (
                   <div
                     key={item.id}
-                    className="glass rounded-lg px-4 py-3 flex items-center gap-3 group hover:glow-border transition-all"
+                    onClick={() => onRerun(item.query, meta.expanded_query)}
+                    className="glass rounded-lg px-4 py-3 flex items-center gap-3 group hover:glow-border transition-all cursor-pointer"
                   >
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                       isResearch ? "bg-purple-500/10 border border-purple-500/20" : "bg-primary/10 border border-primary/20"
@@ -153,9 +154,9 @@ const HistoryTab = ({ onRerun }: HistoryTabProps) => {
                       <p className="text-[11px] text-muted-foreground font-display mt-0.5">{relativeTime(item.created_at)}</p>
                     </div>
 
-                    {item.result_count > 0 && (
+                    {item.result_count != null && (
                       <span className="text-[10px] font-display font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border shrink-0">
-                        {item.result_count} results
+                        {item.result_count} {item.result_count === 1 ? 'result' : 'results'}
                       </span>
                     )}
 
