@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 340" width="300" height="340">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1c1c22"/><stop offset="100%" stop-color="#151519"/></linearGradient>
+    <linearGradient id="ac" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#00E5C3"/><stop offset="100%" stop-color="#00BFA5"/></linearGradient>
+    <style>@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&amp;display=swap');</style>
+  </defs>
+  <rect x="66" y="16" width="168" height="168" rx="36" fill="url(#bg)"/>
+  <rect x="66" y="16" width="168" height="168" rx="36" fill="none" stroke="#2a2a32" stroke-width="1"/>
+  <g transform="translate(150,100)">
+    <path d="M-22,-30 L-48,0 L-22,30" fill="none" stroke="url(#ac)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="-5" y1="25" x2="5" y2="-25" stroke="url(#ac)" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+    <path d="M22,-30 L48,0 L22,30" fill="none" stroke="url(#ac)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="150" y="248" text-anchor="middle" font-family="'JetBrains Mono','SF Mono',monospace" font-size="38" font-weight="600" letter-spacing="-0.5">
+    <tspan fill="#9E9E9E">Source</tspan><tspan fill="#00BFA5">Kit</tspan>
+  </text>
+</svg>

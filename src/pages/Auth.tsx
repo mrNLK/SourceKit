@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { lovable } from "@/integrations/lovable/index";
-import { Zap } from "lucide-react";
+import sourcekitStacked from "@/assets/sourcekit-stacked.svg";
 import { Button } from "@/components/ui/button";
 
 const Auth = () => {
@@ -22,11 +22,8 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-8 text-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center">
-            <Zap className="w-6 h-6 text-primary" />
-          </div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">SourceKit</h1>
+        <div className="flex flex-col items-center gap-4">
+          <img src={sourcekitStacked} alt="SourceKit" className="w-40" />
           <p className="text-sm text-muted-foreground">Sign in to start sourcing</p>
         </div>
 

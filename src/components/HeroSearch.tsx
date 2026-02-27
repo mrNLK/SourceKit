@@ -1,4 +1,5 @@
-import { Search, GitBranch } from "lucide-react";
+import { Search } from "lucide-react";
+import sourcekitWordmark from "@/assets/sourcekit-wordmark.svg";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -26,13 +27,8 @@ const HeroSearch = () => {
 
       <div className="relative z-10 max-w-3xl w-full text-center">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center glow-sm">
-            <GitBranch className="w-5 h-5 text-primary" />
-          </div>
-          <h2 className="font-display text-xl font-semibold tracking-tight text-foreground">
-            SourceKit
-          </h2>
+        <div className="flex items-center justify-center mb-8">
+          <img src={sourcekitWordmark} alt="SourceKit" className="h-10" />
         </div>
 
         {/* Heading */}

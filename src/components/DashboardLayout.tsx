@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Zap, Menu, X, Users, Microscope, Sparkles, Crown } from "lucide-react";
+import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Menu, X, Users, Sparkles, Crown } from "lucide-react";
+import sourcekitLogo from "@/assets/sourcekit-bare.svg";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -39,11 +40,9 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center glow-sm">
-          <Zap className="w-4 h-4 text-primary" />
-        </div>
-        <span className="font-display text-sm font-semibold tracking-tight text-foreground">
-          SourceKit
+        <img src={sourcekitLogo} alt="SourceKit" className="w-7 h-7" />
+        <span className="font-display text-sm font-semibold tracking-tight">
+          <span className="text-muted-foreground">Source</span><span className="text-primary">Kit</span>
         </span>
       </div>
 
@@ -162,8 +161,10 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-primary" />
-              <span className="font-display text-sm font-semibold text-foreground">SourceKit</span>
+              <img src={sourcekitLogo} alt="SourceKit" className="w-5 h-5" />
+              <span className="font-display text-sm font-semibold">
+                <span className="text-muted-foreground">Source</span><span className="text-primary">Kit</span>
+              </span>
             </div>
           </header>
         )}
