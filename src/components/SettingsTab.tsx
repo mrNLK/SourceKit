@@ -9,7 +9,9 @@ const SettingsTab = () => {
   const [form, setForm] = useState({
     target_role: "",
     target_company: "",
+    role_pitch: "",
     webhook_url: "",
+    slack_webhook_url: "",
   });
 
   useEffect(() => {
@@ -17,13 +19,13 @@ const SettingsTab = () => {
       const { data } = await (supabase as any).from("settings").select("key, value");
       if (data) {
         const map: Record<string, string> = {};
-        data.forEach((r: any) => {
-          map[r.key] = r.value;
-        });
+        data.forEach((r: any) => { map[r.key] = r.value; });
         setForm((prev) => ({
           target_role: map.target_role || prev.target_role,
           target_company: map.target_company || prev.target_company,
+          role_pitch: map.role_pitch || prev.role_pitch,
           webhook_url: map.webhook_url || prev.webhook_url,
+          slack_webhook_url: map.slack_webhook_url || prev.slack_webhook_url,
         }));
       }
       setLoading(false);
@@ -54,10 +56,14 @@ const SettingsTab = () => {
   }
 
   const fields = [
-    { key: "target_role", label: "Default Target Role", type: "text", placeholder: "Senior Software Engineer" },
-    { key: "target_company", label: "Default Target Company", type: "text", placeholder: "Acme Inc" },
-    { key: "webhook_url", label: "Webhook URL", type: "url", placeholder: "https://hooks.example.com/..." },
+    { key: "target_role", label: "Default Target Role", type: "text", placeholder: "Senior Software Engineer", group: "Outreach" },
+    { key: "target_company", label: "Default Target Company", type: "text", placeholder: "Acme Inc", group: "Outreach" },
+    { key: "role_pitch", label: "Role Pitch (one-liner)", type: "text", placeholder: "Building the next-gen developer platform", group: "Outreach" },
+    { key: "webhook_url", label: "Webhook URL", type: "url", placeholder: "https://hooks.example.com/...", group: "Integrations" },
+    { key: "slack_webhook_url", label: "Slack Webhook URL", type: "url", placeholder: "https://hooks.slack.com/services/...", group: "Integrations" },
   ];
+
+  const groups = [...new Set(fields.map(f => f.group))];
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -67,23 +73,30 @@ const SettingsTab = () => {
         </div>
         <div>
           <h2 className="font-display text-lg font-semibold text-foreground">Settings</h2>
-          <p className="text-sm text-muted-foreground">Default search configuration</p>
+          <p className="text-sm text-muted-foreground">Configure outreach, integrations, and defaults</p>
         </div>
       </div>
-      <div className="space-y-4">
-        {fields.map((f) => (
-          <div key={f.key} className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">{f.label}</label>
-            <input
-              type={f.type}
-              value={form[f.key as keyof typeof form]}
-              onChange={(e) => update(f.key, e.target.value)}
-              placeholder={f.placeholder}
-              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-            />
+
+      {groups.map(group => (
+        <div key={group}>
+          <h3 className="text-[11px] font-display font-semibold text-muted-foreground uppercase tracking-wider mb-3">{group}</h3>
+          <div className="space-y-4">
+            {fields.filter(f => f.group === group).map((f) => (
+              <div key={f.key} className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">{f.label}</label>
+                <input
+                  type={f.type}
+                  value={form[f.key as keyof typeof form]}
+                  onChange={(e) => update(f.key, e.target.value)}
+                  placeholder={f.placeholder}
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
+
       <button
         onClick={handleSave}
         disabled={saving}

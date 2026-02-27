@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { EEAMini } from "@/components/EEASignals";
 import { toast } from "@/hooks/use-toast";
+import DuplicateModal from "@/components/DuplicateModal";
 
 interface DeveloperCardProps {
   developer: Developer;
@@ -25,11 +26,10 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
   const [linkedinCopied, setLinkedinCopied] = useState(false);
   const [addedToPipeline, setAddedToPipeline] = useState(!!inPipeline);
   const [pipelineLoading, setPipelineLoading] = useState(false);
+  const [duplicateCandidate, setDuplicateCandidate] = useState<any>(null);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
-  const handleAddToPipeline = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (addedToPipeline || pipelineLoading) return;
-    setPipelineLoading(true);
+  const doAddToPipeline = async () => {
     try {
       const { error } = await supabase.from('pipeline').upsert({
         github_username: developer.username,
@@ -43,6 +43,32 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
         title: `${developer.name || developer.username} added to pipeline`,
         description: "Added to Sourced stage.",
       });
+    } catch (err) {
+      console.error('Failed to add to pipeline:', err);
+      toast({ title: "Failed to add to pipeline", variant: "destructive" });
+    }
+  };
+
+  const handleAddToPipeline = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (addedToPipeline || pipelineLoading) return;
+    setPipelineLoading(true);
+    try {
+      // Duplicate detection
+      const { data: existing } = await supabase
+        .from('pipeline')
+        .select('*')
+        .ilike('github_username', developer.username)
+        .maybeSingle();
+
+      if (existing) {
+        setDuplicateCandidate(existing);
+        setShowDuplicateModal(true);
+        setPipelineLoading(false);
+        return;
+      }
+
+      await doAddToPipeline();
     } catch (err) {
       console.error('Failed to add to pipeline:', err);
       toast({ title: "Failed to add to pipeline", variant: "destructive" });
@@ -250,6 +276,21 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
           {isWatched(developer.username) ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
         </button>
       </div>
+
+      {/* Duplicate detection modal */}
+      <DuplicateModal
+        open={showDuplicateModal}
+        onClose={() => setShowDuplicateModal(false)}
+        existing={duplicateCandidate}
+        onSaveAnyway={() => {
+          setShowDuplicateModal(false);
+          doAddToPipeline();
+        }}
+        onViewExisting={() => {
+          setShowDuplicateModal(false);
+          navigate('/');
+        }}
+      />
     </div>
   );
 };

@@ -146,6 +146,7 @@ export type Database = {
           name: string | null
           notes: string | null
           stage: string
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
@@ -156,6 +157,7 @@ export type Database = {
           name?: string | null
           notes?: string | null
           stage?: string
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -166,6 +168,7 @@ export type Database = {
           name?: string | null
           notes?: string | null
           stage?: string
+          tags?: string[] | null
           updated_at?: string
         }
         Relationships: []
@@ -194,6 +197,24 @@ export type Database = {
           metadata?: Json | null
           query?: string
           result_count?: number | null
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
         }
         Relationships: []
       }
