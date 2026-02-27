@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Clock, RotateCcw, X, Trash2, FlaskConical, Building2, Briefcase } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,6 +17,19 @@ function formatTimeAgo(dateStr: string): string {
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
   return `${Math.floor(seconds / 86400)}d ago`
+}
+
+function getDateGroup(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return 'This Week'
+  if (diffDays < 30) return 'This Month'
+  return 'Older'
 }
 
 function querySummary(q: SearchQuery): string {
@@ -49,6 +63,7 @@ function ResearchStrategyEntry({
         <button
           onClick={() => onDelete(entry.id)}
           className="p-1 rounded-md hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+          aria-label="Delete entry"
         >
           <X className="w-3 h-3" />
         </button>
@@ -92,6 +107,26 @@ function ResearchStrategyEntry({
 }
 
 export function SearchHistory({ history, onRerun, onDelete, onClear }: SearchHistoryProps) {
+  // Group history entries by date
+  const grouped = useMemo(() => {
+    const groups: Array<{ label: string; entries: SearchHistoryEntry[] }> = []
+    const groupMap = new Map<string, SearchHistoryEntry[]>()
+
+    for (const entry of history) {
+      const group = getDateGroup(entry.created_at)
+      if (!groupMap.has(group)) {
+        groupMap.set(group, [])
+      }
+      groupMap.get(group)!.push(entry)
+    }
+
+    for (const [label, entries] of groupMap) {
+      groups.push({ label, entries })
+    }
+
+    return groups
+  }, [history])
+
   if (history.length === 0) return null
 
   return (
@@ -101,43 +136,54 @@ export function SearchHistory({ history, onRerun, onDelete, onClear }: SearchHis
           <Clock className="w-4 h-4" />
           <span>Recent Searches</span>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClear} className="text-xs text-muted-foreground gap-1">
+        <Button variant="ghost" size="sm" onClick={onClear} className="text-xs text-muted-foreground gap-1" aria-label="Clear search history">
           <Trash2 className="w-3 h-3" />
           Clear
         </Button>
       </div>
-      <div className="space-y-1">
-        {history.map(entry =>
-          entry.metadata?.type === 'research_strategy' && entry.metadata.strategy ? (
-            <ResearchStrategyEntry key={entry.id} entry={entry} onDelete={onDelete} />
-          ) : (
-            <div
-              key={entry.id}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors group"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-foreground truncate">{querySummary(entry.query_params)}</p>
-                <p className="text-xs text-muted-foreground">
-                  {entry.result_count} results &middot; {formatTimeAgo(entry.created_at)}
-                </p>
-              </div>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => onRerun(entry.query_params)}
-                  className="p-1.5 rounded-md hover:bg-primary/20 text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => onDelete(entry.id)}
-                  className="p-1.5 rounded-md hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
+      <div className="space-y-3">
+        {grouped.map(({ label, entries }) => (
+          <div key={label}>
+            <p className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider mb-1.5 px-1">
+              {label}
+            </p>
+            <div className="space-y-1">
+              {entries.map(entry =>
+                entry.metadata?.type === 'research_strategy' && entry.metadata.strategy ? (
+                  <ResearchStrategyEntry key={entry.id} entry={entry} onDelete={onDelete} />
+                ) : (
+                  <div
+                    key={entry.id}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-foreground truncate">{querySummary(entry.query_params)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {entry.result_count} results &middot; {formatTimeAgo(entry.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => onRerun(entry.query_params)}
+                        className="p-1.5 rounded-md hover:bg-primary/20 text-muted-foreground hover:text-primary transition-colors"
+                        aria-label="Re-run search"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(entry.id)}
+                        className="p-1.5 rounded-md hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                        aria-label="Delete search entry"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )
+              )}
             </div>
-          )
-        )}
+          </div>
+        ))}
       </div>
     </div>
   )

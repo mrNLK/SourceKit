@@ -70,8 +70,9 @@ export function useCandidates() {
 
   const addCandidate = useCallback((candidate: Omit<Candidate, 'id' | 'created_at' | 'stage' | 'score' | 'notes' | 'tags'>) => {
     const isDuplicate = candidates.some(
-      c => c.name.toLowerCase() === candidate.name.toLowerCase() &&
-           c.company.toLowerCase() === candidate.company.toLowerCase()
+      c => (candidate.github_handle && c.github_handle === candidate.github_handle) ||
+           (c.name.toLowerCase() === candidate.name.toLowerCase() &&
+            c.company.toLowerCase() === candidate.company.toLowerCase())
     )
     if (isDuplicate) {
       return { success: false, error: 'Duplicate candidate: same name and company already exists' }

@@ -101,3 +101,47 @@ export async function enrichCandidateViaEdge(
   }
   return response.json()
 }
+
+interface AIStrategy {
+  jobTitle: string
+  companyName: string
+  searchQueries: string[]
+  targetCompanies: string[]
+  targetRepos: string[]
+  keywords: string[]
+  generatedAt: string
+}
+
+export async function generateAIStrategy(
+  jobTitle: string,
+  companyName?: string,
+  jobDescription?: string
+): Promise<AIStrategy | null> {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('Supabase not configured — skipping AI strategy generation')
+    return null
+  }
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/generate-strategy`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseKey}`,
+    },
+    body: JSON.stringify({
+      job_title: jobTitle,
+      company_name: companyName,
+      job_description: jobDescription,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({ error: response.statusText }))
+    console.error('AI strategy generation failed:', response.status, errorBody)
+    throw new Error(errorBody.error || `AI strategy generation failed: ${response.status}`)
+  }
+  const data = await response.json()
+  return data.strategy || null
+}

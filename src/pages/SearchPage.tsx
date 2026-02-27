@@ -89,6 +89,7 @@ export function SearchPage() {
   const [seniorityFilter, setSeniorityFilter] = useState<SeniorityFilter>('any')
   const [hiddenGemsOnly, setHiddenGemsOnly] = useState(false)
   const [showMinScoreDropdown, setShowMinScoreDropdown] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const { addCandidate, allCandidates } = useCandidates()
   const { history, addEntry, removeEntry, clearHistory } = useSearchHistory()
@@ -148,9 +149,15 @@ export function SearchPage() {
     const seenKeys = new Set<string>()
 
     const addResult = (c: Candidate) => {
-      const key = `${c.name.toLowerCase()}|${(c.company || '').toLowerCase()}`
-      if (seenKeys.has(key)) return
-      seenKeys.add(key)
+      // Dedup by github_handle (primary) or name+company (fallback)
+      if (c.github_handle) {
+        const ghKey = `gh:${c.github_handle.toLowerCase()}`
+        if (seenKeys.has(ghKey)) return
+        seenKeys.add(ghKey)
+      }
+      const nameKey = `${c.name.toLowerCase()}|${(c.company || '').toLowerCase()}`
+      if (seenKeys.has(nameKey)) return
+      seenKeys.add(nameKey)
       newResults.push(c)
     }
 
@@ -339,10 +346,34 @@ export function SearchPage() {
 
   const isSaved = useCallback((candidate: Candidate) => {
     return allCandidates.some(
-      c => c.name.toLowerCase() === candidate.name.toLowerCase() &&
-           c.company.toLowerCase() === candidate.company.toLowerCase()
+      c => (candidate.github_handle && c.github_handle === candidate.github_handle) ||
+           (c.name.toLowerCase() === candidate.name.toLowerCase() &&
+            c.company.toLowerCase() === candidate.company.toLowerCase())
     )
   }, [allCandidates])
+
+  const toggleSelect = useCallback((candidate: Candidate) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(candidate.id)) next.delete(candidate.id)
+      else next.add(candidate.id)
+      return next
+    })
+  }, [])
+
+  const handleBatchSave = useCallback(() => {
+    let count = 0
+    for (const candidate of results) {
+      if (selectedIds.has(candidate.id) && !isSaved(candidate)) {
+        addCandidate(candidate)
+        count++
+      }
+    }
+    setSelectedIds(new Set())
+    if (count > 0) {
+      track('batch_pipelined', { count })
+    }
+  }, [selectedIds, results, isSaved, addCandidate])
 
   const toggleHidePipelined = useCallback(() => {
     setHidePipelined(prev => {
@@ -513,16 +544,42 @@ export function SearchPage() {
       {filteredResults.length > 0 && (
         <div className="space-y-3 px-4 py-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">
-              Showing {filteredResults.length} of {totalFound} engineer{totalFound !== 1 ? 's' : ''}
-            </p>
-            <button
-              onClick={() => exportToCSV(filteredResults)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Download className="w-3 h-3" />
-              Export CSV
-            </button>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-muted-foreground">
+                Showing {filteredResults.length} of {totalFound} engineer{totalFound !== 1 ? 's' : ''}
+              </p>
+              {/* Batch select controls */}
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={handleBatchSave}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  Save {selectedIds.size} to Pipeline
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const unsavedIds = filteredResults.filter(c => !isSaved(c)).map(c => c.id)
+                  if (selectedIds.size === unsavedIds.length) {
+                    setSelectedIds(new Set())
+                  } else {
+                    setSelectedIds(new Set(unsavedIds))
+                  }
+                }}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {selectedIds.size > 0 ? 'Deselect All' : 'Select All'}
+              </button>
+              <button
+                onClick={() => exportToCSV(filteredResults)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Download className="w-3 h-3" />
+                Export CSV
+              </button>
+            </div>
           </div>
           {filteredResults.map(candidate => (
             <CandidateCard
@@ -531,6 +588,9 @@ export function SearchPage() {
               onSave={handleSave}
               saved={isSaved(candidate)}
               showScore={true}
+              selectable={true}
+              selected={selectedIds.has(candidate.id)}
+              onToggleSelect={toggleSelect}
             />
           ))}
         </div>

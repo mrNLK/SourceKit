@@ -17,6 +17,9 @@ interface CandidateCardProps {
   isWatchlisted?: boolean
   showScore?: boolean
   saved?: boolean
+  selectable?: boolean
+  selected?: boolean
+  onToggleSelect?: (candidate: Candidate) => void
 }
 
 export function CandidateCard({
@@ -28,6 +31,9 @@ export function CandidateCard({
   isWatchlisted = false,
   showScore = false,
   saved = false,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
 }: CandidateCardProps) {
   const sourceStyle = SOURCE_COLORS[candidate.source] || SOURCE_COLORS.web
   const initials = candidate.name
@@ -38,9 +44,21 @@ export function CandidateCard({
     .slice(0, 2)
 
   return (
-    <Card className="hover:border-primary/30 transition-colors">
+    <Card className={cn('hover:border-primary/30 transition-colors', selected && 'border-primary/50 bg-primary/5')}>
       <CardContent className="p-4">
         <div className="flex gap-3">
+          {/* Batch select checkbox */}
+          {selectable && !saved && (
+            <div className="shrink-0 flex items-start pt-3">
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={() => onToggleSelect?.(candidate)}
+                className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
+                aria-label={`Select ${candidate.name}`}
+              />
+            </div>
+          )}
           {/* Avatar */}
           <div className="shrink-0">
             {candidate.avatar_url ? (

@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Github, Globe, MapPin, Calendar, Star, GitFork, Users, Code2 } from 'lucide-react'
+import { ArrowLeft, Github, Globe, MapPin, Calendar, Star, GitFork, Users, Code2, Activity, GitCommit, GitPullRequest, Eye, Flame } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -314,6 +314,103 @@ export function ProfilePage() {
                     ))}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Contribution Patterns */}
+        {gp?.contribution_patterns && (
+          <Card>
+            <CardHeader>
+              <h2 className="text-base font-semibold flex items-center gap-2">
+                <Activity className="w-5 h-5 text-primary" />
+                Contribution Patterns
+              </h2>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Activity stats */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary">
+                  <GitCommit className="w-4 h-4 text-green-400" />
+                  <div>
+                    <p className="text-lg font-bold font-mono text-foreground">
+                      {gp.contribution_patterns.total_commits.toLocaleString()}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Commits</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary">
+                  <GitPullRequest className="w-4 h-4 text-blue-400" />
+                  <div>
+                    <p className="text-lg font-bold font-mono text-foreground">
+                      {gp.contribution_patterns.total_prs.toLocaleString()}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">PRs</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary">
+                  <Eye className="w-4 h-4 text-purple-400" />
+                  <div>
+                    <p className="text-lg font-bold font-mono text-foreground">
+                      {gp.contribution_patterns.total_reviews.toLocaleString()}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Reviews</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary">
+                  <Flame className="w-4 h-4 text-orange-400" />
+                  <div>
+                    <p className="text-lg font-bold font-mono text-foreground">
+                      {gp.contribution_patterns.total_issues.toLocaleString()}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Issues</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Frequency and streaks */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-secondary">
+                  <p className="text-xs text-muted-foreground">Commit Frequency</p>
+                  <p className="text-sm font-semibold text-foreground capitalize mt-0.5">
+                    {gp.contribution_patterns.commit_frequency}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-secondary">
+                  <p className="text-xs text-muted-foreground">Longest Streak</p>
+                  <p className="text-sm font-semibold text-foreground mt-0.5">
+                    {gp.contribution_patterns.streak_longest} days
+                    {gp.contribution_patterns.streak_current > 0 && (
+                      <span className="text-xs text-green-400 ml-1.5">
+                        ({gp.contribution_patterns.streak_current}d current)
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Active days visualization */}
+              {gp.contribution_patterns.active_days.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Most Active Days</p>
+                  <div className="flex gap-1">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => {
+                      const isActive = gp.contribution_patterns!.active_days.includes(i)
+                      return (
+                        <div
+                          key={day}
+                          className={cn(
+                            'flex-1 text-center py-1.5 rounded text-[10px] font-medium',
+                            isActive ? 'bg-green-500/20 text-green-400' : 'bg-secondary text-muted-foreground/50'
+                          )}
+                        >
+                          {day}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
