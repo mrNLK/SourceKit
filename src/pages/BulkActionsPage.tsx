@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { CheckSquare, Download, Tags, ArrowRightLeft, Trash2, Send, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,14 +8,44 @@ import { useSettings } from '@/hooks/useSettings'
 import { useOutreach } from '@/hooks/useOutreach'
 import { exportToCSV } from '@/services/export'
 import { generateOutreach } from '@/services/outreach'
-import type { CandidateStage } from '@/types'
+import { cn } from '@/lib/utils'
+import type { Candidate, CandidateStage } from '@/types'
 
 const STAGES: CandidateStage[] = ['sourced', 'contacted', 'responded', 'screen', 'offer']
+
+type BulkTab = 'pipeline' | 'all'
+
+function loadLastSearchResults(): Candidate[] {
+  try {
+    const data = localStorage.getItem('sourcekit_last_search_results')
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
 
 export function BulkActionsPage() {
   const { allCandidates, updateStage, addTag, deleteCandidate } = useCandidates()
   const { settings } = useSettings()
   const { saveOutreach } = useOutreach()
+  const [activeTab, setActiveTab] = useState<BulkTab>('pipeline')
+
+  const lastSearchResults = useMemo(() => loadLastSearchResults(), [])
+
+  // Merge pipeline + search results, dedup by name+company
+  const allAvailable = useMemo(() => {
+    if (activeTab === 'pipeline') return allCandidates
+    const seen = new Set(allCandidates.map(c => `${c.name.toLowerCase()}|${(c.company || '').toLowerCase()}`))
+    const merged = [...allCandidates]
+    for (const c of lastSearchResults) {
+      const key = `${c.name.toLowerCase()}|${(c.company || '').toLowerCase()}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        merged.push(c)
+      }
+    }
+    return merged
+  }, [activeTab, allCandidates, lastSearchResults])
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [tagInput, setTagInput] = useState('')
@@ -38,15 +68,15 @@ export function BulkActionsPage() {
   }
 
   const toggleAll = () => {
-    if (selected.size === allCandidates.length) {
+    if (selected.size === allAvailable.length) {
       setSelected(new Set())
     } else {
-      setSelected(new Set(allCandidates.map(c => c.id)))
+      setSelected(new Set(allAvailable.map(c => c.id)))
     }
   }
 
   const handleExportSelected = () => {
-    const selectedCandidates = allCandidates.filter(c => selected.has(c.id))
+    const selectedCandidates = allAvailable.filter(c => selected.has(c.id))
     if (selectedCandidates.length === 0) return
     exportToCSV(selectedCandidates, `sourcekit-bulk-export-${new Date().toISOString().slice(0, 10)}.csv`)
     showNotice('success', `Exported ${selectedCandidates.length} candidates`)
@@ -70,7 +100,7 @@ export function BulkActionsPage() {
   }
 
   const handleBatchOutreach = async () => {
-    const selectedCandidates = allCandidates.filter(c => selected.has(c.id))
+    const selectedCandidates = allAvailable.filter(c => selected.has(c.id))
     if (selectedCandidates.length === 0) return
 
     setBatchProgress({ current: 0, total: selectedCandidates.length })
@@ -106,13 +136,13 @@ export function BulkActionsPage() {
     showNotice('success', `Removed ${count} candidates from pipeline`)
   }
 
-  if (allCandidates.length === 0) {
+  if (allCandidates.length === 0 && lastSearchResults.length === 0) {
     return (
       <div className="p-4">
         <EmptyState
           icon={CheckSquare}
-          title="No candidates in pipeline"
-          description="Save candidates from Search to use bulk actions"
+          title="No candidates available"
+          description="Save candidates from Search or run a search first to use bulk actions"
         />
       </div>
     )
@@ -127,13 +157,37 @@ export function BulkActionsPage() {
         </h2>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={toggleAll}>
-            {selected.size === allCandidates.length ? 'Deselect All' : 'Select All'}
+            {selected.size === allAvailable.length ? 'Deselect All' : 'Select All'}
           </Button>
           <span className="text-sm text-muted-foreground">
-            {selected.size} of {allCandidates.length} selected
+            {selected.size} of {allAvailable.length} selected
           </span>
         </div>
       </div>
+
+      {/* Source tabs */}
+      {lastSearchResults.length > 0 && (
+        <div className="flex gap-1 p-1 bg-secondary rounded-lg">
+          <button
+            onClick={() => { setActiveTab('pipeline'); setSelected(new Set()) }}
+            className={cn(
+              'flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+              activeTab === 'pipeline' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Pipeline ({allCandidates.length})
+          </button>
+          <button
+            onClick={() => { setActiveTab('all'); setSelected(new Set()) }}
+            className={cn(
+              'flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+              activeTab === 'all' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            All Candidates ({allCandidates.length + lastSearchResults.length})
+          </button>
+        </div>
+      )}
 
       {/* Notice */}
       {notice && (
@@ -217,7 +271,7 @@ export function BulkActionsPage() {
 
       {/* Candidate list with checkboxes */}
       <div className="space-y-1">
-        {allCandidates.map(candidate => (
+        {allAvailable.map(candidate => (
           <label
             key={candidate.id}
             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${

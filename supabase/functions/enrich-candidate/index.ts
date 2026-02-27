@@ -68,22 +68,24 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        name: user.name || user.login,
-        bio: user.bio,
-        company: user.company,
-        location: user.location,
-        avatar_url: user.avatar_url,
-        public_repos: user.public_repos,
-        followers: user.followers,
+        name: user.name || user.login || 'Unknown',
+        bio: user.bio || '',
+        company: user.company || '',
+        location: user.location || '',
+        avatar_url: user.avatar_url || '',
+        public_repos: user.public_repos || 0,
+        followers: user.followers || 0,
         top_repos: topRepos,
         top_languages: topLanguages,
         total_stars: totalStars,
+        created_at: user.created_at || null,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    console.error('enrich-candidate error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'An unexpected error occurred' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

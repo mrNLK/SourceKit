@@ -13,6 +13,13 @@ const DEFAULT_SETTINGS: Settings = {
   one_line_pitch: '',
   auto_enrich_github: true,
   github_token: '',
+  results_per_search: 20,
+  default_seniority: 'any',
+  outreach_tone: 'professional',
+  scoring_commit_weight: 50,
+  scoring_star_weight: 50,
+  scoring_follower_weight: 50,
+  scoring_recency_weight: 50,
 }
 
 function loadSettings(): Settings {

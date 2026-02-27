@@ -108,8 +108,9 @@ export function CandidateCard({
                 return (
                   <span
                     key={i}
+                    title={signal.label}
                     className={cn(
-                      'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                      'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium max-w-[200px] truncate',
                       colors.bg,
                       colors.text
                     )}
@@ -140,9 +141,10 @@ export function CandidateCard({
                   onClick={() => onSave(candidate)}
                   className="gap-1"
                   disabled={saved}
+                  title={saved ? `In pipeline since ${new Date(candidate.created_at).toLocaleDateString()}` : 'Add to pipeline'}
                 >
                   <Bookmark className="w-3 h-3" />
-                  {saved ? 'Saved' : 'Save'}
+                  {saved ? 'In Pipeline' : 'Save'}
                 </Button>
               )}
               {onToggleWatchlist && saved && (

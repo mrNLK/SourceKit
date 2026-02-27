@@ -91,14 +91,29 @@ function calculateGitHubBonus(profile: GitHubProfile): number {
   if (profile.public_repos >= 50) bonus += 3
   else if (profile.public_repos >= 20) bonus += 1
 
-  if (profile.followers >= 100) bonus += 3
+  // Follower-based bonus (scaled for high-profile engineers)
+  if (profile.followers >= 1000) bonus += 5
+  else if (profile.followers >= 500) bonus += 4
+  else if (profile.followers >= 100) bonus += 3
   else if (profile.followers >= 50) bonus += 1
 
   const totalStars = profile.repositories.reduce((sum, r) => sum + r.stars, 0)
-  if (totalStars >= 1000) bonus += 5
+  if (totalStars >= 10000) bonus += 8
+  else if (totalStars >= 1000) bonus += 5
   else if (totalStars >= 100) bonus += 2
 
-  return Math.min(bonus, 20)
+  // Bonus for high-impact repos (repos with 1000+ stars)
+  const highImpactRepos = profile.repositories.filter(r => r.stars >= 1000)
+  if (highImpactRepos.length >= 3) bonus += 5
+  else if (highImpactRepos.length >= 1) bonus += 3
+
+  // Bonus for high contribution volume
+  const totalContributions = profile.repositories.reduce((sum, r) => sum + (r.contributions || 0), 0)
+  if (totalContributions >= 1000) bonus += 5
+  else if (totalContributions >= 500) bonus += 3
+  else if (totalContributions >= 100) bonus += 1
+
+  return Math.min(bonus, 30)
 }
 
 export function getScoreColor(score: number): string {

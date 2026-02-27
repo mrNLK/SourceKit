@@ -218,11 +218,63 @@ export function ProfilePage() {
                 </div>
               )}
 
-              {/* Top Repos */}
+              {/* Contributed To — repos with contributions flagged */}
+              {(() => {
+                const contributedRepos = gp.repositories
+                  .filter(r => (r.contributions || 0) > 0 && (r.is_fork || r.stars >= 100))
+                  .sort((a, b) => (b.stars * (b.contributions || 1)) - (a.stars * (a.contributions || 1)))
+                  .slice(0, 5)
+                if (contributedRepos.length === 0) return null
+                return (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Contributed To</h3>
+                    <div className="space-y-2">
+                      {contributedRepos.map(repo => (
+                        <a
+                          key={repo.full_name}
+                          href={`https://github.com/${repo.full_name}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block p-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
+                        >
+                          <div className="flex items-start justify-between">
+                            <span className="text-sm font-medium text-primary font-mono">{repo.full_name}</span>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-0.5">
+                                <Star className="w-3 h-3" />
+                                {repo.stars.toLocaleString()}
+                              </span>
+                              {repo.contributions && (
+                                <span className="text-primary/80">{repo.contributions} commits</span>
+                              )}
+                            </div>
+                          </div>
+                          {repo.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{repo.description}</p>
+                          )}
+                        </a>
+                      ))}
+                    </div>
+                    {candidate.github_handle && (
+                      <a
+                        href={`https://github.com/${candidate.github_handle}?tab=repositories&type=fork`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary/70 hover:text-primary mt-2 inline-block"
+                      >
+                        View all on GitHub
+                      </a>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* Notable Repositories — own repos, filtered for quality */}
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-2">Notable Repositories</h3>
                 <div className="space-y-2">
                   {gp.repositories
+                    .filter(r => !r.is_fork && (r.stars >= 5 || r.description))
                     .sort((a, b) => b.stars - a.stars)
                     .slice(0, 5)
                     .map(repo => (

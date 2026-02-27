@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Settings as SettingsIcon, RotateCcw, ExternalLink, Search, Database, Info, Download, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard, Zap, LogOut } from 'lucide-react'
+import { Settings as SettingsIcon, RotateCcw, ExternalLink, Search, Database, Info, Download, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard, Zap, LogOut, SlidersHorizontal, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,6 +13,7 @@ import { exportToCSV } from '@/services/export'
 import { captureException } from '@/lib/sentry'
 import { track } from '@/lib/analytics'
 import { loadPlan, savePlan, createCheckoutSession, fetchPlanStatus, type PlanInfo } from '@/lib/stripe'
+import type { Settings } from '@/types'
 
 export function SettingsPage() {
   const { settings, updateSettings, resetSettings, saveError: settingsSaveError } = useSettings()
@@ -335,6 +336,115 @@ export function SettingsPage() {
               className="min-h-[60px]"
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Search Configuration */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Search className="w-5 h-5 text-primary" />
+            <h2 className="text-base font-semibold">Search Configuration</h2>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div>
+            <label className="text-sm text-muted-foreground mb-1 block">Results per search</label>
+            <select
+              value={settings.results_per_search}
+              onChange={e => updateSettings({ results_per_search: parseInt(e.target.value) })}
+              className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm"
+            >
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-sm text-muted-foreground mb-1 block">Default seniority filter</label>
+            <select
+              value={settings.default_seniority}
+              onChange={e => updateSettings({ default_seniority: e.target.value as Settings['default_seniority'] })}
+              className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm"
+            >
+              <option value="any">Any</option>
+              <option value="junior">Junior</option>
+              <option value="mid">Mid</option>
+              <option value="senior">Senior</option>
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Outreach Defaults */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-primary" />
+            <h2 className="text-base font-semibold">Outreach Defaults</h2>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div>
+            <label className="text-sm text-muted-foreground mb-1 block">Default tone</label>
+            <select
+              value={settings.outreach_tone}
+              onChange={e => updateSettings({ outreach_tone: e.target.value as Settings['outreach_tone'] })}
+              className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm"
+            >
+              <option value="professional">Professional</option>
+              <option value="casual">Casual</option>
+              <option value="technical">Technical</option>
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Scoring Weights */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-5 h-5 text-primary" />
+            <h2 className="text-base font-semibold">Scoring Weights</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">Adjust how candidates are scored (0-100)</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {([
+            { key: 'scoring_commit_weight', label: 'Commit activity' },
+            { key: 'scoring_star_weight', label: 'Stars / popularity' },
+            { key: 'scoring_follower_weight', label: 'Follower count' },
+            { key: 'scoring_recency_weight', label: 'Recency of activity' },
+          ] as const).map(({ key, label }) => (
+            <div key={key}>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm text-muted-foreground">{label}</label>
+                <span className="text-xs font-mono text-foreground">{settings[key]}</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={settings[key]}
+                onChange={e => updateSettings({ [key]: parseInt(e.target.value) })}
+                className="w-full accent-primary"
+              />
+            </div>
+          ))}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => updateSettings({
+              scoring_commit_weight: 50,
+              scoring_star_weight: 50,
+              scoring_follower_weight: 50,
+              scoring_recency_weight: 50,
+            })}
+            className="w-full text-muted-foreground"
+          >
+            <RotateCcw className="w-3 h-3 mr-1" />
+            Reset to Defaults
+          </Button>
         </CardContent>
       </Card>
 

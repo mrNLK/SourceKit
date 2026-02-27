@@ -22,7 +22,10 @@ export async function searchCandidatesViaExa(
 ): Promise<ExaCandidate[]> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-  if (!supabaseUrl || !supabaseKey) return []
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('Supabase not configured — skipping Exa search')
+    return []
+  }
 
   const response = await fetch(`${supabaseUrl}/functions/v1/search-candidates`, {
     method: 'POST',
@@ -33,7 +36,11 @@ export async function searchCandidatesViaExa(
     body: JSON.stringify({ query, role, company }),
   })
 
-  if (!response.ok) return []
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({ error: response.statusText }))
+    console.error('Exa search failed:', response.status, errorBody)
+    throw new Error(errorBody.error || `Exa search failed: ${response.status}`)
+  }
   const data = await response.json()
   return data.candidates || []
 }
@@ -45,7 +52,10 @@ export async function searchGitHubContributors(
 ): Promise<GitHubContributor[]> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-  if (!supabaseUrl || !supabaseKey) return []
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('Supabase not configured — skipping GitHub contributor search')
+    return []
+  }
 
   const response = await fetch(`${supabaseUrl}/functions/v1/github-search`, {
     method: 'POST',
@@ -56,7 +66,11 @@ export async function searchGitHubContributors(
     body: JSON.stringify({ query, language, min_stars: minStars }),
   })
 
-  if (!response.ok) return []
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({ error: response.statusText }))
+    console.error('GitHub contributor search failed:', response.status, errorBody)
+    throw new Error(errorBody.error || `GitHub contributor search failed: ${response.status}`)
+  }
   const data = await response.json()
   return data.results || []
 }
@@ -66,7 +80,10 @@ export async function enrichCandidateViaEdge(
 ): Promise<Record<string, unknown> | null> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-  if (!supabaseUrl || !supabaseKey) return null
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('Supabase not configured — skipping enrichment')
+    return null
+  }
 
   const response = await fetch(`${supabaseUrl}/functions/v1/enrich-candidate`, {
     method: 'POST',
@@ -77,6 +94,10 @@ export async function enrichCandidateViaEdge(
     body: JSON.stringify({ github_handle: githubHandle }),
   })
 
-  if (!response.ok) return null
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({ error: response.statusText }))
+    console.error('Enrichment failed:', response.status, errorBody)
+    throw new Error(errorBody.error || `Enrichment failed: ${response.status}`)
+  }
   return response.json()
 }

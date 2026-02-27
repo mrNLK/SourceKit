@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import { Search as SearchIcon, EyeOff, Eye, AlertCircle } from 'lucide-react'
+import { useState, useCallback, useMemo } from 'react'
+import { Search as SearchIcon, EyeOff, Eye, AlertCircle, Gem, ChevronDown } from 'lucide-react'
 import { SearchForm } from '@/components/search/SearchForm'
 import { CandidateCard } from '@/components/search/CandidateCard'
 import { FilterBar } from '@/components/search/FilterBar'
@@ -13,7 +13,50 @@ import { searchCandidatesViaExa, searchGitHubContributors } from '@/services/edg
 import { parseSignals } from '@/lib/scoring'
 import { captureException } from '@/lib/sentry'
 import { track } from '@/lib/analytics'
+import { cn } from '@/lib/utils'
 import type { Candidate, SearchQuery, SourceType } from '@/types'
+
+type SeniorityFilter = 'any' | 'junior' | 'mid' | 'senior'
+type MinScoreFilter = 0 | 30 | 50 | 70 | 80
+
+const MIN_SCORE_OPTIONS: Array<{ value: MinScoreFilter; label: string }> = [
+  { value: 0, label: 'Any' },
+  { value: 30, label: '30+' },
+  { value: 50, label: '50+' },
+  { value: 70, label: '70+' },
+  { value: 80, label: '80+' },
+]
+
+const SENIORITY_TABS: Array<{ value: SeniorityFilter; label: string }> = [
+  { value: 'any', label: 'Any' },
+  { value: 'junior', label: 'Junior' },
+  { value: 'mid', label: 'Mid' },
+  { value: 'senior', label: 'Senior' },
+]
+
+function matchesSeniority(candidate: Candidate, seniority: SeniorityFilter): boolean {
+  if (seniority === 'any') return true
+  const text = `${candidate.role || ''} ${candidate.title || ''} ${candidate.bio || ''}`.toLowerCase()
+  switch (seniority) {
+    case 'senior':
+      return /\b(senior|staff|principal|lead|director|head|vp|chief|cto|founder|architect)\b/.test(text)
+    case 'mid':
+      return /\b(mid|intermediate|software engineer|engineer ii|sde\s*2)\b/.test(text) ||
+        (!matchesSeniority(candidate, 'senior') && !matchesSeniority(candidate, 'junior'))
+    case 'junior':
+      return /\b(junior|jr|intern|entry|associate|new grad|graduate)\b/.test(text)
+    default:
+      return true
+  }
+}
+
+function isHiddenGem(candidate: Candidate): boolean {
+  const followers = candidate.github_profile?.followers ?? 0
+  const totalStars = candidate.github_profile?.repositories.reduce((s, r) => s + r.stars, 0) ?? 0
+  const repos = candidate.github_profile?.public_repos ?? 0
+  // High contribution signals but low visibility
+  return followers < 200 && (repos >= 10 || totalStars >= 20 || candidate.score >= 40)
+}
 
 function loadHidePipelined(): boolean {
   try {
@@ -30,6 +73,10 @@ export function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [hidePipelined, setHidePipelined] = useState(loadHidePipelined)
+  const [minScore, setMinScore] = useState<MinScoreFilter>(0)
+  const [seniorityFilter, setSeniorityFilter] = useState<SeniorityFilter>('any')
+  const [hiddenGemsOnly, setHiddenGemsOnly] = useState(false)
+  const [showMinScoreDropdown, setShowMinScoreDropdown] = useState(false)
 
   const { addCandidate, allCandidates } = useCandidates()
   const { history, addEntry, removeEntry, clearHistory } = useSearchHistory()
@@ -196,6 +243,10 @@ export function SearchPage() {
       }
 
       setResults(newResults)
+      // Cache results for Bulk Actions page
+      try {
+        localStorage.setItem('sourcekit_last_search_results', JSON.stringify(newResults))
+      } catch { /* quota exceeded — non-critical */ }
       addEntry(query, newResults.length)
       track('search_executed', { result_count: newResults.length, has_github: Boolean(query.github_handle), has_capability: Boolean(query.capability_query) })
 
@@ -238,9 +289,18 @@ export function SearchPage() {
     ? sourceFiltered.filter(r => isSaved(r)).length
     : 0
 
-  const filteredResults = hidePipelined
-    ? sourceFiltered.filter(r => !isSaved(r))
-    : sourceFiltered
+  // Apply all filters: source, pipeline, min score, seniority, hidden gems
+  const filteredResults = useMemo(() => {
+    let filtered = sourceFiltered
+    if (hidePipelined) filtered = filtered.filter(r => !isSaved(r))
+    if (minScore > 0) filtered = filtered.filter(r => r.score >= minScore)
+    if (seniorityFilter !== 'any') filtered = filtered.filter(r => matchesSeniority(r, seniorityFilter))
+    if (hiddenGemsOnly) filtered = filtered.filter(r => isHiddenGem(r))
+    return filtered
+  }, [sourceFiltered, hidePipelined, isSaved, minScore, seniorityFilter, hiddenGemsOnly])
+
+  const totalFound = results.length
+  const afterFilters = filteredResults.length
 
   const sourceCounts = results.reduce((acc, r) => {
     acc[r.source] = (acc[r.source] || 0) + 1
@@ -252,29 +312,112 @@ export function SearchPage() {
       <SearchForm onSearch={handleSearch} isLoading={isLoading} />
 
       {results.length > 0 && (
-        <div className="flex items-center gap-2 pr-4">
-          <div className="flex-1 overflow-x-auto">
-            <FilterBar
-              activeFilter={sourceFilter}
-              onFilterChange={setSourceFilter}
-              counts={sourceCounts}
-            />
+        <>
+          <div className="flex items-center gap-2 pr-4">
+            <div className="flex-1 overflow-x-auto">
+              <FilterBar
+                activeFilter={sourceFilter}
+                onFilterChange={setSourceFilter}
+                counts={sourceCounts}
+              />
+            </div>
+            <button
+              onClick={toggleHidePipelined}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
+                hidePipelined
+                  ? 'bg-primary/20 text-primary'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {hidePipelined ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+              Hide pipelined
+              {hidePipelined && pipelinedCount > 0 && (
+                <span className="text-[10px] text-primary/70">({pipelinedCount} hidden)</span>
+              )}
+            </button>
           </div>
-          <button
-            onClick={toggleHidePipelined}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
-              hidePipelined
-                ? 'bg-primary/20 text-primary'
-                : 'bg-secondary text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {hidePipelined ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-            Hide pipelined
-            {hidePipelined && pipelinedCount > 0 && (
-              <span className="text-[10px] text-primary/70">({pipelinedCount} hidden)</span>
+
+          {/* Advanced Filters Row: Seniority, Min Score, Hidden Gems */}
+          <div className="flex items-center gap-2 px-4 py-2 overflow-x-auto">
+            {/* Seniority tabs */}
+            <div className="flex items-center gap-1 shrink-0">
+              {SENIORITY_TABS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setSeniorityFilter(value)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                    seniorityFilter === value
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="w-px h-5 bg-border shrink-0" />
+
+            {/* Min Score dropdown */}
+            <div className="relative shrink-0">
+              <button
+                onClick={() => setShowMinScoreDropdown(!showMinScoreDropdown)}
+                className={cn(
+                  'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                  minScore > 0
+                    ? 'bg-primary/20 text-primary'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Min Score {minScore > 0 ? `${minScore}+` : 'Any'}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              {showMinScoreDropdown && (
+                <div className="absolute left-0 top-full mt-1 w-28 bg-card border border-border rounded-lg shadow-lg z-20">
+                  {MIN_SCORE_OPTIONS.map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => {
+                        setMinScore(value)
+                        setShowMinScoreDropdown(false)
+                      }}
+                      className={cn(
+                        'w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors first:rounded-t-lg last:rounded-b-lg',
+                        value === minScore ? 'text-primary font-medium' : 'text-foreground'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="w-px h-5 bg-border shrink-0" />
+
+            {/* Hidden Gems toggle */}
+            <button
+              onClick={() => setHiddenGemsOnly(!hiddenGemsOnly)}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0',
+                hiddenGemsOnly
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Gem className="w-3 h-3" />
+              Hidden Gems
+            </button>
+
+            {/* Funnel */}
+            {(minScore > 0 || seniorityFilter !== 'any' || hiddenGemsOnly) && (
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
+                {totalFound} found &rarr; {afterFilters} filtered
+              </span>
             )}
-          </button>
-        </div>
+          </div>
+        </>
       )}
 
       {/* Search error */}
@@ -298,13 +441,16 @@ export function SearchPage() {
 
       {filteredResults.length > 0 && (
         <div className="space-y-3 px-4 py-2">
+          <p className="text-xs text-muted-foreground">
+            Showing {filteredResults.length} of {totalFound} engineer{totalFound !== 1 ? 's' : ''}
+          </p>
           {filteredResults.map(candidate => (
             <CandidateCard
               key={candidate.id}
               candidate={candidate}
               onSave={handleSave}
               saved={isSaved(candidate)}
-              showScore={false}
+              showScore={true}
             />
           ))}
         </div>

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronDown, MessageSquare, Trash2, Hash, X, Send, ArrowUpRight, Bookmark, BookmarkCheck } from 'lucide-react'
+import { ChevronDown, MessageSquare, Trash2, Hash, X, Send, ArrowUpRight, Bookmark, BookmarkCheck, GripVertical } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AvailabilityBadge } from '@/components/ui/AvailabilityBadge'
@@ -70,9 +70,13 @@ export function PipelineCard({
     .slice(0, 2)
 
   return (
-    <Card>
+    <Card className="cursor-grab active:cursor-grabbing">
       <CardContent className="p-4">
         <div className="flex gap-3">
+          {/* Drag handle */}
+          <div className="shrink-0 flex items-start pt-2 text-muted-foreground/50">
+            <GripVertical className="w-4 h-4" />
+          </div>
           {/* Avatar */}
           <div className="shrink-0">
             {candidate.avatar_url ? (

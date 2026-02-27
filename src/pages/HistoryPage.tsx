@@ -100,7 +100,9 @@ export function HistoryPage() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{getQueryText(entry)}</p>
+                <p className="text-sm font-medium text-foreground truncate" title={getQueryText(entry)}>
+                  {getQueryText(entry)}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {entry.result_count} result{entry.result_count !== 1 ? 's' : ''} &middot; {relativeTime(entry.created_at)}
                 </p>

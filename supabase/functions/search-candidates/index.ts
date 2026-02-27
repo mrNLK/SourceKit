@@ -12,6 +12,15 @@ serve(async (req) => {
 
   try {
     const { query, role, company } = await req.json()
+
+    // Input validation
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'query is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const exaApiKey = Deno.env.get('EXA_API_KEY')
 
     if (!exaApiKey) {
@@ -22,6 +31,9 @@ serve(async (req) => {
     }
 
     const searchQuery = [query, role, company].filter(Boolean).join(' ')
+
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
 
     const response = await fetch('https://api.exa.ai/search', {
       method: 'POST',
@@ -40,7 +52,18 @@ serve(async (req) => {
           highlights: { numSentences: 3 },
         },
       }),
+      signal: controller.signal,
     })
+    clearTimeout(timeout)
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '')
+      console.error(`Exa API error: ${response.status}`, errorText)
+      return new Response(
+        JSON.stringify({ error: `Search API error: ${response.status}` }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     const data = await response.json()
 
@@ -58,8 +81,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    console.error('search-candidates error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'An unexpected error occurred' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

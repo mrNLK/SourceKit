@@ -355,10 +355,10 @@ export function ResearchPage() {
               </div>
 
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Keywords</p>
+                <p className="text-xs text-muted-foreground mb-1">Keywords ({strategy.keywords.length})</p>
                 <div className="flex flex-wrap gap-1">
                   {strategy.keywords.map(k => (
-                    <Badge key={k} variant="secondary" className="text-[10px]">{k}</Badge>
+                    <Badge key={k} variant="secondary" className="text-[10px]" title={k}>{k}</Badge>
                   ))}
                 </div>
               </div>

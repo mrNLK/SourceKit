@@ -175,6 +175,13 @@ export interface Settings {
   one_line_pitch: string
   auto_enrich_github: boolean
   github_token?: string
+  results_per_search: number
+  default_seniority: 'any' | 'junior' | 'mid' | 'senior'
+  outreach_tone: 'professional' | 'casual' | 'technical'
+  scoring_commit_weight: number
+  scoring_star_weight: number
+  scoring_follower_weight: number
+  scoring_recency_weight: number
 }
 
 export interface OutreachMessage {

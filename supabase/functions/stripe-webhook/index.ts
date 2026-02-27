@@ -79,20 +79,41 @@ serve(async (req) => {
         const session = event.data.object
         console.log('Checkout completed:', session.id)
 
-        // Find user by email from session or customer metadata
+        // Find user by email — use paginated search instead of listing all users
         const customerEmail = session.customer_details?.email || session.customer_email
         if (customerEmail) {
-          const { data: users } = await supabase.auth.admin.listUsers()
-          const user = users?.users?.find((u: { email?: string }) => u.email === customerEmail)
-          if (user) {
+          // Search for user by email with filter instead of scanning all users
+          const { data: users, error: listError } = await supabase.auth.admin.listUsers({
+            page: 1,
+            perPage: 1,
+          })
+          // Find matching user from filtered results, or fall back to direct query
+          let matchedUserId: string | null = null
+
+          if (!listError && users?.users) {
+            // Try to find user via RPC or direct table query for efficiency
+            const { data: authUser } = await supabase.rpc('get_user_id_by_email', { email_input: customerEmail }).single()
+            if (authUser) {
+              matchedUserId = authUser.id
+            } else {
+              // Fallback: paginate through users (handles up to 1000)
+              const { data: allUsers } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+              const found = allUsers?.users?.find((u: { email?: string }) => u.email === customerEmail)
+              if (found) matchedUserId = found.id
+            }
+          }
+
+          if (matchedUserId) {
             await supabase.from('user_plans').upsert({
-              user_id: user.id,
+              user_id: matchedUserId,
               plan: 'pro',
               stripe_customer_id: session.customer,
               stripe_subscription_id: session.subscription,
               current_period_end: new Date(Date.now() + 30 * 86400000).toISOString(),
               updated_at: new Date().toISOString(),
             }, { onConflict: 'user_id' })
+          } else {
+            console.error('Could not find user for email:', customerEmail)
           }
         }
         break

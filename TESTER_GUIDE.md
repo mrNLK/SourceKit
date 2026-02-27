@@ -114,9 +114,7 @@ When you click "Find LinkedIn" on a candidate, the app uses **Exa** (a semantic 
 
 ## Getting Started
 
-Go to **https://github-stars.lovable.app** — **no login required.** The app is ready to use immediately.
-
-> **Note:** Because there's no login, data is shared. Best for solo testing.
+Go to **https://github-stars.lovable.app** — login is supported via Supabase Auth (email/password). Data is stored locally in your browser with optional cloud sync for Pro users.
 
 ---
 
@@ -289,53 +287,63 @@ Click **Pipeline** in the sidebar. Five-stage kanban board:
 
 ## Watchlist
 
-Save candidates to organized lists:
-- **Default** list always exists
-- **+ New List** for custom lists (e.g. "Frontend", "ML Team", "Q2 Hires")
-- Filter candidates within a list
-- Click a card to view details
-- **✕** to remove from list
+Bookmark candidates for later review:
+- View a list of bookmarked candidates with avatar, name, role, and company
+- **Profile** link to open full candidate detail
+- **Notes** section per candidate with edit toggle
+- **Remove** from watchlist with a single click
+- Badge count shown in the sidebar navigation
 
 ---
 
 ## Bulk Actions
 
-Two-panel layout for batch AI analysis:
+Batch operations on pipeline candidates and search results:
 
-**Left panel — Candidate table:**
-- Filter by name, stage, or score range
-- Sort by name, score, or stage
-- Check candidates to select
+**Source tabs:**
+- **Pipeline** — Shows candidates in your pipeline
+- **All Candidates** — Merges pipeline + last search results (deduplicated)
 
-**Right panel — AI Chat:**
+**Candidate selection:**
+- Checkboxes for multi-select with Select All / Deselect All
+- Shows "X of Y selected" count
 
-| Action | What it does | Requirements |
-|--------|-------------|-------------|
-| **Refine Shortlist** | Ranks candidates with recommendations | 1+ selected |
-| **Draft Outreach** | Personalized email openers | 1-8 selected |
-| **Search Insights** | Pool stats: avg scores, top companies, skills | Any candidates |
-| **Candidate Brief** | One-sentence strength/risk per candidate | 1-5 selected |
-| **Compare Selected** | Side-by-side comparison table | 2-3 selected |
+**Available operations (when candidates are selected):**
 
-You can also type custom questions in the chat.
+| Action | What it does |
+|--------|-------------|
+| **Export Selected** | Download selected candidates as CSV |
+| **Change Stage** | Move all selected to a pipeline stage |
+| **Add Tags** | Batch tag assignment with text input |
+| **Generate Outreach** | AI-generate messages for all selected (with progress bar) |
+| **Remove** | Bulk delete with confirmation |
 
 ---
 
 ## History
 
-Browse past searches grouped by time (Today, Yesterday, This Week, Older):
-- **Filter** by query text
-- **Click** any entry to re-run that search
-- Research sessions show with a 📄 icon, searches with a 🔍 icon
+Browse past searches with timestamps and result counts:
+- Entries show relative time (e.g., "5m ago", "2d ago")
+- **Re-run** any entry to restore that search with its parameters
+- Research sessions show with a flask icon, searches with a magnifier icon
+- **Delete** individual entries or clear all history
+- Pagination for large histories (50 per page)
+- Hover on truncated query text to see the full query
 
 ---
 
 ## Settings
 
-Configure defaults:
-- **Target Role** — Pre-fills search forms
-- **Target Company** — Used in outreach generation
-- **Webhook URL** — POST candidate data on stage changes
+Configure defaults and preferences:
+- **Plan** — View current plan (Free/Pro) and upgrade
+- **API Configuration** — Enrichment API URL, GitHub Token (increases rate limits), Slack Webhook URL, Auto-enrich toggle
+- **Search Context** — Target Role and Target Company (pre-fills Research builder)
+- **Outreach Context** — One-line pitch for AI outreach generation
+- **Search Configuration** — Results per search (20/50/100), default seniority filter
+- **Outreach Defaults** — Default tone (Professional/Casual/Technical)
+- **Scoring Weights** — Adjustable sliders for commit, star, follower, and recency weighting
+- **Data Management** — Pipeline/search/outreach stats, export options, clear data
+- **Account** — Reset settings, sign out
 
 ---
 
@@ -352,10 +360,10 @@ Configure defaults:
 
 ## Important Notes
 
-- **No login required** — Data is shared (no user isolation). Best for solo testing.
-- **GitHub API rate limits** — If searches fail, wait a few minutes before retrying
+- **Auth supported** — Sign in with email/password via Supabase Auth. Auth UI only shows when logged in.
+- **GitHub API rate limits** — If searches fail, add a GitHub token in Settings (increases from 60 to 5,000 req/hr)
 - **LinkedIn enrichment** depends on publicly available data — some lookups may fail
-- **Browser data persists** — Clearing cookies resets shortlist/filter preferences
+- **Browser data persists** — Data stored in localStorage. Use Settings > Data Management to clear.
 
 ## Feedback
 
