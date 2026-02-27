@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { Search, FlaskConical, GitBranch, Settings } from 'lucide-react'
+import { SourceKitLogo } from '@/components/ui/SourceKitLogo'
 
 const NAV_HINTS_KEY = 'sourcekit-nav-hints-dismissed'
 
@@ -34,10 +35,11 @@ export function AppShell() {
     <div className="flex flex-col h-screen h-[100dvh] bg-background">
       <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">SK</span>
-          </div>
-          <h1 className="text-lg font-semibold text-foreground">SourceKit</h1>
+          <SourceKitLogo size={32} />
+          <h1 className="text-lg font-semibold" style={{ fontFamily: 'var(--font-mono)' }}>
+            <span style={{ color: '#9E9E9E' }}>Source</span>
+            <span style={{ color: '#00BFA5' }}>Kit</span>
+          </h1>
         </div>
       </header>
       <main className="flex-1 overflow-y-auto pb-20">
