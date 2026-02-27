@@ -35,7 +35,43 @@ serve(async (req) => {
       )
     }
 
-    // Parse the event (in production, verify signature with Stripe SDK)
+    // Verify Stripe webhook signature (HMAC-SHA256)
+    const encoder = new TextEncoder()
+    const parts = signature.split(',')
+    const timestamp = parts.find((p: string) => p.startsWith('t='))?.slice(2)
+    const sig = parts.find((p: string) => p.startsWith('v1='))?.slice(3)
+
+    if (!timestamp || !sig) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid stripe-signature format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const signedPayload = `${timestamp}.${body}`
+    const key = await crypto.subtle.importKey(
+      'raw', encoder.encode(webhookSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    )
+    const signatureBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(signedPayload))
+    const expectedSig = Array.from(new Uint8Array(signatureBytes))
+      .map(b => b.toString(16).padStart(2, '0')).join('')
+
+    if (expectedSig !== sig) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid signature' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Reject events older than 5 minutes to prevent replay attacks
+    const eventAge = Math.floor(Date.now() / 1000) - parseInt(timestamp, 10)
+    if (eventAge > 300) {
+      return new Response(
+        JSON.stringify({ error: 'Event too old' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const event = JSON.parse(body)
 
     switch (event.type) {
@@ -73,7 +109,7 @@ serve(async (req) => {
           .from('user_plans')
           .select('id')
           .eq('stripe_subscription_id', subscription.id)
-          .single()
+          .maybeSingle()
 
         if (plan) {
           await supabase.from('user_plans').update({

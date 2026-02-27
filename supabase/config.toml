@@ -1,6 +1,4 @@
-[project]
-id = "sourcekit"
-name = "SourceKit"
+project_id = "chmmgyjfrspwwejxidnx"
 
 [api]
 port = 54321
