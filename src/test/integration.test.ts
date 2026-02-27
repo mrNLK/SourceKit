@@ -1,17 +1,21 @@
 /**
  * Integration smoke tests for SourceKit features.
  *
- * Adapted to the actual codebase:
- *   1. GitHub search + scoring (replaces "monitors flow" — no MonitorCandidate type exists)
- *   2. Availability signals (uses commit_frequency, not created_at + public_repos)
- *   3. Outreach generation with mocked edge function (replaces "company research")
- *   4. Outreach history via useOutreach hook
+ * Tests cover:
+ *   1. GitHub search + scoring
+ *   2. Signal parsing (including false positive fixes)
+ *   3. Availability signals
+ *   4. Outreach generation (AI + template fallback)
+ *   5. Outreach history via useOutreach hook
+ *   6. Export functions
+ *   7. Input validation
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { calculateScore, parseSignals } from '@/lib/scoring'
 import { generateOutreach } from '@/services/outreach'
 import { searchGitHubUsers } from '@/services/github'
+import { exportToCSV, exportToJSON } from '@/services/export'
 import { useOutreach } from '@/hooks/useOutreach'
 import type { Candidate, Settings, GitHubProfile } from '@/types'
 
@@ -71,7 +75,7 @@ function makeSettings(overrides: Partial<Settings> = {}): Settings {
 }
 
 // ---------------------------------------------------------------------------
-// 1. GitHub search + scoring (adapted from "monitors flow")
+// 1. GitHub search + scoring
 // ---------------------------------------------------------------------------
 
 describe('GitHub search + scoring', () => {
@@ -86,7 +90,6 @@ describe('GitHub search + scoring', () => {
   })
 
   it('searchGitHubUsers returns de-duplicated user objects', async () => {
-    // Mock the search endpoint
     const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>
     mockFetch.mockImplementation(async (url: string) => {
       if (url.includes('/search/users')) {
@@ -96,12 +99,11 @@ describe('GitHub search + scoring', () => {
             items: [
               { login: 'alice', avatar_url: 'a.jpg' },
               { login: 'bob', avatar_url: 'b.jpg' },
-              { login: 'alice', avatar_url: 'a.jpg' }, // duplicate
+              { login: 'alice', avatar_url: 'a.jpg' },
             ],
           }),
         }
       }
-      // Individual user detail calls
       const login = url.split('/users/')[1]?.split('?')[0]
       return {
         ok: true,
@@ -116,8 +118,6 @@ describe('GitHub search + scoring', () => {
     })
 
     const results = await searchGitHubUsers('typescript')
-    // GitHub API returns items array — the function processes up to 10 items.
-    // Even if duplicates come from the API, each item in the slice is fetched.
     expect(results.length).toBeGreaterThan(0)
     expect(results[0]).toHaveProperty('username')
     expect(results[0]).toHaveProperty('bio')
@@ -129,11 +129,11 @@ describe('GitHub search + scoring', () => {
     const signals = parseSignals(text)
 
     const types = signals.map(s => s.type)
-    expect(types).toContain('degree')      // PhD
-    expect(types).toContain('university')  // Stanford
-    expect(types).toContain('company')     // Google, Meta
-    expect(types).toContain('conference')  // NeurIPS
-    expect(types).toContain('open_source') // open-source maintainer
+    expect(types).toContain('degree')
+    expect(types).toContain('university')
+    expect(types).toContain('company')
+    expect(types).toContain('conference')
+    expect(types).toContain('open_source')
   })
 
   it('calculateScore is deterministic — same signals produce same score', () => {
@@ -187,12 +187,76 @@ describe('GitHub search + scoring', () => {
 })
 
 // ---------------------------------------------------------------------------
-// 2. Availability signals
+// 2. Signal parsing false positive fixes
+// ---------------------------------------------------------------------------
+
+describe('Signal parsing - false positive prevention', () => {
+  it('"published a blog post" should NOT match as publication', () => {
+    const signals = parseSignals('published a blog post on Medium')
+    const types = signals.map(s => s.type)
+    expect(types).not.toContain('publication')
+  })
+
+  it('"published on Medium" should NOT match as publication', () => {
+    const signals = parseSignals('I published on Medium about JavaScript')
+    const types = signals.map(s => s.type)
+    expect(types).not.toContain('publication')
+  })
+
+  it('"published at NeurIPS" SHOULD match as publication', () => {
+    const signals = parseSignals('published at NeurIPS 2024')
+    const types = signals.map(s => s.type)
+    expect(types).toContain('publication')
+  })
+
+  it('"arxiv" SHOULD match as publication', () => {
+    const signals = parseSignals('My paper on arxiv about transformers')
+    const types = signals.map(s => s.type)
+    expect(types).toContain('publication')
+  })
+
+  it('"Director of Engineering" SHOULD match leadership', () => {
+    const signals = parseSignals('Director of Engineering at Acme Corp')
+    const types = signals.map(s => s.type)
+    expect(types).toContain('leadership')
+  })
+
+  it('"directed the project" should NOT match leadership', () => {
+    const signals = parseSignals('I directed the project to completion')
+    const types = signals.map(s => s.type)
+    expect(types).not.toContain('leadership')
+  })
+
+  it('"directed my efforts" should NOT match leadership', () => {
+    const signals = parseSignals('Directed my efforts toward improving the codebase')
+    const types = signals.map(s => s.type)
+    expect(types).not.toContain('leadership')
+  })
+
+  it('"Staff Engineer" SHOULD match leadership', () => {
+    const signals = parseSignals('Staff Engineer at Google building ML infrastructure')
+    const types = signals.map(s => s.type)
+    expect(types).toContain('leadership')
+  })
+
+  it('"CTO" SHOULD match leadership', () => {
+    const signals = parseSignals('CTO at early-stage startup')
+    const types = signals.map(s => s.type)
+    expect(types).toContain('leadership')
+  })
+
+  it('"co-founder" SHOULD match leadership', () => {
+    const signals = parseSignals('co-founder of a DevTools company')
+    const types = signals.map(s => s.type)
+    expect(types).toContain('leadership')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// 3. Availability signals
 // ---------------------------------------------------------------------------
 
 describe('Availability signals', () => {
-  // deriveAvailability is not exported, so we replicate its logic here
-  // to verify the mapping: commit_frequency → availability label
   function deriveAvailability(candidate: Candidate): 'active' | 'moderate' | 'low' | null {
     const freq = candidate.github_profile?.contribution_patterns?.commit_frequency
     if (!freq) return null
@@ -267,7 +331,7 @@ describe('Availability signals', () => {
 })
 
 // ---------------------------------------------------------------------------
-// 3. Outreach generation (adapted from "company research")
+// 4. Outreach generation
 // ---------------------------------------------------------------------------
 
 describe('Outreach generation', () => {
@@ -293,7 +357,8 @@ describe('Outreach generation', () => {
 
     const result = await generateOutreach(candidate, settings, 'https://my-project.supabase.co', 'anon-key-123')
 
-    expect(result).toBe('Hey Jane, love your work at Google on TensorFlow!')
+    expect(result.message).toBe('Hey Jane, love your work at Google on TensorFlow!')
+    expect(result.source).toBe('ai')
     expect(mockFetch).toHaveBeenCalledWith(
       'https://my-project.supabase.co/functions/v1/generate-outreach',
       expect.objectContaining({
@@ -305,16 +370,16 @@ describe('Outreach generation', () => {
     )
   })
 
-  it('throws on non-ok edge function response', async () => {
+  it('falls back to template with source indicator when AI fails', async () => {
     const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>
     mockFetch.mockResolvedValue({ ok: false, status: 500 })
 
-    const candidate = makeCandidate()
+    const candidate = makeCandidate({ name: 'Alice', company: 'Stripe' })
     const settings = makeSettings()
 
-    await expect(
-      generateOutreach(candidate, settings, 'https://my.supabase.co', 'key')
-    ).rejects.toThrow('Failed to generate outreach')
+    const result = await generateOutreach(candidate, settings, 'https://my.supabase.co', 'key')
+    expect(result.source).toBe('template')
+    expect(result.message).toContain('Alice')
   })
 
   it('falls back to template when no supabase URL is provided', async () => {
@@ -327,11 +392,12 @@ describe('Outreach generation', () => {
 
     const result = await generateOutreach(candidate, settings)
 
-    expect(result).toContain('Alice')
-    expect(result).toContain('Stripe')
-    expect(result).toContain('AcmeCo')
-    expect(result).toContain('Platform Engineer')
-    expect(result).toContain('the next-gen developer platform')
+    expect(result.source).toBe('template')
+    expect(result.message).toContain('Alice')
+    expect(result.message).toContain('Stripe')
+    expect(result.message).toContain('AcmeCo')
+    expect(result.message).toContain('Platform Engineer')
+    expect(result.message).toContain('the next-gen developer platform')
   })
 
   it('fallback template handles missing company gracefully', async () => {
@@ -340,9 +406,8 @@ describe('Outreach generation', () => {
 
     const result = await generateOutreach(candidate, settings)
 
-    expect(result).toContain('Bob')
-    // Should not contain " at " with empty company
-    expect(result).not.toContain(' at  ')
+    expect(result.message).toContain('Bob')
+    expect(result.message).not.toContain(' at  ')
   })
 
   it('edge function request body includes candidate and context', async () => {
@@ -375,7 +440,7 @@ describe('Outreach generation', () => {
 })
 
 // ---------------------------------------------------------------------------
-// 4. Outreach history (useOutreach hook)
+// 5. Outreach history (useOutreach hook)
 // ---------------------------------------------------------------------------
 
 describe('Outreach history', () => {
@@ -399,7 +464,7 @@ describe('Outreach history', () => {
     expect(history[0].candidate_key).toBe('alice-chen')
     expect(history[0].candidate_name).toBe('Alice Chen')
     expect(history[0].message).toBe('Hello Alice!')
-    expect(history[0].channel).toBe('email') // default
+    expect(history[0].channel).toBe('email')
     expect(history[0].created_at).toBeTruthy()
     expect(history[0].id).toBeTruthy()
   })
@@ -449,7 +514,6 @@ describe('Outreach history', () => {
   })
 
   it('loads persisted data on mount', () => {
-    // Pre-populate localStorage
     const entries = [{
       id: 'pre-existing',
       candidate_key: 'preloaded',
@@ -475,5 +539,59 @@ describe('Outreach history', () => {
     })
 
     expect(result.current.entries[0].channel).toBe('linkedin')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// 6. Export functions
+// ---------------------------------------------------------------------------
+
+describe('Export functions', () => {
+  let mockCreateObjectURL: ReturnType<typeof vi.fn>
+  let mockRevokeObjectURL: ReturnType<typeof vi.fn>
+  let mockClick: ReturnType<typeof vi.fn>
+  const originalCreateObjectURL = URL.createObjectURL
+  const originalRevokeObjectURL = URL.revokeObjectURL
+
+  beforeEach(() => {
+    mockCreateObjectURL = vi.fn(() => 'blob:mock')
+    mockRevokeObjectURL = vi.fn()
+    mockClick = vi.fn()
+    URL.createObjectURL = mockCreateObjectURL
+    URL.revokeObjectURL = mockRevokeObjectURL
+    vi.spyOn(document, 'createElement').mockReturnValue({
+      set href(_: string) {},
+      set download(_: string) {},
+      click: mockClick,
+    } as unknown as HTMLElement)
+    vi.spyOn(document.body, 'appendChild').mockImplementation(vi.fn() as ReturnType<typeof vi.fn>)
+    vi.spyOn(document.body, 'removeChild').mockImplementation(vi.fn() as ReturnType<typeof vi.fn>)
+  })
+
+  afterEach(() => {
+    URL.createObjectURL = originalCreateObjectURL
+    URL.revokeObjectURL = originalRevokeObjectURL
+    vi.restoreAllMocks()
+  })
+
+  it('exportToCSV generates CSV content and triggers download', () => {
+    const candidates = [
+      makeCandidate({ name: 'Test User', company: 'TestCo', stage: 'sourced', score: 75, tags: ['ml'] }),
+    ]
+
+    exportToCSV(candidates)
+
+    expect(mockCreateObjectURL).toHaveBeenCalled()
+    expect(mockClick).toHaveBeenCalled()
+    expect(mockRevokeObjectURL).toHaveBeenCalled()
+  })
+
+  it('exportToJSON generates JSON content and triggers download', () => {
+    const candidates = [makeCandidate()]
+
+    exportToJSON(candidates)
+
+    expect(mockCreateObjectURL).toHaveBeenCalled()
+    expect(mockClick).toHaveBeenCalled()
   })
 })

@@ -1,5 +1,7 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 import type { Settings } from '@/types'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 
 const STORAGE_KEY = 'sourcekit_settings'
 
@@ -22,27 +24,91 @@ function loadSettings(): Settings {
   }
 }
 
-export function useSettings() {
-  const [settings, setSettings] = useState<Settings>(loadSettings)
-  const [saveError, setSaveError] = useState(false)
+let _settingsSaveError = false
+let _settingsSaveErrorListeners: Array<() => void> = []
+function setSettingsSaveErrorExternal(val: boolean) {
+  if (_settingsSaveError !== val) {
+    _settingsSaveError = val
+    _settingsSaveErrorListeners.forEach(l => l())
+  }
+}
 
+export function useSettings() {
+  const { user } = useAuth()
+  const [settings, setSettings] = useState<Settings>(loadSettings)
+  const saveError = useSyncExternalStore(
+    (cb) => { _settingsSaveErrorListeners.push(cb); return () => { _settingsSaveErrorListeners = _settingsSaveErrorListeners.filter(l => l !== cb) } },
+    () => _settingsSaveError,
+  )
+  const isInitialSync = useRef(true)
+
+  // Sync from Supabase on mount
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('settings')
+      .select('key, value')
+      .eq('user_id', user.id)
+      .then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          const fromDb: Partial<Settings> = {}
+          for (const row of data) {
+            try {
+              (fromDb as Record<string, unknown>)[row.key] = JSON.parse(row.value)
+            } catch {
+              (fromDb as Record<string, unknown>)[row.key] = row.value
+            }
+          }
+          const merged = { ...DEFAULT_SETTINGS, ...fromDb }
+          setSettings(merged)
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+          isInitialSync.current = false
+        } else {
+          isInitialSync.current = false
+        }
+      })
+  }, [user])
+
+  // Save to localStorage cache
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
-      setSaveError(false)
+      setSettingsSaveErrorExternal(false)
     } catch (err) {
       console.error('Failed to save settings to localStorage:', err)
-      setSaveError(true)
+      setSettingsSaveErrorExternal(true)
     }
   }, [settings])
 
   const updateSettings = useCallback((updates: Partial<Settings>) => {
-    setSettings(prev => ({ ...prev, ...updates }))
-  }, [])
+    setSettings(prev => {
+      const next = { ...prev, ...updates }
+
+      // Persist each changed key to Supabase
+      if (user) {
+        for (const [key, value] of Object.entries(updates)) {
+          supabase.from('settings').upsert(
+            { key, value: JSON.stringify(value), user_id: user.id },
+            { onConflict: 'key,user_id' }
+          ).then(({ error }) => {
+            if (error) console.error('Failed to save setting to Supabase:', error)
+          })
+        }
+      }
+
+      return next
+    })
+  }, [user])
 
   const resetSettings = useCallback(() => {
     setSettings(DEFAULT_SETTINGS)
-  }, [])
+
+    if (user) {
+      supabase.from('settings').delete().eq('user_id', user.id).then(({ error }) => {
+        if (error) console.error('Failed to reset settings in Supabase:', error)
+      })
+    }
+  }, [user])
 
   return { settings, updateSettings, resetSettings, saveError }
 }

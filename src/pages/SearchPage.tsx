@@ -9,6 +9,7 @@ import { useCandidates } from '@/hooks/useCandidates'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 import { useSettings } from '@/hooks/useSettings'
 import { searchGitHubUsers, fetchGitHubProfile } from '@/services/github'
+import { searchCandidatesViaExa, searchGitHubContributors } from '@/services/edgeFunctions'
 import { parseSignals } from '@/lib/scoring'
 import { captureException } from '@/lib/sentry'
 import { track } from '@/lib/analytics'
@@ -40,16 +41,24 @@ export function SearchPage() {
     setSearchError(null)
     const newResults: Candidate[] = []
     const errors: string[] = []
+    const seenKeys = new Set<string>()
+
+    const addResult = (c: Candidate) => {
+      const key = `${c.name.toLowerCase()}|${(c.company || '').toLowerCase()}`
+      if (seenKeys.has(key)) return
+      seenKeys.add(key)
+      newResults.push(c)
+    }
 
     try {
-      // GitHub search
+      // GitHub profile fetch (direct handle)
       if (query.github_handle) {
         try {
           const profile = await fetchGitHubProfile(query.github_handle, settings.github_token || undefined)
           const bioText = `${profile.bio || ''} ${profile.repositories.map(r => r.description).join(' ')}`
           const signals = parseSignals(bioText)
 
-          newResults.push({
+          addResult({
             id: crypto.randomUUID(),
             name: query.name || profile.username,
             company: query.company || '',
@@ -74,16 +83,21 @@ export function SearchPage() {
         }
       }
 
-      // Capability-based GitHub search
+      // Capability-based search: use all three sources in parallel
       if (query.capability_query) {
-        try {
-          const ghQuery = query.capability_query + (query.role ? ` ${query.role}` : '')
-          const users = await searchGitHubUsers(ghQuery, settings.github_token || undefined)
+        const ghQuery = query.capability_query + (query.role ? ` ${query.role}` : '')
 
-          for (const user of users) {
-            if (newResults.some(r => r.github_handle === user.username)) continue
+        const [ghUsers, exaResults, ghContributors] = await Promise.allSettled([
+          searchGitHubUsers(ghQuery, settings.github_token || undefined),
+          searchCandidatesViaExa(query.capability_query, query.role, query.company),
+          searchGitHubContributors(query.capability_query),
+        ])
+
+        // Process GitHub user search results
+        if (ghUsers.status === 'fulfilled') {
+          for (const user of ghUsers.value) {
             const signals = parseSignals(user.bio)
-            newResults.push({
+            addResult({
               id: crypto.randomUUID(),
               name: user.username,
               company: '',
@@ -102,21 +116,69 @@ export function SearchPage() {
               created_at: new Date().toISOString(),
             })
           }
-        } catch (err) {
-          console.error('GitHub search error:', err)
-          captureException(err, { capability_query: query.capability_query })
-          errors.push('GitHub search failed — check your token in Settings or try again')
+        } else {
+          errors.push('GitHub search failed')
         }
+
+        // Process Exa results
+        if (exaResults.status === 'fulfilled') {
+          for (const candidate of exaResults.value) {
+            const signals = parseSignals(candidate.bio || '')
+            const source = candidate.source as SourceType || 'exa'
+            addResult({
+              id: crypto.randomUUID(),
+              name: candidate.name || 'Unknown',
+              company: '',
+              role: query.role || '',
+              bio: candidate.bio || undefined,
+              profile_url: candidate.profile_url,
+              source: source === 'linkedin' || source === 'github' ? source : 'exa',
+              enrichment_data: null,
+              github_profile: null,
+              stage: 'sourced',
+              score: 0,
+              notes: '',
+              tags: [],
+              signals,
+              created_at: new Date().toISOString(),
+            })
+          }
+        }
+        // Exa failure is non-fatal — just use GitHub results
+
+        // Process GitHub contributor results
+        if (ghContributors.status === 'fulfilled') {
+          for (const contrib of ghContributors.value) {
+            addResult({
+              id: crypto.randomUUID(),
+              name: contrib.username,
+              company: '',
+              role: query.role || '',
+              avatar_url: contrib.avatar_url,
+              github_handle: contrib.username,
+              source: 'github',
+              enrichment_data: null,
+              github_profile: null,
+              stage: 'sourced',
+              score: 0,
+              notes: '',
+              tags: [],
+              signals: [],
+              created_at: new Date().toISOString(),
+            })
+          }
+        }
+        // Contributor failure is non-fatal
       }
 
-      // Name/company search — generate web-sourced placeholder results
+      // Name/company search — web-sourced placeholder
       if (query.name && query.company) {
         const exists = newResults.some(
           r => r.name.toLowerCase() === query.name!.toLowerCase()
         )
         if (!exists) {
           const signals = parseSignals(`${query.name} ${query.company} ${query.role || ''}`)
-          newResults.push({
+          addResult({
             id: crypto.randomUUID(),
             name: query.name,
             company: query.company,

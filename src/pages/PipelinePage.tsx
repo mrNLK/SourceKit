@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { GitBranch, Download, Share2, ArrowUpDown, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { GitBranch, Download, Share2, ArrowUpDown, AlertCircle, CheckCircle2, Info } from 'lucide-react'
 import { StageFilter } from '@/components/pipeline/StageFilter'
 import { TagFilter } from '@/components/pipeline/TagFilter'
 import { PipelineCard } from '@/components/pipeline/PipelineCard'
@@ -9,7 +9,8 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { useCandidates } from '@/hooks/useCandidates'
 import { useSettings } from '@/hooks/useSettings'
 import { useOutreach } from '@/hooks/useOutreach'
-import { exportToCSV, shareToSlack } from '@/services/export'
+import { useWatchlist } from '@/hooks/useWatchlist'
+import { exportToCSV, exportToJSON, shareToSlack } from '@/services/export'
 import { generateOutreach } from '@/services/outreach'
 import { captureException } from '@/lib/sentry'
 import { track } from '@/lib/analytics'
@@ -36,31 +37,46 @@ export function PipelinePage() {
 
   const { settings } = useSettings()
   const { saveOutreach, getHistory } = useOutreach()
+  const { isWatchlisted, toggleWatchlist } = useWatchlist()
 
   const [outreachCandidate, setOutreachCandidate] = useState<Candidate | null>(null)
   const [outreachMessage, setOutreachMessage] = useState<string | null>(null)
   const [outreachLoading, setOutreachLoading] = useState(false)
-  const [notice, setNotice] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
+  const [outreachSource, setOutreachSource] = useState<'ai' | 'template' | null>(null)
+  const [notice, setNotice] = useState<{ type: 'error' | 'success' | 'info'; message: string } | null>(null)
+
+  const showNotice = useCallback((type: 'error' | 'success' | 'info', message: string) => {
+    setNotice({ type, message })
+    setTimeout(() => setNotice(null), 4000)
+  }, [])
 
   const handleGenerateOutreach = useCallback(async (candidate: Candidate) => {
     setOutreachCandidate(candidate)
     setOutreachLoading(true)
     setOutreachMessage(null)
+    setOutreachSource(null)
     try {
-      const message = await generateOutreach(candidate, settings)
-      setOutreachMessage(message)
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const result = await generateOutreach(candidate, settings, supabaseUrl, supabaseKey)
+      setOutreachMessage(result.message)
+      setOutreachSource(result.source)
       const key = candidate.github_handle || candidate.name.toLowerCase().replace(/\s+/g, '-')
-      saveOutreach(key, candidate.name, message)
-      track('outreach_generated', { candidate_source: candidate.source })
+      saveOutreach(key, candidate.name, result.message)
+      track('outreach_generated', { candidate_source: candidate.source, outreach_source: result.source })
+
+      if (result.source === 'template') {
+        showNotice('info', 'AI generation failed — using template fallback. Configure Supabase for AI outreach.')
+      }
     } catch (err) {
       console.error('Outreach error:', err)
       captureException(err)
       setOutreachMessage(null)
-      showNotice('error', 'Failed to generate outreach message')
+      showNotice('error', 'Failed to generate outreach message. Try again.')
     } finally {
       setOutreachLoading(false)
     }
-  }, [settings, saveOutreach])
+  }, [settings, saveOutreach, showNotice])
 
   const handleToggleTag = useCallback((tag: string) => {
     setTagFilter(prev =>
@@ -68,20 +84,19 @@ export function PipelinePage() {
     )
   }, [setTagFilter])
 
-  const showNotice = useCallback((type: 'error' | 'success', message: string) => {
-    setNotice({ type, message })
-    setTimeout(() => setNotice(null), 4000)
-  }, [])
-
-  const handleExport = () => {
+  const handleExport = (format: 'csv' | 'json' = 'csv') => {
     try {
-      exportToCSV(candidates)
-      showNotice('success', 'Pipeline exported to CSV')
-      track('export_triggered', { format: 'csv', count: candidates.length })
+      if (format === 'json') {
+        exportToJSON(candidates)
+      } else {
+        exportToCSV(candidates)
+      }
+      showNotice('success', `Pipeline exported to ${format.toUpperCase()}`)
+      track('export_triggered', { format, count: candidates.length })
     } catch (err) {
       console.error('Export error:', err)
       captureException(err)
-      showNotice('error', 'Failed to export CSV')
+      showNotice('error', `Failed to export ${format.toUpperCase()}`)
     }
   }
 
@@ -127,10 +142,14 @@ export function PipelinePage() {
         <div className={`mx-3 sm:mx-4 mt-2 flex items-center gap-2 p-2.5 rounded-lg text-sm ${
           notice.type === 'error'
             ? 'bg-destructive/10 border border-destructive/20 text-destructive'
+            : notice.type === 'info'
+            ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
             : 'bg-green-500/10 border border-green-500/20 text-green-400'
         }`}>
           {notice.type === 'error'
             ? <AlertCircle className="w-4 h-4 shrink-0" />
+            : notice.type === 'info'
+            ? <Info className="w-4 h-4 shrink-0" />
             : <CheckCircle2 className="w-4 h-4 shrink-0" />}
           <span className="flex-1">{notice.message}</span>
           <button onClick={() => setNotice(null)} className="opacity-60 hover:opacity-100 text-xs">dismiss</button>
@@ -152,9 +171,13 @@ export function PipelinePage() {
             <ArrowUpDown className="w-3 h-3" />
             <span className="hidden sm:inline">Score</span>
           </Button>
-          <Button size="sm" variant="ghost" onClick={handleExport} className="gap-1 px-2 sm:px-3">
+          <Button size="sm" variant="ghost" onClick={() => handleExport('csv')} className="gap-1 px-2 sm:px-3">
             <Download className="w-3 h-3" />
             <span className="hidden sm:inline">CSV</span>
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => handleExport('json')} className="gap-1 px-2 sm:px-3">
+            <Download className="w-3 h-3" />
+            <span className="hidden sm:inline">JSON</span>
           </Button>
           <Button size="sm" variant="ghost" onClick={handleShareSlack} className="gap-1 px-2 sm:px-3">
             <Share2 className="w-3 h-3" />
@@ -181,6 +204,8 @@ export function PipelinePage() {
               onRemoveTag={removeTag}
               onDelete={deleteCandidate}
               onGenerateOutreach={handleGenerateOutreach}
+              onToggleWatchlist={toggleWatchlist}
+              isWatchlisted={isWatchlisted(candidate.id)}
             />
           ))}
         </div>
@@ -194,6 +219,7 @@ export function PipelinePage() {
           history={getHistory(outreachCandidate.github_handle || outreachCandidate.name.toLowerCase().replace(/\s+/g, '-'))}
           onClose={() => setOutreachCandidate(null)}
           onRegenerate={() => handleGenerateOutreach(outreachCandidate)}
+          source={outreachSource}
         />
       )}
     </div>

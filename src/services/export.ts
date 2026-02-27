@@ -1,5 +1,28 @@
 import type { Candidate } from '@/types'
 
+export type ExportFormat = 'csv' | 'json'
+
+export function exportToJSON(candidates: Candidate[], filename?: string): void {
+  const json = JSON.stringify(candidates, null, 2)
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename || `sourcekit-export-${new Date().toISOString().slice(0, 10)}.json`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+export function exportPipeline(candidates: Candidate[], format: ExportFormat): void {
+  if (format === 'json') {
+    exportToJSON(candidates)
+  } else {
+    exportToCSV(candidates)
+  }
+}
+
 export function exportToCSV(candidates: Candidate[], filename?: string): void {
   const headers = ['Name', 'Company', 'Role', 'Stage', 'Score', 'Source', 'Tags', 'Notes', 'GitHub', 'Location', 'Created']
 

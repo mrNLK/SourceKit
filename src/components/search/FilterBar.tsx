@@ -11,6 +11,7 @@ const filters: Array<{ value: SourceType | 'all'; label: string }> = [
   { value: 'all', label: 'All' },
   { value: 'linkedin', label: 'LinkedIn' },
   { value: 'github', label: 'GitHub' },
+  { value: 'exa', label: 'Exa' },
   { value: 'web', label: 'Other' },
 ]
 

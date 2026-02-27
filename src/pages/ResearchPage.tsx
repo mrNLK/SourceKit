@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { FlaskConical, Play, RefreshCw, AlertCircle } from 'lucide-react'
+import { FlaskConical, Play, RefreshCw, AlertCircle, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -42,6 +43,12 @@ const COMPETITOR_MAP: Record<string, string[]> = {
   anthropic: ['openai', 'google deepmind', 'cohere', 'mistral'],
 }
 
+const EXAMPLE_PROMPTS = [
+  { label: 'Staff ML Engineer @ Anthropic', title: 'Staff ML Engineer', company: 'Anthropic' },
+  { label: 'Founding Engineer @ Series A AI startup', title: 'Founding Engineer', company: '' },
+  { label: 'Staff Backend Engineer @ Stripe', title: 'Staff Backend Engineer', company: 'Stripe' },
+]
+
 function extractKeywords(jobTitle: string): string[] {
   const lower = jobTitle.toLowerCase()
   const matched: string[] = []
@@ -50,9 +57,8 @@ function extractKeywords(jobTitle: string): string[] {
       matched.push(...keywords)
     }
   }
-  // Also add the raw title words as keywords
   const titleWords = lower
-    .replace(/\b(senior|junior|lead|principal|staff|intern|associate|manager|director|head|vp|chief)\b/g, '')
+    .replace(/\b(senior|junior|lead|principal|staff|intern|associate|manager|director|head|vp|chief|founding)\b/g, '')
     .trim()
     .split(/\s+/)
     .filter(w => w.length > 2)
@@ -71,7 +77,7 @@ function getCompetitors(company: string): string[] {
 function generateStrategy(jobTitle: string, companyName: string): ResearchStrategy {
   const keywords = extractKeywords(jobTitle)
   const competitors = getCompetitors(companyName)
-  const targetCompanies = [companyName, ...competitors]
+  const targetCompanies = companyName ? [companyName, ...competitors] : []
   const targetRepos = keywords.slice(0, 3).map(k => `${k} projects`)
 
   const searchQueries = [
@@ -90,10 +96,54 @@ function generateStrategy(jobTitle: string, companyName: string): ResearchStrate
   }
 }
 
+function parseJDToStrategy(jdText: string): ResearchStrategy {
+  const lower = jdText.toLowerCase()
+
+  // Extract job title from first line or common patterns
+  const titleMatch = jdText.match(/(?:^|\n)\s*(?:job\s+title|role|position)\s*[:-]\s*(.+)/i)
+    || jdText.match(/^(.+?)\n/)
+  const jobTitle = titleMatch?.[1]?.trim().slice(0, 60) || 'Engineer'
+
+  // Extract company name
+  const companyMatch = jdText.match(/(?:at|@|company)\s*[:-]?\s*([A-Z][a-zA-Z]+(?:\s[A-Z][a-zA-Z]+)?)/m)
+  const companyName = companyMatch?.[1]?.trim() || ''
+
+  // Extract keywords from the JD
+  const allKeywords: string[] = []
+  for (const [, keywords] of Object.entries(ROLE_KEYWORDS)) {
+    for (const kw of keywords) {
+      if (lower.includes(kw.toLowerCase())) {
+        allKeywords.push(kw)
+      }
+    }
+  }
+
+  const keywords = [...new Set(allKeywords)]
+  const competitors = getCompetitors(companyName)
+  const targetCompanies = companyName ? [companyName, ...competitors] : []
+
+  return {
+    jobTitle,
+    companyName,
+    searchQueries: [
+      keywords.slice(0, 3).join(' ') + ` ${jobTitle}`,
+      ...targetCompanies.slice(0, 2).map(c => `${c} ${keywords[0] || 'engineer'}`),
+    ],
+    targetCompanies,
+    targetRepos: keywords.slice(0, 3).map(k => `${k} projects`),
+    keywords,
+    generatedAt: new Date().toISOString(),
+  }
+}
+
+type ResearchMode = 'role' | 'jd'
+
 export function ResearchPage() {
   const location = useLocation()
+  const [mode, setMode] = useState<ResearchMode>('role')
   const [jobTitle, setJobTitle] = useState('')
   const [companyName, setCompanyName] = useState('')
+  const [jdText, setJdText] = useState('')
   const [strategy, setStrategy] = useState<ResearchStrategy | null>(null)
   const [results, setResults] = useState<Candidate[]>([])
   const [isRunning, setIsRunning] = useState(false)
@@ -114,11 +164,25 @@ export function ResearchPage() {
   }, [location.state])
 
   const handleGenerateStrategy = () => {
-    if (!jobTitle.trim()) return
-    const s = generateStrategy(jobTitle.trim(), companyName.trim())
-    setStrategy(s)
+    if (mode === 'role') {
+      if (!jobTitle.trim()) return
+      const s = generateStrategy(jobTitle.trim(), companyName.trim())
+      setStrategy(s)
+    } else {
+      if (!jdText.trim()) return
+      const s = parseJDToStrategy(jdText.trim())
+      setJobTitle(s.jobTitle)
+      setCompanyName(s.companyName)
+      setStrategy(s)
+    }
     setResults([])
-    track('strategy_built', { job_title: s.jobTitle, company: s.companyName, query_count: s.searchQueries.length })
+    track('strategy_built', { mode, job_title: jobTitle })
+  }
+
+  const handleExamplePrompt = (example: typeof EXAMPLE_PROMPTS[0]) => {
+    setJobTitle(example.title)
+    setCompanyName(example.company)
+    setMode('role')
   }
 
   const handleSearchWithStrategy = useCallback(async () => {
@@ -169,7 +233,6 @@ export function ResearchPage() {
 
       setResults(allResults)
 
-      // Persist the strategy to search history
       const expandedQuery = strategy.searchQueries.join(' | ')
       addEntry(
         { capability_query: expandedQuery, role: strategy.jobTitle, company: strategy.companyName },
@@ -211,22 +274,72 @@ export function ResearchPage() {
           Research Strategy Builder
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            placeholder="Job title (e.g. ML Engineer)"
-            value={jobTitle}
-            onChange={e => setJobTitle(e.target.value)}
-          />
-          <Input
-            placeholder="Company (optional)"
-            value={companyName}
-            onChange={e => setCompanyName(e.target.value)}
-          />
+        {/* Mode tabs */}
+        <div className="flex gap-1 p-1 bg-secondary rounded-lg">
+          <button
+            onClick={() => setMode('role')}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+              mode === 'role' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <FlaskConical className="w-3.5 h-3.5" />
+            Role + Company
+          </button>
+          <button
+            onClick={() => setMode('jd')}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+              mode === 'jd' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Job Description
+          </button>
         </div>
 
-        <Button onClick={handleGenerateStrategy} disabled={!jobTitle.trim()} className="w-full">
+        {mode === 'role' ? (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                placeholder="Job title (e.g. ML Engineer)"
+                value={jobTitle}
+                onChange={e => setJobTitle(e.target.value)}
+              />
+              <Input
+                placeholder="Company (optional)"
+                value={companyName}
+                onChange={e => setCompanyName(e.target.value)}
+              />
+            </div>
+
+            {/* Example prompts */}
+            <div className="flex flex-wrap gap-2">
+              {EXAMPLE_PROMPTS.map(ex => (
+                <button
+                  key={ex.label}
+                  onClick={() => handleExamplePrompt(ex)}
+                  className="px-3 py-1.5 rounded-full text-xs bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
+                >
+                  {ex.label}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <Textarea
+            placeholder="Paste a job description here..."
+            value={jdText}
+            onChange={e => setJdText(e.target.value)}
+            className="min-h-[120px]"
+          />
+        )}
+
+        <Button
+          onClick={handleGenerateStrategy}
+          disabled={mode === 'role' ? !jobTitle.trim() : !jdText.trim()}
+          className="w-full"
+        >
           <RefreshCw className="w-4 h-4 mr-2" />
-          Generate Strategy
+          Build Sourcing Strategy
         </Button>
       </div>
 
@@ -258,6 +371,19 @@ export function ResearchPage() {
                   <div className="flex flex-wrap gap-1">
                     {strategy.targetCompanies.map(c => (
                       <Badge key={c} variant="outline" className="text-[10px]">{c}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {strategy.targetRepos.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Target Repos ({strategy.targetRepos.length})
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {strategy.targetRepos.map(r => (
+                      <Badge key={r} variant="outline" className="text-[10px]">{r}</Badge>
                     ))}
                   </div>
                 </div>
@@ -332,7 +458,7 @@ export function ResearchPage() {
         <EmptyState
           icon={FlaskConical}
           title="Build a research strategy"
-          description="Enter a job title to generate a targeted sourcing strategy with keywords, companies, and search queries"
+          description="Enter a job title or paste a JD to generate a targeted sourcing strategy with keywords, companies, and search queries"
         />
       )}
     </div>

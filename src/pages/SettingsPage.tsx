@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Settings as SettingsIcon, RotateCcw, ExternalLink, Search, Database, Info, Download, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard, Zap } from 'lucide-react'
+import { Settings as SettingsIcon, RotateCcw, ExternalLink, Search, Database, Info, Download, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard, Zap, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -8,6 +8,7 @@ import { useSettings } from '@/hooks/useSettings'
 import { useCandidates } from '@/hooks/useCandidates'
 import { useSearchHistory } from '@/hooks/useSearchHistory'
 import { useOutreach } from '@/hooks/useOutreach'
+import { useAuth } from '@/contexts/AuthContext'
 import { exportToCSV } from '@/services/export'
 import { captureException } from '@/lib/sentry'
 import { track } from '@/lib/analytics'
@@ -18,6 +19,7 @@ export function SettingsPage() {
   const { allCandidates } = useCandidates()
   const { history, clearHistory } = useSearchHistory()
   const { entries: outreachEntries, clearHistory: clearOutreach } = useOutreach()
+  const { user, signOut } = useAuth()
 
   const [confirmClearHistory, setConfirmClearHistory] = useState(false)
   const [confirmClearAll, setConfirmClearAll] = useState(false)
@@ -44,16 +46,24 @@ export function SettingsPage() {
     }
   }, [showNotice])
 
-  // Fetch plan status on mount if Supabase is configured
+  // Fetch plan status from user_plans table
   useEffect(() => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-    if (supabaseUrl && supabaseKey) {
-      fetchPlanStatus(supabaseUrl, supabaseKey)
-        .then(p => { setPlan(p); savePlan(p) })
-        .catch(() => { /* use cached plan */ })
-    }
-  }, [])
+    if (!user) return
+    import('@/lib/supabase').then(({ supabase }) => {
+      supabase
+        .from('user_plans')
+        .select('plan, current_period_end')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data, error }) => {
+          if (!error && data) {
+            const p: PlanInfo = { status: data.plan as PlanInfo['status'], current_period_end: data.current_period_end }
+            setPlan(p)
+            savePlan(p)
+          }
+        })
+    })
+  }, [user])
 
   const handleUpgrade = async () => {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -238,7 +248,11 @@ export function SettingsPage() {
               value={settings.github_token || ''}
               onChange={e => updateSettings({ github_token: e.target.value })}
               placeholder="ghp_..."
+              className={settings.github_token && !/^(ghp_|github_pat_)/.test(settings.github_token) ? 'border-amber-500' : ''}
             />
+            {settings.github_token && !/^(ghp_|github_pat_)/.test(settings.github_token) && (
+              <p className="text-[10px] text-amber-400 mt-1">Token should start with "ghp_" or "github_pat_"</p>
+            )}
             <p className="text-xs text-muted-foreground mt-1">Increases GitHub API rate limits from 60 to 5,000 req/hr</p>
           </div>
           <div>
@@ -247,7 +261,11 @@ export function SettingsPage() {
               value={settings.slack_webhook_url}
               onChange={e => updateSettings({ slack_webhook_url: e.target.value })}
               placeholder="https://hooks.slack.com/services/..."
+              className={settings.slack_webhook_url && !settings.slack_webhook_url.startsWith('https://hooks.slack.com/') ? 'border-amber-500' : ''}
             />
+            {settings.slack_webhook_url && !settings.slack_webhook_url.startsWith('https://hooks.slack.com/') && (
+              <p className="text-[10px] text-amber-400 mt-1">URL should start with https://hooks.slack.com/</p>
+            )}
           </div>
           <div className="flex items-center justify-between py-2">
             <div>
@@ -431,13 +449,30 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Actions */}
-      <div className="flex gap-2">
-        <Button variant="outline" onClick={resetSettings} className="gap-1 flex-1">
-          <RotateCcw className="w-4 h-4" />
-          Reset Settings
-        </Button>
-      </div>
+      {/* Account */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <LogOut className="w-5 h-5 text-primary" />
+            <h2 className="text-base font-semibold">Account</h2>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {user && (
+            <p className="text-sm text-muted-foreground">Signed in as <strong className="text-foreground">{user.email}</strong></p>
+          )}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={resetSettings} className="gap-1 flex-1">
+              <RotateCcw className="w-4 h-4" />
+              Reset Settings
+            </Button>
+            <Button variant="outline" onClick={signOut} className="gap-1 flex-1 text-destructive hover:text-destructive">
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* About */}
       <Card>

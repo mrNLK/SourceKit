@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +14,8 @@ serve(async (req) => {
   try {
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     if (!webhookSecret || !stripeKey) {
       return new Response(
@@ -21,6 +24,7 @@ serve(async (req) => {
       )
     }
 
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
     const body = await req.text()
     const signature = req.headers.get('stripe-signature')
 
@@ -38,8 +42,23 @@ serve(async (req) => {
       case 'checkout.session.completed': {
         const session = event.data.object
         console.log('Checkout completed:', session.id)
-        // TODO: Update user plan status in database
-        // e.g. supabase.from('user_plans').upsert({ user_id, status: 'pro', stripe_customer_id: session.customer })
+
+        // Find user by email from session or customer metadata
+        const customerEmail = session.customer_details?.email || session.customer_email
+        if (customerEmail) {
+          const { data: users } = await supabase.auth.admin.listUsers()
+          const user = users?.users?.find((u: { email?: string }) => u.email === customerEmail)
+          if (user) {
+            await supabase.from('user_plans').upsert({
+              user_id: user.id,
+              plan: 'pro',
+              stripe_customer_id: session.customer,
+              stripe_subscription_id: session.subscription,
+              current_period_end: new Date(Date.now() + 30 * 86400000).toISOString(),
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id' })
+          }
+        }
         break
       }
 
@@ -49,21 +68,45 @@ serve(async (req) => {
           : subscription.status === 'past_due' ? 'past_due'
           : 'free'
         console.log('Subscription updated:', subscription.id, status)
-        // TODO: Update user plan status in database
+
+        const { data: plan } = await supabase
+          .from('user_plans')
+          .select('id')
+          .eq('stripe_subscription_id', subscription.id)
+          .single()
+
+        if (plan) {
+          await supabase.from('user_plans').update({
+            plan: status,
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            updated_at: new Date().toISOString(),
+          }).eq('id', plan.id)
+        }
         break
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object
         console.log('Subscription cancelled:', subscription.id)
-        // TODO: Set user plan status to 'free' in database
+
+        await supabase.from('user_plans').update({
+          plan: 'free',
+          current_period_end: null,
+          updated_at: new Date().toISOString(),
+        }).eq('stripe_subscription_id', subscription.id)
         break
       }
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object
         console.log('Payment failed:', invoice.id)
-        // TODO: Set user plan status to 'past_due' in database
+
+        if (invoice.subscription) {
+          await supabase.from('user_plans').update({
+            plan: 'past_due',
+            updated_at: new Date().toISOString(),
+          }).eq('stripe_subscription_id', invoice.subscription)
+        }
         break
       }
 

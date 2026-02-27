@@ -22,9 +22,10 @@ interface OutreachModalProps {
   history: OutreachEntry[]
   onClose: () => void
   onRegenerate: () => void
+  source?: 'ai' | 'template' | null
 }
 
-export function OutreachModal({ candidate, message, isLoading, history, onClose, onRegenerate }: OutreachModalProps) {
+export function OutreachModal({ candidate, message, isLoading, history, onClose, onRegenerate, source }: OutreachModalProps) {
   const [copied, setCopied] = useState<string | null>(null)
 
   const [copyError, setCopyError] = useState(false)
@@ -66,6 +67,11 @@ export function OutreachModal({ candidate, message, isLoading, history, onClose,
           </div>
         ) : message ? (
           <>
+            {source === 'template' && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-3">
+                <span className="text-xs text-amber-400">AI unavailable — using template. Configure Supabase + Anthropic for AI-generated messages.</span>
+              </div>
+            )}
             <div className="bg-secondary rounded-lg p-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap font-mono">
               {message}
             </div>

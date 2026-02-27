@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
-import { ChevronDown, MessageSquare, Trash2, Hash, X, Send } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ChevronDown, MessageSquare, Trash2, Hash, X, Send, ArrowUpRight, Bookmark, BookmarkCheck } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AvailabilityBadge } from '@/components/ui/AvailabilityBadge'
@@ -23,6 +24,8 @@ interface PipelineCardProps {
   onRemoveTag: (id: string, tag: string) => void
   onDelete: (id: string) => void
   onGenerateOutreach: (candidate: Candidate) => void
+  onToggleWatchlist?: (id: string) => void
+  isWatchlisted?: boolean
 }
 
 export function PipelineCard({
@@ -33,6 +36,8 @@ export function PipelineCard({
   onRemoveTag,
   onDelete,
   onGenerateOutreach,
+  onToggleWatchlist,
+  isWatchlisted = false,
 }: PipelineCardProps) {
   const [showStages, setShowStages] = useState(false)
   const [notes, setNotes] = useState(candidate.notes)
@@ -51,7 +56,8 @@ export function PipelineCard({
   const handleTagSubmit = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && tagInput.trim()) {
       e.preventDefault()
-      onAddTag(candidate.id, tagInput.trim())
+      const sanitized = tagInput.trim().replace(/[<>"'&]/g, '').slice(0, 30)
+      if (sanitized) onAddTag(candidate.id, sanitized)
       setTagInput('')
     }
   }
@@ -211,6 +217,22 @@ export function PipelineCard({
                 <Send className="w-3 h-3" />
                 Outreach
               </Button>
+              <Link to={`/profile/${candidate.id}`}>
+                <Button size="sm" variant="ghost" className="gap-1">
+                  <ArrowUpRight className="w-3 h-3" />
+                  Profile
+                </Button>
+              </Link>
+              {onToggleWatchlist && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onToggleWatchlist(candidate.id)}
+                  className="gap-1"
+                >
+                  {isWatchlisted ? <BookmarkCheck className="w-3 h-3 text-primary" /> : <Bookmark className="w-3 h-3" />}
+                </Button>
+              )}
               <Button size="sm" variant="ghost" onClick={() => onDelete(candidate.id)} className="gap-1 text-muted-foreground hover:text-destructive ml-auto">
                 <Trash2 className="w-3 h-3" />
               </Button>

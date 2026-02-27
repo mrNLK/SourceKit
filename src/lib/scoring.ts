@@ -137,13 +137,20 @@ export function parseSignals(text: string): Signal[] {
   if (/\bph\.?d\b/i.test(text)) signals.push({ type: 'degree', label: 'PhD' })
   if (/\bm\.?s\.?\b/i.test(text) || /master/i.test(text)) signals.push({ type: 'degree', label: 'Masters' })
 
-  // Publication detection
-  if (/\bpublication|published|paper|journal|arxiv\b/i.test(text)) {
+  // Publication detection — require academic context
+  // "published at NeurIPS" matches, "published on Medium" or "published a blog post" does NOT
+  if (/\bpublications?\b/i.test(text) ||
+      /\barxiv\b/i.test(text) ||
+      /\bpublished\s+(?:at|in)\s+(?:NeurIPS|ICML|CVPR|ACL|ICLR|AAAI|SIGMOD|VLDB|SOSP|OSDI|Nature|Science|IEEE|ACM)\b/i.test(text) ||
+      /\b(?:research\s+)?paper(?:s)?\s+(?:at|in|on)\b/i.test(text) ||
+      /\bjournal\s+(?:of|paper|article)/i.test(text)) {
     signals.push({ type: 'publication', label: 'Publications' })
   }
 
   // Conference detection
-  if (/\bconference|nips|neurips|icml|cvpr|acl|iclr|sigmod|osdi|sosp\b/i.test(text)) {
+  if (/\b(?:nips|neurips|icml|cvpr|acl|iclr|sigmod|osdi|sosp|aaai|vldb)\b/i.test(text) ||
+      /\bconference\s+(?:speaker|talk|presentation|paper)/i.test(text) ||
+      /\bspoke\s+at\s+\w+/i.test(text)) {
     signals.push({ type: 'conference', label: 'Conference Speaker' })
   }
 
@@ -155,8 +162,15 @@ export function parseSignals(text: string): Signal[] {
   // Patent detection
   if (/\bpatent/i.test(text)) signals.push({ type: 'patent', label: 'Patents' })
 
-  // Leadership detection
-  if (/\b(vp|director|head of|chief|cto|ceo|founder|co-founder|lead|principal|staff)\b/i.test(text)) {
+  // Leadership detection — require job title context, not freeform verbs
+  // "Director of Engineering" matches, "directed the project" does NOT
+  if (/\b(?:vp|vice\s+president)\s+(?:of\s+)?\w/i.test(text) ||
+      /\b(?:director|head)\s+of\s+\w/i.test(text) ||
+      /\b(?:chief\s+(?:technology|executive|product|operating|data|information))\b/i.test(text) ||
+      /\b(?:cto|ceo|cpo|coo|cdo|cio)\b/i.test(text) ||
+      /\b(?:co-?founder|founder)\b/i.test(text) ||
+      /\b(?:principal|staff)\s+(?:engineer|scientist|architect|developer)/i.test(text) ||
+      /\b(?:tech|engineering|team)\s+lead\b/i.test(text)) {
     signals.push({ type: 'leadership', label: 'Leadership' })
   }
 

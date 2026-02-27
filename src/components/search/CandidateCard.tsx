@@ -1,4 +1,5 @@
-import { MapPin, Bookmark, ArrowUpRight, Zap, Github } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { MapPin, Bookmark, BookmarkCheck, ArrowUpRight, Zap, Github } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,8 @@ interface CandidateCardProps {
   onSave?: (candidate: Candidate) => void
   onEnrich?: (candidate: Candidate) => void
   onViewProfile?: (candidate: Candidate) => void
+  onToggleWatchlist?: (candidate: Candidate) => void
+  isWatchlisted?: boolean
   showScore?: boolean
   saved?: boolean
 }
@@ -21,6 +24,8 @@ export function CandidateCard({
   onSave,
   onEnrich,
   onViewProfile,
+  onToggleWatchlist,
+  isWatchlisted = false,
   showScore = false,
   saved = false,
 }: CandidateCardProps) {
@@ -55,7 +60,13 @@ export function CandidateCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h3 className="font-semibold text-foreground truncate">{candidate.name}</h3>
+                {saved ? (
+                  <Link to={`/profile/${candidate.id}`} className="font-semibold text-foreground truncate hover:text-primary transition-colors">
+                    {candidate.name}
+                  </Link>
+                ) : (
+                  <h3 className="font-semibold text-foreground truncate">{candidate.name}</h3>
+                )}
                 <p className="text-sm text-muted-foreground truncate">
                   {candidate.role || candidate.title || 'Engineer'}
                   {candidate.company && <span className="text-foreground"> @ {candidate.company}</span>}
@@ -132,6 +143,16 @@ export function CandidateCard({
                 >
                   <Bookmark className="w-3 h-3" />
                   {saved ? 'Saved' : 'Save'}
+                </Button>
+              )}
+              {onToggleWatchlist && saved && (
+                <Button
+                  size="sm"
+                  variant={isWatchlisted ? 'secondary' : 'ghost'}
+                  onClick={() => onToggleWatchlist(candidate)}
+                  className="gap-1"
+                >
+                  {isWatchlisted ? <BookmarkCheck className="w-3 h-3 text-primary" /> : <Bookmark className="w-3 h-3" />}
                 </Button>
               )}
               {onViewProfile && (
