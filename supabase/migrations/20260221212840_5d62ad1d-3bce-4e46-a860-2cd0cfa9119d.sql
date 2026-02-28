@@ -1,6 +1,6 @@
 
 -- Candidates cache table (no auth needed, public read/write from edge functions)
-CREATE TABLE public.candidates (
+CREATE TABLE IF NOT EXISTS public.candidates (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   github_username TEXT NOT NULL UNIQUE,
   name TEXT,
@@ -29,15 +29,21 @@ CREATE TABLE public.candidates (
 );
 
 -- Index for fast lookups
-CREATE INDEX idx_candidates_username ON public.candidates(github_username);
-CREATE INDEX idx_candidates_fetched_at ON public.candidates(fetched_at);
+CREATE INDEX IF NOT EXISTS idx_candidates_username ON public.candidates(github_username);
+CREATE INDEX IF NOT EXISTS idx_candidates_fetched_at ON public.candidates(fetched_at);
 
 -- Enable RLS but allow public access (no auth needed for this app)
 ALTER TABLE public.candidates ENABLE ROW LEVEL SECURITY;
 
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public read') THEN
 CREATE POLICY "Allow public read" ON public.candidates FOR SELECT USING (true);
+END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow service insert') THEN
 CREATE POLICY "Allow service insert" ON public.candidates FOR INSERT WITH CHECK (true);
+END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow service update') THEN
 CREATE POLICY "Allow service update" ON public.candidates FOR UPDATE USING (true);
+END IF; END $$;
 
 -- Updated at trigger
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
