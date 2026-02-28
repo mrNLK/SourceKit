@@ -1,6 +1,7 @@
-interface SuggestionChip {
+export interface SuggestionChip {
   label: string;
   expandedQuery: string;
+  targetRepos?: string[];
 }
 
 interface SuggestionChipsProps {
@@ -15,7 +16,7 @@ const SuggestionChips = ({ suggestions, onSubmit }: SuggestionChipsProps) => (
       {suggestions.map((chip) => (
         <button key={chip.label} onClick={() => onSubmit(chip)}
           className="text-xs font-display px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
-          title={chip.expandedQuery.substring(0, 100) + "..."}>
+          title={chip.targetRepos ? `Searches ${chip.targetRepos.length} repos directly` : chip.expandedQuery.substring(0, 100) + "..."}>
           {chip.label}
         </button>
       ))}

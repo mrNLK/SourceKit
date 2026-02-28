@@ -36,7 +36,7 @@ interface StrategyEditorProps {
   jobTitle: string;
   companyName: string;
   onStrategyChange: (s: SearchStrategy) => void;
-  onSearch: (shortQuery: string, expandedQuery: string) => void;
+  onSearch: (shortQuery: string, expandedQuery: string, targetRepos?: string[]) => void;
   onCopy: (text: string) => void;
 }
 
@@ -85,7 +85,9 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
 
   const handleSearch = () => {
     const shortQuery = jobTitle && companyName ? `${jobTitle} at ${companyName}` : (localQuery || s.search_query).substring(0, 80);
-    onSearch(shortQuery, buildFinalQuery());
+    // P28: Pass targetRepos directly so they route to Contributors API without re-parsing
+    const targetRepos = s.target_repos.filter(r => r.repo.trim()).map(r => r.repo);
+    onSearch(shortQuery, buildFinalQuery(), targetRepos.length > 0 ? targetRepos : undefined);
   };
 
   // Section header

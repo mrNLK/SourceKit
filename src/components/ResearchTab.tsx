@@ -31,7 +31,7 @@ export interface ResearchState {
 interface ResearchTabProps {
   state: ResearchState;
   onStateChange: (state: ResearchState) => void;
-  onSearchWithStrategy?: (query: string, expandedQuery: string) => void;
+  onSearchWithStrategy?: (query: string, expandedQuery: string, targetRepos?: string[]) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -167,7 +167,7 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
           jobTitle={state.jobTitle}
           companyName={state.companyName}
           onStrategyChange={(strategy) => update({ strategy })}
-          onSearch={(short, expanded) => onSearchWithStrategy?.(short, expanded)}
+          onSearch={(short, expanded, targetRepos) => onSearchWithStrategy?.(short, expanded, targetRepos)}
           onCopy={(text) => { navigator.clipboard.writeText(text); toast({ title: "Strategy copied to clipboard" }); }}
         />
       )}

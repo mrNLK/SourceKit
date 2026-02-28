@@ -304,6 +304,29 @@ async function scoreCandidates(candidates: any[], query: string, parsedCriteria:
   return [...alreadyScored, ...freshlyScored].sort((a, b) => (b.score || 0) - (a.score || 0));
 }
 
+// Step 5: Filter ungettable candidates (founders, C-suite)
+const UNGETTABLE_TITLE_PATTERN = /\b(co-?founder|founder|ceo|cto|cso|cpo|coo|cio|chief\s+(executive|technology|science|product|operating|information))\b/i;
+const UNGETTABLE_BLOCKLIST = new Set([
+  'torvalds', 'karpathy', 'gaborcselle', 'thomwolf', 'guido', 'gvanrossum',
+  'yyx990803', 'rauchg', 'tj', 'sindresorhus', 'maboroshi',
+]);
+
+function detectUngettable(candidate: any): { reachability: string; reason: string } | null {
+  const username = (candidate.github_username || '').toLowerCase();
+  if (UNGETTABLE_BLOCKLIST.has(username)) {
+    return { reachability: 'low', reason: `Known high-profile individual` };
+  }
+  const bio = candidate.bio || '';
+  const match = bio.match(UNGETTABLE_TITLE_PATTERN);
+  if (match) {
+    return { reachability: 'low', reason: `Bio contains "${match[0]}"` };
+  }
+  if (candidate.followers > 5000) {
+    return { reachability: 'low', reason: `Very high visibility (${candidate.followers} followers)` };
+  }
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -313,8 +336,8 @@ serve(async (req) => {
     // Subscription gate check
     const gate = await checkSearchGate(req.headers.get('Authorization'));
     if (!gate.allowed) {
-      return new Response(JSON.stringify({ 
-        error: gate.error, 
+      return new Response(JSON.stringify({
+        error: gate.error,
         upgrade: true,
         searches_used: gate.searchesUsed,
         search_limit: gate.searchLimit,
@@ -324,11 +347,26 @@ serve(async (req) => {
       });
     }
 
-    const url = new URL(req.url);
-    const query = url.searchParams.get('q') || '';
+    // Support both GET (query string) and POST (body with targetRepos)
+    let query = '';
+    let directRepos: { owner: string; name: string }[] = [];
 
-    if (!query) {
-      return new Response(JSON.stringify({ error: 'Query parameter "q" is required' }), {
+    if (req.method === 'POST') {
+      const body = await req.json();
+      query = body.query || body.q || '';
+      if (body.targetRepos && Array.isArray(body.targetRepos)) {
+        directRepos = body.targetRepos.map((r: string) => {
+          const [owner, name] = r.split('/');
+          return { owner, name };
+        }).filter((r: any) => r.owner && r.name);
+      }
+    } else {
+      const url = new URL(req.url);
+      query = url.searchParams.get('q') || '';
+    }
+
+    if (!query && directRepos.length === 0) {
+      return new Response(JSON.stringify({ error: 'Query parameter "q" or targetRepos is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -337,9 +375,21 @@ serve(async (req) => {
     const supabase = getSupabase();
     const t0 = Date.now();
 
-    // Step 1: Parse query with AI
-    const parsedCriteria = await parseQuery(query);
-    console.log(`[${Date.now() - t0}ms] Parsed criteria:`, parsedCriteria);
+    // Step 1: Parse query with AI (skip if targetRepos provided directly)
+    let parsedCriteria: { repos: { owner: string; name: string }[]; skills: string[]; location: string | null; seniority: string | null };
+    if (directRepos.length > 0) {
+      // Use directly-provided repos, extract skills from query for scoring
+      parsedCriteria = {
+        repos: directRepos,
+        skills: query ? query.split(/[\s,]+/).filter(w => w.length > 2).slice(0, 6) : [],
+        location: null,
+        seniority: null,
+      };
+      console.log(`[${Date.now() - t0}ms] Using ${directRepos.length} direct target repos`);
+    } else {
+      parsedCriteria = await parseQuery(query);
+      console.log(`[${Date.now() - t0}ms] Parsed criteria:`, parsedCriteria);
+    }
 
     // Step 2: Fetch contributors from identified repos (parallel)
     const contributorMap = await fetchContributors(parsedCriteria.repos, parsedCriteria.skills);
@@ -353,33 +403,46 @@ serve(async (req) => {
     const scored = await scoreCandidates(candidates, query, parsedCriteria);
     console.log(`[${Date.now() - t0}ms] Scored ${scored.length} candidates`);
 
-    // Format response
-    const results = scored.map((c: any) => ({
-      id: c.github_username,
-      username: c.github_username,
-      name: c.name,
-      avatarUrl: c.avatar_url,
-      bio: c.summary || c.bio,
-      about: c.about || '',
-      location: c.location,
-      totalContributions: Object.values(c.contributed_repos || {}).reduce((a: number, b: any) => a + (b as number), 0) as number,
-      publicRepos: c.public_repos,
-      followers: c.followers,
-      stars: c.stars,
-      topLanguages: c.top_languages || [],
-      highlights: c.highlights || [],
-      score: c.score || 0,
-      hiddenGem: c.is_hidden_gem || false,
-      joinedYear: c.joined_year,
-      contributedRepos: c.contributed_repos || {},
-      linkedinUrl: c.linkedin_url,
-      twitterUsername: c.twitter_username,
-      email: c.email,
-      githubUrl: c.github_url,
-    }));
+    // Step 5: Mark ungettable candidates
+    const results = scored.map((c: any) => {
+      const ungettable = detectUngettable(c);
+      return {
+        id: c.github_username,
+        username: c.github_username,
+        name: c.name,
+        avatarUrl: c.avatar_url,
+        bio: c.summary || c.bio,
+        about: c.about || '',
+        location: c.location,
+        totalContributions: Object.values(c.contributed_repos || {}).reduce((a: number, b: any) => a + (b as number), 0) as number,
+        publicRepos: c.public_repos,
+        followers: c.followers,
+        stars: c.stars,
+        topLanguages: c.top_languages || [],
+        highlights: c.highlights || [],
+        score: c.score || 0,
+        hiddenGem: c.is_hidden_gem || false,
+        joinedYear: c.joined_year,
+        contributedRepos: c.contributed_repos || {},
+        linkedinUrl: c.linkedin_url,
+        twitterUsername: c.twitter_username,
+        email: c.email,
+        githubUrl: c.github_url,
+        ...(ungettable ? { reachability: ungettable.reachability, reachabilityReason: ungettable.reason } : {}),
+      };
+    });
 
-    // Increment search count for gated users
-    if (gate.userId) {
+    // Sort: reachable candidates first (same score range), then ungettable
+    results.sort((a: any, b: any) => {
+      const aUngettable = a.reachability === 'low' ? 1 : 0;
+      const bUngettable = b.reachability === 'low' ? 1 : 0;
+      if (aUngettable !== bUngettable) return aUngettable - bUngettable;
+      return (b.score || 0) - (a.score || 0);
+    });
+
+    // P20: Only increment search count if results were found
+    const creditCharged = results.length > 0;
+    if (gate.userId && creditCharged) {
       await incrementSearchCount(gate.userId).catch(e => console.error('Failed to increment search count:', e));
     }
 
@@ -387,6 +450,7 @@ serve(async (req) => {
       results,
       parsedCriteria,
       reposSearched: parsedCriteria.repos.map((r: any) => `${r.owner}/${r.name}`),
+      creditCharged,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

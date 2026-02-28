@@ -16,6 +16,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("research");
   const [rerunQuery, setRerunQuery] = useState<string | undefined>();
   const [rerunExpanded, setRerunExpanded] = useState<string | undefined>();
+  const [rerunTargetRepos, setRerunTargetRepos] = useState<string[] | undefined>();
   const [rerunKey, setRerunKey] = useState(0);
 
   // Handle payment success/cancelled URL params
@@ -45,13 +46,16 @@ const Index = () => {
     }
     setRerunQuery(query);
     setRerunExpanded(expandedQuery);
+    setRerunTargetRepos(undefined);
     setRerunKey((k) => k + 1);
     setActiveTab("search");
   }, []);
 
-  const handleSearchWithStrategy = useCallback((query: string, expandedQuery: string) => {
+  // P28: Pass targetRepos from strategy directly to search
+  const handleSearchWithStrategy = useCallback((query: string, expandedQuery: string, targetRepos?: string[]) => {
     setRerunQuery(query);
     setRerunExpanded(expandedQuery);
+    setRerunTargetRepos(targetRepos);
     setRerunKey((k) => k + 1);
     setActiveTab("search");
   }, []);
@@ -64,6 +68,7 @@ const Index = () => {
           key={rerunKey}
           initialQuery={rerunQuery}
           initialExpandedQuery={rerunExpanded}
+          initialTargetRepos={rerunTargetRepos}
           autoSubmit={!!rerunQuery && rerunKey > 0}
           onNavigate={(tab) => setActiveTab(tab as ActiveTab)}
         />

@@ -39,9 +39,13 @@ export interface SearchResponse {
     seniority: string | null;
   };
   reposSearched: string[];
+  creditCharged?: boolean;
 }
 
-export async function searchDevelopers(query: string): Promise<SearchResponse> {
+export async function searchDevelopers(query: string, targetRepos?: string[]): Promise<SearchResponse> {
+  if (targetRepos && targetRepos.length > 0) {
+    return invokeFunction('github-search', undefined, { query, targetRepos });
+  }
   return invokeFunction('github-search', { q: query });
 }
 

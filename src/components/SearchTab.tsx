@@ -23,19 +23,20 @@ import SkillPriorities from "@/components/search/SkillPriorities";
 interface SearchTabProps {
   initialQuery?: string;
   initialExpandedQuery?: string;
+  initialTargetRepos?: string[];
   autoSubmit?: boolean;
   onNavigate?: (tab: string) => void;
 }
 
-interface SuggestionChip { label: string; expandedQuery: string; }
+import type { SuggestionChip } from "@/components/search/SuggestionChips";
 interface SkillFilter { id: string; text: string; }
 
 const DEFAULT_SUGGESTIONS: SuggestionChip[] = [
-  { label: "Rust systems engineers", expandedQuery: "Rust systems engineers with experience in low-level programming, memory safety, performance optimization, and systems-level software development including operating systems, compilers, or embedded systems" },
-  { label: "React accessibility experts", expandedQuery: "React frontend engineers specializing in web accessibility (a11y), WCAG compliance, ARIA attributes, screen reader compatibility, and inclusive design patterns using React and TypeScript" },
-  { label: "ML infrastructure", expandedQuery: "Machine learning infrastructure engineers experienced with ML pipelines, model serving, distributed training, MLOps, Kubernetes for ML workloads, feature stores, and tools like Ray, Kubeflow, or MLflow" },
-  { label: "Kubernetes contributors", expandedQuery: "Kubernetes contributors and cloud-native engineers with experience in container orchestration, Helm charts, operators, service mesh, cloud infrastructure automation, and Go programming" },
-  { label: "Security researchers", expandedQuery: "Security researchers and application security engineers with expertise in vulnerability research, penetration testing, cryptography, secure coding practices, and CVE discovery" },
+  { label: "Rust systems engineers", expandedQuery: "Rust systems engineers", targetRepos: ["rust-lang/rust", "tokio-rs/tokio", "servo/servo", "denoland/deno", "tauri-apps/tauri", "solana-labs/solana"] },
+  { label: "React accessibility experts", expandedQuery: "React accessibility experts", targetRepos: ["facebook/react", "vercel/next.js", "jsx-eslint/eslint-plugin-jsx-a11y", "radix-ui/primitives", "shadcn-ui/ui"] },
+  { label: "ML infrastructure", expandedQuery: "ML infrastructure engineers", targetRepos: ["pytorch/pytorch", "tensorflow/tensorflow", "ray-project/ray", "mlflow/mlflow", "huggingface/transformers"] },
+  { label: "Kubernetes contributors", expandedQuery: "Kubernetes contributors", targetRepos: ["kubernetes/kubernetes", "helm/helm", "argoproj/argo-cd", "istio/istio", "cilium/cilium"] },
+  { label: "Security researchers", expandedQuery: "Security researchers", targetRepos: ["OWASP/CheatSheetSeries", "zaproxy/zaproxy", "projectdiscovery/nuclei", "hashicorp/vault", "aquasecurity/trivy"] },
 ];
 
 // ---------------------------------------------------------------------------
@@ -71,13 +72,14 @@ type SeniorityFilter = "any" | "junior" | "mid" | "senior";
 // Component
 // ---------------------------------------------------------------------------
 
-const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate }: SearchTabProps) => {
+const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, autoSubmit, onNavigate }: SearchTabProps) => {
   const queryClient = useQueryClient();
 
   // -- Search state --
   const [query, setQuery] = useState(initialQuery || "");
   const [activeQuery, setActiveQuery] = useState("");
   const [expandedQuery, setExpandedQuery] = useState(initialExpandedQuery || "");
+  const [activeTargetRepos, setActiveTargetRepos] = useState<string[] | undefined>(undefined);
   const [showExpandedQuery, setShowExpandedQuery] = useState(false);
   const autoSubmitDone = useRef(false);
   const historySavedForQuery = useRef<string>("");
@@ -114,20 +116,21 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
     localStorage.setItem('sourcekit-filters', JSON.stringify({ seniority: seniorityFilter, skills: skillFilters, language: languageFilter, minScore }));
   }, [seniorityFilter, skillFilters, languageFilter, minScore]);
 
-  // Auto-submit for re-run from history
+  // Auto-submit for re-run from history or strategy
   useEffect(() => {
     if (autoSubmit && initialQuery && !autoSubmitDone.current) {
       autoSubmitDone.current = true;
+      setExpandedQuery(initialExpandedQuery || "");
+      setActiveTargetRepos(initialTargetRepos);
       setActiveQuery(initialExpandedQuery || initialQuery);
       setQuery(initialQuery);
-      setExpandedQuery(initialExpandedQuery || "");
     }
-  }, [autoSubmit, initialQuery, initialExpandedQuery]);
+  }, [autoSubmit, initialQuery, initialExpandedQuery, initialTargetRepos]);
 
   // -- Data fetching --
   const { data, isLoading, error } = useQuery({
-    queryKey: ["github-search", activeQuery],
-    queryFn: () => searchDevelopers(activeQuery),
+    queryKey: ["github-search", activeQuery, activeTargetRepos],
+    queryFn: () => searchDevelopers(activeQuery, activeTargetRepos),
     enabled: !!activeQuery,
     staleTime: 1000 * 60 * 5,
   });
@@ -170,15 +173,23 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
     return combined.filter((d: any) => !isLikelyBot(d));
   }, [baseResults, expandedResults]);
 
-  // Save search history
+  // P23: Save search history for ALL searches (including 0 results)
+  // P20: Show toast when credit was not charged (0-result search)
   useEffect(() => {
     if (data && activeQuery && historySavedForQuery.current !== activeQuery) {
       historySavedForQuery.current = activeQuery;
+      // Show toast if no credit was charged
+      if (data.creditCharged === false) {
+        toast({ title: "No results found", description: "Your search credit was not used." });
+      }
       (async () => {
         try {
           await supabase.from("search_history").insert({ query: query || activeQuery, action_type: "search", result_count: baseResults.length, metadata: { expanded_query: expandedQuery || activeQuery, skills: parsedCriteria?.skills || [], location: parsedCriteria?.location || null, seniority: parsedCriteria?.seniority || null } } as any);
           queryClient.invalidateQueries({ queryKey: ["search-history"] });
-          window.dispatchEvent(new Event("sourcekit-search-complete"));
+          // Only fire search-complete event if credit was charged (so counter refreshes correctly)
+          if (data.creditCharged !== false) {
+            window.dispatchEvent(new Event("sourcekit-search-complete"));
+          }
         } catch { /* silent */ }
       })();
     }
@@ -239,10 +250,19 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) { toast({ title: "Enter a search query", description: "Type a skill, language, or domain to search for engineers." }); return; }
+    // P22: Reset expanded query and target repos when user initiates a new manual search
+    setExpandedQuery("");
+    setActiveTargetRepos(undefined);
     setActiveQuery(buildSearchQuery());
   };
 
-  const handleChipSubmit = (chip: SuggestionChip) => { setQuery(chip.label); setExpandedQuery(chip.expandedQuery); setActiveQuery(chip.expandedQuery); };
+  // P25: Chips pass targetRepos directly to the Contributors API
+  const handleChipSubmit = (chip: SuggestionChip) => {
+    setQuery(chip.label);
+    setExpandedQuery(chip.expandedQuery);
+    setActiveTargetRepos(chip.targetRepos);
+    setActiveQuery(chip.expandedQuery);
+  };
 
   const toggleShortlist = (username: string) => {
     setShortlisted(prev => { const next = new Set(prev); if (next.has(username)) next.delete(username); else next.add(username); localStorage.setItem('shortlisted', JSON.stringify([...next])); return next; });
@@ -317,7 +337,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, autoSubmit, onNavigate 
         <form onSubmit={handleSearch} className="relative mb-2">
           <div className="relative glass rounded-xl glow-border transition-all duration-300 focus-within:glow-sm">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input type="text" value={query} onChange={(e) => { setQuery(e.target.value); if (!expandedQuery) setShowExpandedQuery(false); }}
+            <input type="text" value={query} onChange={(e) => { setQuery(e.target.value); setExpandedQuery(""); setActiveTargetRepos(undefined); setShowExpandedQuery(false); }}
               placeholder="Search by skill, language, or domain..." className="w-full bg-transparent text-foreground placeholder:text-muted-foreground py-3.5 pl-12 pr-28 text-sm outline-none font-body" />
             <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-5 py-2 rounded-lg font-display text-xs font-medium hover:opacity-90 transition-opacity">Search</button>
           </div>

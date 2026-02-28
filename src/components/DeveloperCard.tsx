@@ -157,6 +157,12 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
                   Hidden Gem
                 </span>
               )}
+              {(developer as any).reachability === 'low' && (
+                <span className="text-[10px] font-display font-semibold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20"
+                  title={(developer as any).reachabilityReason || 'Founder/C-Suite — may not respond to outreach'}>
+                  Founder/C-Suite
+                </span>
+              )}
               {inPipeline && (
                 <span className="text-[10px] font-display px-1.5 py-0.5 rounded bg-info/10 text-info border border-info/20">
                   In Pipeline
