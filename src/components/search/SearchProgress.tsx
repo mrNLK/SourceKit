@@ -38,7 +38,8 @@ const SearchProgress = ({ isLoading, hasTargetRepos, repoCount }: SearchProgress
     setElapsed(0);
 
     // Step progression timers
-    const stepTimers = steps.map((step, idx) => {
+    const currentSteps = hasTargetRepos ? DIRECT_STEPS : STEPS;
+    const stepTimers = currentSteps.map((step, idx) => {
       if (idx === 0) return null;
       return setTimeout(() => setActiveStep(idx), step.delay);
     });
@@ -50,7 +51,7 @@ const SearchProgress = ({ isLoading, hasTargetRepos, repoCount }: SearchProgress
       stepTimers.forEach(t => t && clearTimeout(t));
       clearInterval(ticker);
     };
-  }, [isLoading, hasTargetRepos, steps]);
+  }, [isLoading, hasTargetRepos]);
 
   if (!isLoading) return null;
 

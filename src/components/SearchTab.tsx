@@ -130,7 +130,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
 
   // -- Data fetching --
   const { data, isLoading, error } = useQuery({
-    queryKey: ["github-search", activeQuery, activeTargetRepos],
+    queryKey: ["github-search", activeQuery, activeTargetRepos?.slice().sort().join(',')],
     queryFn: () => searchDevelopers(activeQuery, activeTargetRepos),
     enabled: !!activeQuery,
     staleTime: 1000 * 60 * 5,

@@ -278,10 +278,11 @@ async function enrichCandidates(
     await supabase.from('candidates').upsert(validProfiles as any[], { onConflict: 'github_username' });
   }
 
+  const freshMap = new Map(validProfiles.map((p: any) => [p.github_username, p]));
   const allCandidates = [];
   for (const username of usernames) {
     const c = cachedMap.get(username);
-    const fresh = validProfiles.find((p: any) => p?.github_username === username);
+    const fresh = freshMap.get(username);
     const candidate = fresh || c;
     if (candidate) {
       const commitCounts = contributorMap.get(username)?.commitCounts || {};
@@ -490,9 +491,8 @@ serve(async (req) => {
     const exaGitHubUsernames = new Set(
       exaCandidates.map(e => extractGitHubUsername(e.profileUrl)).filter(Boolean) as string[]
     );
-    const githubUsernames = new Set(Array.from(contributorMap.keys()));
     for (const c of candidates) {
-      const inGithub = githubUsernames.has(c.github_username);
+      const inGithub = contributorMap.has(c.github_username);
       const inExa = exaGitHubUsernames.has(c.github_username);
       c._source = inGithub && inExa ? 'both' : inExa ? 'exa' : 'github';
     }
