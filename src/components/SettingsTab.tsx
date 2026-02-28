@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Settings, Save, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { clearSettingsCache } from "@/lib/api";
 
 const SettingsTab = () => {
   const [loading, setLoading] = useState(true);
@@ -13,6 +14,8 @@ const SettingsTab = () => {
     role_pitch: "",
     webhook_url: "",
     slack_webhook_url: "",
+    exa_api_key: "",
+    parallel_api_key: "",
   });
 
   useEffect(() => {
@@ -31,6 +34,8 @@ const SettingsTab = () => {
           role_pitch: map.role_pitch || prev.role_pitch,
           webhook_url: map.webhook_url || prev.webhook_url,
           slack_webhook_url: map.slack_webhook_url || prev.slack_webhook_url,
+          exa_api_key: map.exa_api_key || prev.exa_api_key,
+          parallel_api_key: map.parallel_api_key || prev.parallel_api_key,
         }));
       }
       setLoading(false);
@@ -45,6 +50,7 @@ const SettingsTab = () => {
     for (const [key, value] of entries) {
       await (supabase as any).from("settings").upsert({ key, value }, { onConflict: "key" });
     }
+    clearSettingsCache();
     setSaving(false);
     setSaved(true);
     toast({ title: "Settings saved" });
@@ -65,6 +71,8 @@ const SettingsTab = () => {
     { key: "target_role", label: "Default Target Role", type: "text", placeholder: "Senior Software Engineer", group: "Outreach" },
     { key: "target_company", label: "Default Target Company", type: "text", placeholder: "Acme Inc", group: "Outreach" },
     { key: "role_pitch", label: "Role Pitch (one-liner)", type: "text", placeholder: "Building the next-gen developer platform", group: "Outreach" },
+    { key: "exa_api_key", label: "Exa API Key", type: "password", placeholder: "exa-...", group: "API Keys" },
+    { key: "parallel_api_key", label: "Parallel API Key", type: "password", placeholder: "parallel-...", group: "API Keys" },
     { key: "webhook_url", label: "Webhook URL", type: "url", placeholder: "https://hooks.example.com/...", group: "Integrations" },
     { key: "slack_webhook_url", label: "Slack Webhook URL", type: "url", placeholder: "https://hooks.slack.com/services/...", group: "Integrations" },
   ];

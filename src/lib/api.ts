@@ -83,3 +83,23 @@ export async function getSetting(key: string): Promise<string> {
   }
   return settingsCache?.[key] || '';
 }
+
+export interface ExaCandidateResult {
+  name: string;
+  bio: string;
+  profile_url: string;
+  source: string;
+  highlights: string[];
+}
+
+export async function searchCandidates(query: string, role?: string, company?: string): Promise<{ candidates: ExaCandidateResult[]; sources: Record<string, number> }> {
+  const exaKey = await getSetting('exa_api_key');
+  const parallelKey = await getSetting('parallel_api_key');
+  return invokeFunction('search-candidates', undefined, {
+    query,
+    role,
+    company,
+    exa_api_key: exaKey || undefined,
+    parallel_api_key: parallelKey || undefined,
+  });
+}

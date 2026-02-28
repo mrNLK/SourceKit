@@ -6,6 +6,7 @@ import PipelineTab from "@/components/PipelineTab";
 import HistoryTab from "@/components/HistoryTab";
 import WatchlistTab from "@/components/WatchlistTab";
 import BulkActionsTab from "@/components/BulkActionsTab";
+import WebsetsTab from "@/components/WebsetsTab";
 import SettingsTab from "@/components/SettingsTab";
 import ResearchTab, { type ResearchState } from "@/components/ResearchTab";
 import { toast } from "@/hooks/use-toast";
@@ -80,6 +81,7 @@ const Index = () => {
         <WatchlistTab onNavigateToSearch={() => setActiveTab("search")} />
       </div>
       {activeTab === "bulk" && <BulkActionsTab />}
+      {activeTab === "websets" && <WebsetsTab />}
       {activeTab === "settings" && <SettingsTab />}
     </DashboardLayout>
   );
