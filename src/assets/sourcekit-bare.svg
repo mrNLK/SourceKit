@@ -1,8 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <defs><linearGradient id="ac" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#00E5C3"/><stop offset="100%" stop-color="#00BFA5"/></linearGradient></defs>
-  <g transform="translate(256,256)">
-    <path d="M-55,-75 L-120,0 L-55,75" fill="none" stroke="url(#ac)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
-    <line x1="-15" y1="80" x2="15" y2="-80" stroke="url(#ac)" stroke-width="14" stroke-linecap="round" opacity="0.55"/>
-    <path d="M55,-75 L120,0 L55,75" fill="none" stroke="url(#ac)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" width="512" height="512" fill="none">
+  <path d="M17 16L7 28l10 12" stroke="#00e5a0" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30.5 14l-5 28" stroke="#00e5a0" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M39 16l10 12-10 12" stroke="#00e5a0" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="43" y="43" width="11" height="5" rx="2.5" fill="#00e5a0" transform="rotate(45 48.5 45.5)"/>
 </svg>

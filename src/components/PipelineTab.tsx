@@ -1,10 +1,11 @@
-import { GripVertical, Trash2, Loader2, Bookmark, BookmarkCheck, Clock, Search, ArrowRight, ArrowUpDown, ChevronDown, Tag, StickyNote, Share2, X, Plus } from "lucide-react";
+import { GripVertical, Trash2, Loader2, Bookmark, BookmarkCheck, Clock, Search, ArrowRight, ArrowUpDown, ChevronDown, Tag, StickyNote, Share2, X, Plus, BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import CandidateProfile from "@/components/CandidateProfile";
 import ExportButton from "@/components/ExportButton";
+import PipelineAnalytics from "@/components/pipeline/PipelineAnalytics";
 import EEAMetadata from "@/components/pipeline/EEAMetadata";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { toast } from "@/hooks/use-toast";
@@ -60,6 +61,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
   const [sortByScore, setSortByScore] = useState(false);
   const [activeStageFilter, setActiveStageFilter] = useState<string | null>(null);
   const [activeTagFilters, setActiveTagFilters] = useState<Set<string>>(new Set());
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const { data: candidates = [], isLoading } = useQuery({
     queryKey: ["pipeline"],
@@ -79,6 +81,28 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
       const { data } = await supabase.from("candidates").select("github_username, score").in("github_username", usernames);
       const map: Record<string, number> = {};
       (data || []).forEach((r: { github_username: string; score: number | null }) => { map[r.github_username] = r.score || 0; });
+      return map;
+    },
+    enabled: candidates.length > 0,
+  });
+
+  // Fetch last stage change time per candidate from pipeline_events
+  const { data: stageChangeTimes = {} } = useQuery({
+    queryKey: ["stage-change-times", candidates.length],
+    queryFn: async () => {
+      const ids = candidates.map((c: any) => c.id);
+      if (ids.length === 0) return {};
+      const { data } = await supabase
+        .from("pipeline_events")
+        .select("pipeline_id, created_at")
+        .eq("event_type", "stage_change")
+        .in("pipeline_id", ids)
+        .order("created_at", { ascending: false });
+      const map: Record<string, string> = {};
+      // First row per pipeline_id is the most recent stage change
+      (data || []).forEach((r: any) => {
+        if (!map[r.pipeline_id]) map[r.pipeline_id] = r.created_at;
+      });
       return map;
     },
     enabled: candidates.length > 0,
@@ -123,7 +147,9 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["pipeline"] });
-      const candidate = candidates.find((c: PipelineCandidate) => c.id === variables.id);
+      queryClient.invalidateQueries({ queryKey: ["bulk-pipeline"] });
+      queryClient.invalidateQueries({ queryKey: ["stage-change-times"] });
+      const candidate = candidates.find((c: any) => c.id === variables.id);
       const stageLabel = STAGES.find(s => s.id === variables.stage)?.label || variables.stage;
       toast({ title: `Moved ${candidate?.name || candidate?.github_username || "candidate"} to ${stageLabel}` });
       // Fire-and-forget webhook notification
@@ -137,6 +163,10 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
         });
       }
     },
+    onError: (error: Error) => {
+      queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+      toast({ title: "Failed to move candidate", description: error.message, variant: "destructive" });
+    },
   });
 
   const removeMutation = useMutation({
@@ -144,7 +174,15 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
       const { error } = await supabase.from("pipeline").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pipeline"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+      queryClient.invalidateQueries({ queryKey: ["bulk-pipeline"] });
+    },
+    onError: (error: Error) => {
+      queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+      queryClient.invalidateQueries({ queryKey: ["bulk-pipeline"] });
+      toast({ title: "Failed to remove candidate", description: error.message, variant: "destructive" });
+    },
   });
 
   const notesMutation = useMutation({
@@ -153,6 +191,9 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pipeline"] }),
+    onError: (error: Error) => {
+      toast({ title: "Failed to save notes", description: error.message, variant: "destructive" });
+    },
   });
 
   const tagsMutation = useMutation({
@@ -161,6 +202,9 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pipeline"] }),
+    onError: (error: Error) => {
+      toast({ title: "Failed to save tags", description: error.message, variant: "destructive" });
+    },
   });
 
   const handleDrop = (stageId: string) => {
@@ -278,6 +322,15 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
         <h1 className="font-display text-lg font-semibold text-foreground">Candidate Pipeline</h1>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            className={`flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-full border transition-colors ${
+              showAnalytics ? "bg-primary/10 text-primary border-primary/30" : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+            }`}
+          >
+            <BarChart3 className="w-3 h-3" />
+            Analytics
+          </button>
+          <button
             onClick={() => setSortByScore(!sortByScore)}
             className={`flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-full border transition-colors ${
               sortByScore ? "bg-primary/10 text-primary border-primary/30" : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
@@ -336,6 +389,11 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
         </div>
       )}
 
+      {/* Analytics panel */}
+      {showAnalytics && candidates.length > 0 && (
+        <PipelineAnalytics candidates={candidates} stages={STAGES} />
+      )}
+
       {/* Empty state */}
       {(!candidates || candidates.length === 0) && (
         <div className="flex flex-col items-center justify-center py-16 text-center rounded-xl border border-dashed border-muted-foreground/20">
@@ -372,6 +430,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
               c={c}
               score={candidateScores[c.github_username] || 0}
               stage={STAGES.find(s => s.id === c.stage) || STAGES[0]}
+              stageChangedAt={stageChangeTimes[c.id]}
               onDragStart={() => setDraggedItem(c.id)}
               onClick={() => setSelectedCandidate(c)}
               onRemove={() => { if (window.confirm(`Remove ${c.name || c.github_username}?`)) removeMutation.mutate(c.id); }}
@@ -417,6 +476,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
                       c={c}
                       score={candidateScores[c.github_username] || 0}
                       stage={stage}
+                      stageChangedAt={stageChangeTimes[c.id]}
                       onDragStart={() => setDraggedItem(c.id)}
                       onClick={() => setSelectedCandidate(c)}
                       onRemove={() => { if (window.confirm(`Remove ${c.name || c.github_username}?`)) removeMutation.mutate(c.id); }}
@@ -444,6 +504,7 @@ interface PipelineCardProps {
   c: PipelineCandidate;
   score: number;
   stage: typeof STAGES[number];
+  stageChangedAt?: string;
   onDragStart: () => void;
   onClick: () => void;
   onRemove: () => void;
@@ -455,15 +516,16 @@ interface PipelineCardProps {
   onMove: (stage: string) => void;
 }
 
-function PipelineCard({ c, score, stage, onDragStart, onClick, onRemove, onWatch, isWatched, onNotesChange, onTagsChange, onShareSlack, onMove }: PipelineCardProps) {
+function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, onRemove, onWatch, isWatched, onNotesChange, onTagsChange, onShareSlack, onMove }: PipelineCardProps) {
   const [showNotes, setShowNotes] = useState(false);
   const [notesValue, setNotesValue] = useState(c.notes || "");
   const [showTagInput, setShowTagInput] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [showMoveMenu, setShowMoveMenu] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  const tags: string[] = c.tags || [];
-  const stageTime = daysInStage(c.updated_at || c.created_at);
+  const tags: string[] = (c as any).tags || [];
+  // Use stage change timestamp if available, otherwise fall back to created_at
+  const stageTime = daysInStage(stageChangedAt || c.created_at);
   const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 
   useEffect(() => { setNotesValue(c.notes || ""); }, [c.notes]);

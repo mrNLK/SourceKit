@@ -14,6 +14,7 @@ const BulkActionsTab = lazy(() => import("@/components/BulkActionsTab"));
 const WebsetsTab = lazy(() => import("@/components/WebsetsTab"));
 const SettingsTab = lazy(() => import("@/components/SettingsTab"));
 const ResearchTab = lazy(() => import("@/components/ResearchTab"));
+const GuideTab = lazy(() => import("@/components/GuideTab"));
 
 const TabFallback = () => (
   <div className="flex items-center justify-center py-24">
@@ -33,7 +34,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     try {
       const saved = localStorage.getItem("sourcekit-active-tab");
-      if (saved && ["search", "research", "history", "pipeline", "watchlist", "bulk", "websets", "settings"].includes(saved)) {
+      if (saved && ["search", "research", "history", "pipeline", "watchlist", "bulk", "websets", "settings", "guide"].includes(saved)) {
         return saved as ActiveTab;
       }
     } catch {}
@@ -123,6 +124,7 @@ const Index = () => {
         {activeTab === "bulk" && <BulkActionsTab />}
         {activeTab === "websets" && <WebsetsTab />}
         {activeTab === "settings" && <SettingsTab />}
+        {activeTab === "guide" && <GuideTab />}
       </Suspense>
     </DashboardLayout>
   );

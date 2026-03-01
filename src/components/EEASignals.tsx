@@ -122,6 +122,81 @@ function DimensionBar({ dim, expanded, onToggle }: { dim: EEADimension; expanded
 }
 
 // ---------------------------------------------------------------------------
+// Popover — compact all-dimension summary for DeveloperCard hover
+// ---------------------------------------------------------------------------
+
+function CompactDimensionRow({ dim }: { dim: EEADimension }) {
+  const colors = STRENGTH_COLORS[dim.strength];
+  const widthPercent = (dim.strength / 4) * 100;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs leading-none w-4 text-center">{dim.icon}</span>
+      <span className="text-[10px] font-display text-foreground w-24 truncate">{dim.shortLabel}</span>
+      <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+        <div className={`h-full rounded-full ${colors.bar}`} style={{ width: `${widthPercent}%` }} />
+      </div>
+      <span className={`text-[9px] font-display font-semibold w-16 text-right ${colors.text}`}>
+        {STRENGTH_LABELS[dim.strength]}
+      </span>
+    </div>
+  );
+}
+
+export function EEAPopover({ developer }: { developer: any }) {
+  const eea = useEEA(developer);
+
+  if (eea.overallScore === 0) return null;
+
+  const uscisDims = eea.dimensions.filter(d => d.criterion === 'uscis');
+  const suppDims = eea.dimensions.filter(d => d.criterion === 'supplementary');
+
+  return (
+    <div className="space-y-3 w-72">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-display font-semibold text-foreground">EEA Breakdown</span>
+          <span className={`text-[9px] font-display font-bold px-1.5 py-0.5 rounded-full border ${eea.tier.bgColor} ${eea.tier.color} ${eea.tier.borderColor}`}>
+            {eea.tier.label}
+          </span>
+        </div>
+        <div className={`w-7 h-7 rounded-md flex items-center justify-center font-display text-xs font-bold border ${eea.tier.bgColor} ${eea.tier.color} ${eea.tier.borderColor}`}>
+          {eea.overallScore}
+        </div>
+      </div>
+
+      {/* USCIS Criteria */}
+      <div>
+        <span className="text-[9px] font-display font-semibold text-muted-foreground uppercase tracking-wider">USCIS Criteria</span>
+        <div className="mt-1.5 space-y-1.5">
+          {uscisDims.map(dim => <CompactDimensionRow key={dim.id} dim={dim} />)}
+        </div>
+      </div>
+
+      {/* Supplementary */}
+      <div>
+        <span className="text-[9px] font-display font-semibold text-muted-foreground uppercase tracking-wider">Supplementary</span>
+        <div className="mt-1.5 space-y-1.5">
+          {suppDims.map(dim => <CompactDimensionRow key={dim.id} dim={dim} />)}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-1 border-t border-border">
+        <span className="text-[10px] text-muted-foreground font-display">
+          {eea.strongCount} strong signal{eea.strongCount !== 1 ? 's' : ''}
+        </span>
+        {eea.documentationGaps.length > 0 && (
+          <span className="text-[10px] text-amber-400 font-display">
+            {eea.documentationGaps.length} doc gap{eea.documentationGaps.length !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Full — complete EEA breakdown for CandidateProfile / SlideOut
 // ---------------------------------------------------------------------------
 

@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 80" width="460" height="80">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 80" width="460" height="80" fill="none">
   <defs>
-    <style>@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&amp;display=swap');</style>
+    <style>@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&amp;display=swap');</style>
   </defs>
-  <text x="0" y="58" font-family="'JetBrains Mono','SF Mono',monospace" font-size="54" font-weight="600" letter-spacing="-1.5">
-    <tspan fill="#9E9E9E">Source</tspan><tspan fill="#00BFA5">Kit</tspan>
+  <text x="0" y="58" font-family="'JetBrains Mono','SF Mono',monospace" font-size="54" letter-spacing="-1.5">
+    <tspan fill="#ffffff" font-weight="700">Source</tspan><tspan fill="#888888" font-weight="400">Kit</tspan>
   </text>
 </svg>

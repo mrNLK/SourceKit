@@ -5,7 +5,8 @@ import type { Developer } from "@/types/developer";
 import { enrichLinkedIn } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { useWatchlist } from "@/hooks/useWatchlist";
-import { EEAMini } from "@/components/EEASignals";
+import { EEAMini, EEAPopover } from "@/components/EEASignals";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
 import DuplicateModal from "@/components/DuplicateModal";
 
@@ -169,7 +170,14 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
                   In Pipeline
                 </span>
               )}
-              <EEAMini developer={developer} />
+              <Popover>
+                <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <button className="cursor-pointer"><EEAMini developer={developer} /></button>
+                </PopoverTrigger>
+                <PopoverContent side="bottom" align="start" className="w-80 p-3" onClick={(e) => e.stopPropagation()}>
+                  <EEAPopover developer={developer} />
+                </PopoverContent>
+              </Popover>
             </div>
             <p className="text-xs text-muted-foreground font-display mb-2">@{developer.username}</p>
             

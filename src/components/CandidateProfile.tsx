@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   ArrowLeft, MessageSquare, Bookmark, BookmarkCheck, Link as LinkIcon, Briefcase, GraduationCap, BookOpen,
   CheckCircle2, XCircle, Star, MapPin, Clock, ExternalLink, Loader2, Sparkles, Copy, ClipboardCheck,
-  ChevronDown
+  ChevronDown, ArrowRight, Plus, Send, Mail, Linkedin, MoreHorizontal, Check
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,13 +90,33 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
     },
   });
 
+  // Pipeline timeline events
+  const { data: timelineEvents = [] } = useQuery({
+    queryKey: ["pipeline-events", pc.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pipeline_events")
+        .select("*")
+        .eq("pipeline_id", pc.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // F7: Stage advancement prompt after outreach generation
+  const [showStagePrompt, setShowStagePrompt] = useState(false);
+
   // Stage update
   const handleStageChange = async (newStage: string) => {
     const fromStage = localStage;
     setLocalStage(newStage); // Optimistic update
     await supabase.from("pipeline").update({ stage: newStage }).eq("id", pc.id);
     queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+    queryClient.invalidateQueries({ queryKey: ["bulk-pipeline"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-events", pc.id] });
     setStageOpen(false);
+    setShowStagePrompt(false);
     notifyStageChange({
       pipeline_id: pc.id,
       github_username: username,
@@ -123,6 +143,11 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
       toast({ title: "Outreach message generated" });
       await supabase.from("outreach_history").insert({ pipeline_id: pc.id, message: data.message });
       queryClient.invalidateQueries({ queryKey: ["outreach-history", pc.id] });
+      // F7: Prompt to advance stage if candidate is still in "sourced"
+      if (localStage === "sourced") {
+        setShowStagePrompt(true);
+        setTimeout(() => setShowStagePrompt(false), 15000);
+      }
     } catch (e) {
       console.error("Outreach generation failed:", e);
       toast({ title: "Outreach generation failed", description: (e as Error)?.message || "Please try again.", variant: "destructive" });
@@ -334,6 +359,28 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
             </div>
           )}
 
+          {/* F7: Stage advancement prompt */}
+          {showStagePrompt && localStage === "sourced" && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
+              <ArrowRight className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="text-xs font-display text-foreground flex-1">
+                Message ready — move to <span className="font-semibold text-amber-400">Contacted</span>?
+              </span>
+              <button
+                onClick={() => handleStageChange("contacted")}
+                className="text-xs font-display font-semibold px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition-colors"
+              >
+                Move to Contacted
+              </button>
+              <button
+                onClick={() => setShowStagePrompt(false)}
+                className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* ===== AI SUMMARY ===== */}
           <div className="glass rounded-xl p-5">
             <h2 className="font-display text-sm font-semibold text-foreground mb-3">About</h2>
@@ -432,7 +479,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
             <EEAFull developer={candidate || pc} />
           </div>
 
-          {/* ===== OUTREACH HISTORY ===== */}
+          {/* ===== OUTREACH HISTORY (F9: with sent tracking) ===== */}
           <div className="glass rounded-xl p-5">
             <h2 className="font-display text-sm font-semibold text-foreground mb-3">
               Outreach History ({outreachHistory.length})
@@ -441,26 +488,125 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
               <p className="text-sm text-muted-foreground italic">No outreach messages yet.</p>
             ) : (
               <div className="space-y-3">
-                {outreachHistory.map((h: { id: string; message: string; created_at: string }) => (
-                  <div key={h.id} className="group/msg p-4 rounded-lg bg-secondary/50 border border-border relative">
-                    <p className="text-sm text-secondary-foreground leading-relaxed pr-8">{h.message}</p>
-                    <div className="flex items-center mt-2">
-                      <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        {new Date(h.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                      </span>
+                {outreachHistory.map((h: any) => {
+                  const isSent = h.status === "sent";
+                  const channel = h.channel || "email";
+                  return (
+                    <div key={h.id} className={`group/msg p-4 rounded-lg border relative ${isSent ? "bg-emerald-500/5 border-emerald-500/15" : "bg-secondary/50 border-border"}`}>
+                      <p className={`text-sm leading-relaxed pr-8 ${isSent ? "text-secondary-foreground" : "text-muted-foreground"}`}>{h.message}</p>
+                      <div className="flex items-center gap-3 mt-2 flex-wrap">
+                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {new Date(h.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                        {/* Channel badge */}
+                        <span className={`flex items-center gap-1 text-[10px] font-display px-1.5 py-0.5 rounded border ${
+                          channel === "linkedin" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
+                          channel === "email" ? "bg-primary/10 text-primary border-primary/20" :
+                          "bg-secondary text-muted-foreground border-border"
+                        }`}>
+                          {channel === "linkedin" ? <Linkedin className="w-2.5 h-2.5" /> : channel === "email" ? <Mail className="w-2.5 h-2.5" /> : <MoreHorizontal className="w-2.5 h-2.5" />}
+                          {channel}
+                        </span>
+                        {/* Sent status */}
+                        {isSent ? (
+                          <span className="flex items-center gap-1 text-[10px] font-display text-emerald-400">
+                            <Check className="w-2.5 h-2.5" /> Sent {h.sent_at ? new Date(h.sent_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            {/* Channel selector */}
+                            <select
+                              value={channel}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={async (e) => {
+                                await supabase.from("outreach_history").update({ channel: e.target.value }).eq("id", h.id);
+                                queryClient.invalidateQueries({ queryKey: ["outreach-history", pc.id] });
+                              }}
+                              className="bg-secondary/50 border border-border rounded px-1.5 py-0.5 text-[10px] text-foreground font-display outline-none cursor-pointer"
+                            >
+                              <option value="email">Email</option>
+                              <option value="linkedin">LinkedIn</option>
+                              <option value="other">Other</option>
+                            </select>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await supabase.from("outreach_history").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", h.id);
+                                queryClient.invalidateQueries({ queryKey: ["outreach-history", pc.id] });
+                                toast({ title: "Marked as sent" });
+                              }}
+                              className="flex items-center gap-1 text-[10px] font-display px-2 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/15 transition-colors"
+                            >
+                              <Send className="w-2.5 h-2.5" /> Mark Sent
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleCopy(h.id, h.message)}
+                        className="absolute top-3 right-3 p-1.5 rounded-md text-muted-foreground hover:text-foreground opacity-0 group-hover/msg:opacity-100 transition-opacity"
+                        title="Copy message"
+                      >
+                        {copiedId === h.id ? <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleCopy(h.id, h.message)}
-                      className="absolute top-3 right-3 p-1.5 rounded-md text-muted-foreground hover:text-foreground opacity-0 group-hover/msg:opacity-100 transition-opacity"
-                      title="Copy message"
-                    >
-                      {copiedId === h.id ? <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
+          </div>
+
+          {/* ===== ACTIVITY TIMELINE (F6) ===== */}
+          <div className="glass rounded-xl p-5">
+            <h2 className="font-display text-sm font-semibold text-foreground mb-3">Activity Timeline</h2>
+            <div className="relative">
+              {/* Vertical line */}
+              <div className="absolute left-[7px] top-2 bottom-2 w-px bg-border" />
+              <div className="space-y-3">
+                {/* Stage change events */}
+                {timelineEvents.map((event: any) => {
+                  const fromStage = STAGES.find(s => s.id === event.from_stage);
+                  const toStage = STAGES.find(s => s.id === event.to_stage);
+                  return (
+                    <div key={event.id} className="flex items-start gap-3 relative">
+                      <div className="w-[15px] h-[15px] rounded-full bg-primary/15 border-2 border-primary/40 shrink-0 z-10 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {fromStage && (
+                            <span className={`text-[10px] font-display font-semibold px-1.5 py-0.5 rounded border ${fromStage.color}`}>
+                              {fromStage.label}
+                            </span>
+                          )}
+                          <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                          {toStage && (
+                            <span className={`text-[10px] font-display font-semibold px-1.5 py-0.5 rounded border ${toStage.color}`}>
+                              {toStage.label}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {new Date(event.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+                {/* Synthetic "added to pipeline" entry */}
+                <div className="flex items-start gap-3 relative">
+                  <div className="w-[15px] h-[15px] rounded-full bg-emerald-500/15 border-2 border-emerald-500/40 shrink-0 z-10 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <Plus className="w-3 h-3 text-emerald-400" />
+                      <span className="text-[10px] font-display font-semibold text-emerald-400">Added to Pipeline</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {new Date(pc.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* ===== NOTES ===== */}

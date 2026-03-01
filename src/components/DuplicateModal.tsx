@@ -1,4 +1,12 @@
-import { AlertTriangle, X, Eye, Plus } from "lucide-react";
+import { AlertTriangle, Eye, Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface DuplicateModalProps {
   open: boolean;
@@ -9,27 +17,24 @@ interface DuplicateModalProps {
 }
 
 const DuplicateModal = ({ open, onClose, existing, onSaveAnyway, onViewExisting }: DuplicateModalProps) => {
-  if (!open || !existing) return null;
+  if (!existing) return null;
 
   return (
-    <>
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50" onClick={onClose} />
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-        <div className="glass rounded-xl border border-border w-full max-w-md p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-warning/10 border border-warning/20 flex items-center justify-center">
-                <AlertTriangle className="w-4 h-4 text-warning" />
-              </div>
-              <h3 className="font-display text-sm font-semibold text-foreground">Possible Duplicate</h3>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
+      <DialogContent className="max-w-md p-0">
+        <DialogHeader className="px-6 pt-6 pb-2">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-8 h-8 rounded-lg bg-warning/10 border border-warning/20 flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4 text-warning" />
             </div>
-            <button onClick={onClose} className="p-1 rounded text-muted-foreground hover:text-foreground">
-              <X className="w-4 h-4" />
-            </button>
+            <DialogTitle className="font-display text-sm font-semibold">Possible Duplicate</DialogTitle>
           </div>
+          <DialogDescription className="text-sm">
+            This candidate may already be in your pipeline.
+          </DialogDescription>
+        </DialogHeader>
 
-          <p className="text-sm text-muted-foreground">This candidate may already be in your pipeline.</p>
-
+        <div className="px-6 pb-2">
           {/* Existing candidate preview */}
           <div className="glass rounded-lg p-4 border border-border">
             <div className="flex items-center gap-3">
@@ -50,26 +55,26 @@ const DuplicateModal = ({ open, onClose, existing, onSaveAnyway, onViewExisting 
               </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onViewExisting}
-              className="flex-1 flex items-center justify-center gap-1.5 text-xs font-display font-semibold px-4 py-2.5 rounded-lg border border-border text-foreground hover:bg-secondary transition-colors"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              View Existing
-            </button>
-            <button
-              onClick={onSaveAnyway}
-              className="flex-1 flex items-center justify-center gap-1.5 text-xs font-display font-semibold px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Save Anyway
-            </button>
-          </div>
         </div>
-      </div>
-    </>
+
+        <DialogFooter className="px-6 pb-6 flex items-center gap-2 sm:flex-row">
+          <button
+            onClick={onViewExisting}
+            className="flex-1 flex items-center justify-center gap-1.5 text-xs font-display font-semibold px-4 py-2.5 rounded-lg border border-border text-foreground hover:bg-secondary transition-colors"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            View Existing
+          </button>
+          <button
+            onClick={onSaveAnyway}
+            className="flex-1 flex items-center justify-center gap-1.5 text-xs font-display font-semibold px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Save Anyway
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

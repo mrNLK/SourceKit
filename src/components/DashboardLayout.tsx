@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Menu, X, Users, Sparkles, Crown, Layers, Sun, Moon } from "lucide-react";
+import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Menu, X, Users, Sparkles, Crown, Layers, Sun, Moon, BookOpen } from "lucide-react";
 import sourcekitLogo from "@/assets/sourcekit-bare.svg";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWatchlist } from "@/hooks/useWatchlist";
@@ -7,7 +7,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 
-export type ActiveTab = "search" | "research" | "history" | "pipeline" | "watchlist" | "bulk" | "websets" | "settings";
+export type ActiveTab = "search" | "research" | "history" | "pipeline" | "watchlist" | "bulk" | "websets" | "settings" | "guide";
 
 interface DashboardLayoutProps {
   activeTab: ActiveTab;
@@ -24,6 +24,7 @@ const NAV_ITEMS: { id: ActiveTab; label: string; icon: React.ElementType; tip: s
   { id: "bulk", label: "Bulk Actions", icon: Users, tip: "AI-powered batch operations on pipeline candidates" },
   { id: "websets", label: "Websets", icon: Layers, tip: "Exa AI-powered candidate websets with verification" },
   { id: "settings", label: "Settings", icon: Settings, tip: "Configure API keys, webhooks, and integrations" },
+  { id: "guide", label: "Guide", icon: BookOpen, tip: "Quick reference for workflows, tips, and features" },
 ];
 
 const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutProps) => {
@@ -61,8 +62,8 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
         <img src={sourcekitLogo} alt="SourceKit" className="w-7 h-7" />
-        <span className="font-display text-sm font-semibold tracking-tight">
-          <span className="text-muted-foreground">Source</span><span className="text-primary">Kit</span>
+        <span className="font-display text-sm tracking-tight">
+          <span className="text-foreground font-bold">Source</span><span className="text-muted-foreground font-normal">Kit</span>
         </span>
       </div>
 
@@ -189,8 +190,8 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
             </button>
             <div className="flex items-center gap-2">
               <img src={sourcekitLogo} alt="SourceKit" className="w-5 h-5" />
-              <span className="font-display text-sm font-semibold">
-                <span className="text-muted-foreground">Source</span><span className="text-primary">Kit</span>
+              <span className="font-display text-sm">
+                <span className="text-foreground font-bold">Source</span><span className="text-muted-foreground font-normal">Kit</span>
               </span>
             </div>
           </header>

@@ -249,9 +249,29 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
     setBatchAdding(true);
     const toAdd = filtered.filter((d) => batchSelected.has(d.username) && !pipelineSet.has(d.username));
     let added = 0;
-    for (const dev of toAdd) { try { const { error } = await supabase.from('pipeline').upsert({ github_username: dev.username, name: dev.name, avatar_url: dev.avatarUrl, stage: 'sourced' }, { onConflict: 'github_username' }); if (!error) added++; } catch {} }
+    let failed = 0;
+    const failedNames: string[] = [];
+    for (const dev of toAdd) {
+      try {
+        const { error } = await supabase.from('pipeline').upsert(
+          { github_username: dev.username, name: dev.name, avatar_url: dev.avatarUrl, stage: 'sourced' },
+          { onConflict: 'github_username' },
+        );
+        if (!error) { added++; } else { failed++; failedNames.push(dev.username); }
+      } catch {
+        failed++;
+        failedNames.push(dev.username);
+      }
+    }
     queryClient.invalidateQueries({ queryKey: ["pipeline-usernames"] });
-    toast({ title: `Added ${added} candidate${added !== 1 ? 's' : ''} to pipeline`, description: `${added} candidate${added !== 1 ? 's' : ''} added to Sourced stage.` });
+    if (failed === 0) {
+      toast({ title: `Added ${added} candidate${added !== 1 ? 's' : ''} to pipeline`, description: `${added} candidate${added !== 1 ? 's' : ''} added to Sourced stage.` });
+    } else if (added > 0) {
+      toast({ title: `Added ${added} of ${toAdd.length} candidates`, description: `${failed} failed — please retry.`, variant: "destructive" });
+    } else {
+      toast({ title: "Failed to add candidates", description: "Please try again.", variant: "destructive" });
+    }
+    if (failedNames.length > 0) console.warn("Failed to add to pipeline:", failedNames);
     setBatchSelected(new Set());
     setBatchAdding(false);
   };

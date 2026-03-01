@@ -15,7 +15,7 @@ export default {
     extend: {
       fontFamily: {
         display: ['JetBrains Mono', 'monospace'],
-        body: ['Inter', 'system-ui', 'sans-serif'],
+        body: ['DM Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
