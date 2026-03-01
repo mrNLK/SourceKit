@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      eea_signal_templates: {
+        Row: {
+          id: string
+          user_id: string | null
+          role_category: string
+          signal_name: string
+          webset_criterion: string
+          enrichment_description: string
+          enrichment_format: string
+          enrichment_options: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          role_category: string
+          signal_name: string
+          webset_criterion: string
+          enrichment_description: string
+          enrichment_format?: string
+          enrichment_options?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          role_category?: string
+          signal_name?: string
+          webset_criterion?: string
+          enrichment_description?: string
+          enrichment_format?: string
+          enrichment_options?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       candidates: {
         Row: {
           about: string | null
@@ -173,6 +212,68 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_searches: {
+        Row: {
+          id: string
+          name: string
+          query: string
+          expanded_query: string | null
+          filters: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          query: string
+          expanded_query?: string | null
+          filters?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          query?: string
+          expanded_query?: string | null
+          filters?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
+      search_results: {
+        Row: {
+          id: string
+          search_id: string
+          candidate_id: string
+          rank: number
+          score: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          search_id: string
+          candidate_id: string
+          rank?: number
+          score?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          search_id?: string
+          candidate_id?: string
+          rank?: number
+          score?: number | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_results_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       search_history: {
         Row: {
           action_type: string
@@ -245,6 +346,39 @@ export type Database = {
           id?: string
           list_name?: string
           notes?: string | null
+        }
+        Relationships: []
+      }
+      webset_refs: {
+        Row: {
+          id: string
+          user_id: string
+          query: string
+          count: number
+          status: string
+          eea_signals: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          user_id: string
+          query: string
+          count?: number
+          status?: string
+          eea_signals?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          query?: string
+          count?: number
+          status?: string
+          eea_signals?: Json | null
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

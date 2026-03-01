@@ -114,9 +114,9 @@ When you click "Find LinkedIn" on a candidate, the app uses **Exa** (a semantic 
 
 ## Getting Started
 
-Go to **https://getsourcekit.vercel.app** — **Google SSO login is required.** Sign in with your Google account to get started.
+Go to **https://getsourcekit.vercel.app** — **Google SSO login required.** Click "Sign in with Google" to get started.
 
-> **Note:** Each user's data is isolated via Supabase Auth. Your searches, pipeline, and watchlist are private to your account.
+> **Note:** Authentication is required. Each user's data (pipeline, watchlist, settings) is isolated to their account.
 
 ---
 
@@ -352,7 +352,7 @@ Configure defaults:
 
 ## Important Notes
 
-- **Google SSO required** — Sign in with your Google account. Data is isolated per user.
+- **Google SSO required** — Sign in with Google to access the app. Data is isolated per user.
 - **GitHub API rate limits** — If searches fail, wait a few minutes before retrying
 - **LinkedIn enrichment** depends on publicly available data — some lookups may fail
 - **Browser data persists** — Clearing cookies resets shortlist/filter preferences

@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { toast } from "@/hooks/use-toast";
 import { EEAFull } from "@/components/EEASignals";
+import { notifyStageChange } from "@/lib/api";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -40,6 +41,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [linkedinCopied, setLinkedinCopied] = useState(false);
   const [stageOpen, setStageOpen] = useState(false);
+  const [localStage, setLocalStage] = useState<string>(pipelineCandidate.stage || "sourced");
   const [localNotes, setLocalNotes] = useState(pipelineCandidate.notes || "");
   const [savingNotes, setSavingNotes] = useState(false);
 
@@ -89,28 +91,40 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
 
   // Stage update
   const handleStageChange = async (newStage: string) => {
+    const fromStage = localStage;
+    setLocalStage(newStage); // Optimistic update
     await supabase.from("pipeline").update({ stage: newStage }).eq("id", pc.id);
     queryClient.invalidateQueries({ queryKey: ["pipeline"] });
     setStageOpen(false);
+    notifyStageChange({
+      pipeline_id: pc.id,
+      github_username: username,
+      candidate_name: displayName,
+      from_stage: fromStage,
+      to_stage: newStage,
+    });
   };
 
   // Generate outreach
   const handleGenerate = async () => {
+    if (generating) return; // Prevent double-fire
     setGenerating(true);
     setGeneratedMsg(null);
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-outreach`, {
         method: "POST",
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ candidate_name: displayName, github_username: username }),
+        body: JSON.stringify({ candidate_name: displayName || username, github_username: username }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed");
+      if (!res.ok) throw new Error(data?.error || "Failed to generate outreach");
       setGeneratedMsg(data.message);
+      toast({ title: "Outreach message generated" });
       await supabase.from("outreach_history").insert({ pipeline_id: pc.id, message: data.message });
       queryClient.invalidateQueries({ queryKey: ["outreach-history", pc.id] });
     } catch (e) {
       console.error("Outreach generation failed:", e);
+      toast({ title: "Outreach generation failed", description: (e as Error)?.message || "Please try again.", variant: "destructive" });
     } finally {
       setGenerating(false);
     }
@@ -128,7 +142,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
   const contributedRepos = (candidate?.contributed_repos as Record<string, number>) || {};
   const about = candidate?.about || candidate?.summary || null;
   const linkedinUrl = candidate?.linkedin_url || null;
-  const currentStage = STAGES.find((s) => s.id === pc.stage) || STAGES[0];
+  const currentStage = STAGES.find((s) => s.id === localStage) || STAGES[0];
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -282,7 +296,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
                             key={s.id}
                             onClick={() => handleStageChange(s.id)}
                             className={`w-full text-left text-xs font-display px-3 py-2 hover:bg-accent transition-colors ${
-                              s.id === pc.stage ? "text-primary font-semibold" : "text-foreground"
+                              s.id === localStage ? "text-primary font-semibold" : "text-foreground"
                             }`}
                           >
                             {s.label}
@@ -380,18 +394,35 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
             </div>
           )}
 
-          {/* ===== HIGHLIGHTS / ACHIEVEMENTS ===== */}
+          {/* ===== HIGHLIGHTS / ACHIEVEMENTS (P26: ranked with star badges) ===== */}
           {highlights.length > 0 && (
             <div className="glass rounded-xl p-5">
               <h2 className="font-display text-sm font-semibold text-foreground mb-3">Key Achievements</h2>
-              <ul className="space-y-2">
-                {highlights.map((h, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    <span className="text-sm text-secondary-foreground">{h}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-2">
+                {highlights.map((h, i) => {
+                  const starMatch = h.match(/\((\d[\d,]*)⭐\)$/);
+                  const starCount = starMatch ? parseInt(starMatch[1].replace(/,/g, ''), 10) : 0;
+                  const label = starMatch ? h.replace(/\s*\(\d[\d,]*⭐\)$/, '') : h;
+                  return (
+                    <div key={i} className={`flex items-start gap-2 p-2 rounded-lg ${i === 0 ? 'bg-primary/5 border border-primary/15' : ''}`}>
+                      <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-bold font-display ${
+                        i === 0 ? 'bg-amber-500/15 text-amber-400' : i === 1 ? 'bg-gray-400/15 text-gray-400' : 'bg-orange-600/15 text-orange-500'
+                      }`}>
+                        {i + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm text-secondary-foreground">{label}</span>
+                      </div>
+                      {starCount > 0 && (
+                        <span className="flex items-center gap-0.5 text-[11px] font-display text-amber-400 shrink-0">
+                          <Star className="w-3 h-3 fill-current" />
+                          {starCount.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 

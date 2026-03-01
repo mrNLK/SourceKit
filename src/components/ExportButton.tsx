@@ -21,6 +21,7 @@ const DEFAULT_COLUMNS: ExportColumn[] = [
   { key: "linkedinUrl", label: "LinkedIn URL", extract: (d) => d.linkedinUrl || d.linkedin_url || "" },
   { key: "email", label: "Email", extract: (d) => d.email || "" },
   { key: "stage", label: "Pipeline Stage", extract: (d) => d.stage || "" },
+  { key: "addedAt", label: "Added At", extract: (d) => d.created_at || d.addedAt || "" },
 ];
 
 interface ExportButtonProps {

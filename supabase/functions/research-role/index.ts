@@ -1,11 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { anthropicCall, anthropicToolCall } from "../_shared/anthropic.ts";
 import { checkSearchGate, incrementSearchCount } from "../_shared/gate.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -139,15 +135,20 @@ I need:
           },
           eea_signals: {
             type: "array",
-            description: "5-8 specific Evidence of Exceptional Ability signals for this role. What would make someone clearly exceptional? Think: contributions, leadership, publications, community impact, technical depth.",
+            description: "5-8 specific Evidence of Exceptional Ability signals for this role. Each signal must include both a human-readable description AND fields that map directly to Exa Webset search criteria and enrichment definitions. Think: contributions, leadership, publications, community impact, technical depth.",
             items: {
               type: "object",
               properties: {
-                signal: { type: "string", description: "The EEA signal (e.g. 'Maintains a 1000+ star Kubernetes operator')" },
+                signal: { type: "string", description: "The EEA signal in plain language (e.g. 'Maintains a 1000+ star Kubernetes operator')" },
                 strength: { type: "string", enum: ["strong", "moderate"], description: "How strong of a signal this is" },
-                criterion: { type: "string", description: "Which EEA criterion this maps to (e.g. 'Original Contributions', 'Critical Role', 'Published Material')" }
+                criterion: { type: "string", description: "Which EEA criterion this maps to (e.g. 'Original Contributions', 'Critical Role', 'Published Material')" },
+                webset_criterion: { type: "string", description: "A precise search filter statement for Exa Websets. Written as a factual criterion an AI agent can verify from public web data. Example: 'Person has authored or co-authored a peer-reviewed paper on distributed systems published at a top-tier venue (SOSP, OSDI, NSDI, EuroSys)'" },
+                enrichment_description: { type: "string", description: "An instruction for an AI enrichment agent to extract verifiable evidence. Example: 'Find and summarize evidence that this person has made significant open-source contributions to Kubernetes-related projects, including repo names, star counts, and role (maintainer vs contributor)'" },
+                enrichment_format: { type: "string", enum: ["text", "options"], description: "Format for the enrichment result. Use 'text' for free-form evidence summaries, 'options' when the signal is binary or categorical." },
+                enrichment_options: { type: "array", items: { type: "string" }, description: "Only when enrichment_format is 'options'. The option labels. Example: ['Confirmed maintainer', 'Active contributor', 'Minor contributor', 'No evidence']" },
+                verification_method: { type: "string", description: "Brief description of how to verify this signal from public data. Example: 'Check GitHub profile for repos with 1000+ stars where user is listed as maintainer'" }
               },
-              required: ["signal", "strength", "criterion"]
+              required: ["signal", "strength", "criterion", "webset_criterion", "enrichment_description", "enrichment_format", "verification_method"]
             }
           },
           role_overview: {

@@ -1,12 +1,15 @@
 import { GripVertical, Trash2, Loader2, Bookmark, BookmarkCheck, Clock, Search, ArrowRight, ArrowUpDown, ChevronDown, Tag, StickyNote, Share2, X, Plus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import CandidateProfile from "@/components/CandidateProfile";
 import ExportButton from "@/components/ExportButton";
+import EEAMetadata from "@/components/pipeline/EEAMetadata";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { toast } from "@/hooks/use-toast";
-import { loadSettings } from "@/lib/api";
+import { notifyStageChange } from "@/lib/api";
+import { useSettings } from "@/hooks/useSettings";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -41,6 +44,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
   const { isWatched, toggle: toggleWatchlist } = useWatchlist();
+  const { settings } = useSettings();
   const [sortByScore, setSortByScore] = useState(false);
   const [activeStageFilter, setActiveStageFilter] = useState<string | null>(null);
   const [activeTagFilters, setActiveTagFilters] = useState<Set<string>>(new Set());
@@ -100,16 +104,26 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
   }, [candidates, activeStageFilter, activeTagFilters, sortByScore, candidateScores]);
 
   const moveMutation = useMutation({
-    mutationFn: async ({ id, stage }: { id: string; stage: string }) => {
+    mutationFn: async ({ id, stage, fromStage }: { id: string; stage: string; fromStage?: string }) => {
       const { error } = await supabase.from("pipeline").update({ stage, updated_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
-      return { id, stage };
+      return { id, stage, fromStage };
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["pipeline"] });
       const candidate = candidates.find((c: any) => c.id === variables.id);
       const stageLabel = STAGES.find(s => s.id === variables.stage)?.label || variables.stage;
       toast({ title: `Moved ${candidate?.name || candidate?.github_username || "candidate"} to ${stageLabel}` });
+      // Fire-and-forget webhook notification
+      if (candidate) {
+        notifyStageChange({
+          pipeline_id: variables.id,
+          github_username: candidate.github_username,
+          candidate_name: candidate.name ?? undefined,
+          from_stage: variables.fromStage,
+          to_stage: variables.stage,
+        });
+      }
     },
   });
 
@@ -131,7 +145,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
 
   const tagsMutation = useMutation({
     mutationFn: async ({ id, tags }: { id: string; tags: string[] }) => {
-      const { error } = await (supabase as any).from("pipeline").update({ tags }).eq("id", id);
+      const { error } = await supabase.from("pipeline").update({ tags }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pipeline"] }),
@@ -139,7 +153,8 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
 
   const handleDrop = (stageId: string) => {
     if (draggedItem) {
-      moveMutation.mutate({ id: draggedItem, stage: stageId });
+      const fromStage = candidates.find((c: any) => c.id === draggedItem)?.stage;
+      moveMutation.mutate({ id: draggedItem, stage: stageId, fromStage });
       setDraggedItem(null);
     }
   };
@@ -148,7 +163,6 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
 
   const handleShareToSlack = async (candidate: any) => {
     try {
-      const settings = await loadSettings();
       const webhookUrl = settings.slack_webhook_url;
       if (!webhookUrl) {
         toast({ title: "Set up Slack in Settings first", description: "Add your Slack webhook URL in Settings → Webhook URL." });
@@ -208,8 +222,39 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-5 h-5 text-primary animate-spin" />
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <Skeleton className="h-6 w-44" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-28 rounded-full" />
+            <Skeleton className="h-8 w-20 rounded-full" />
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 mb-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-7 w-20 rounded-full" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {[1, 2, 3, 4, 5].map((col) => (
+            <div key={col} className="glass rounded-xl p-3 min-h-[400px]">
+              <Skeleton className="h-6 w-16 rounded-md mb-3" />
+              <div className="space-y-2">
+                {[1, 2].map((card) => (
+                  <div key={card} className="glass rounded-lg p-3 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Skeleton className="w-7 h-7 rounded-full" />
+                      <div className="flex-1 space-y-1">
+                        <Skeleton className="h-3.5 w-24" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -323,7 +368,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
               onNotesChange={(notes) => notesMutation.mutate({ id: c.id, notes })}
               onTagsChange={(tags) => tagsMutation.mutate({ id: c.id, tags })}
               onShareSlack={() => handleShareToSlack(c)}
-              onMove={(stageId) => moveMutation.mutate({ id: c.id, stage: stageId })}
+              onMove={(stageId) => moveMutation.mutate({ id: c.id, stage: stageId, fromStage: c.stage })}
             />
           ))}
           {filteredCandidates.length === 0 && (
@@ -368,7 +413,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
                       onNotesChange={(notes) => notesMutation.mutate({ id: c.id, notes })}
                       onTagsChange={(tags) => tagsMutation.mutate({ id: c.id, tags })}
                       onShareSlack={() => handleShareToSlack(c)}
-                      onMove={(stageId) => moveMutation.mutate({ id: c.id, stage: stageId })}
+                      onMove={(stageId) => moveMutation.mutate({ id: c.id, stage: stageId, fromStage: c.stage })}
                     />
                   ))}
                 </div>
@@ -480,6 +525,17 @@ function PipelineCard({ c, score, stage, onDragStart, onClick, onRemove, onWatch
           </span>
         </div>
       </div>
+
+      {/* EEA metadata (from webset enrichment) */}
+      {c.eea_data && (
+        <div className="ml-5 mt-1">
+          <EEAMetadata
+            strength={c.eea_data.strength}
+            enrichments={c.eea_data.enrichments}
+            compact
+          />
+        </div>
+      )}
 
       {/* Tag pills */}
       {tags.length > 0 && (

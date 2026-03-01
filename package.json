@@ -1,10 +1,8 @@
 {
   "name": "sourceproof",
   "private": true,
-  "version": "0.0.0",
-  "engines": {
-    "node": ">=18"
-  },
+  "version": "1.0.0",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -69,6 +67,9 @@
     "vaul": "^0.9.9",
     "zod": "^3.25.76"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
@@ -85,6 +86,7 @@
     "globals": "^15.15.0",
     "jsdom": "^20.0.3",
     "postcss": "^8.5.6",
+    "puppeteer": "^24.37.5",
     "supabase": "^2.76.15",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",

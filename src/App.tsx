@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
-import { clearSettingsCache } from "./lib/api";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Index from "./pages/Index";
 import DeveloperProfile from "./pages/DeveloperProfile";
@@ -25,7 +24,7 @@ const App = () => {
       setSession(session);
       setLoading(false);
       if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
-        clearSettingsCache();
+        queryClient.invalidateQueries({ queryKey: ["settings"] });
       }
     });
 

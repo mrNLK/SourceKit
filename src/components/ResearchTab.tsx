@@ -28,17 +28,24 @@ export interface ResearchState {
   jdText?: string;
 }
 
+// P28: Structured strategy handoff
+interface StrategyHandoff {
+  targetRepos?: string[];
+  skills?: string[];
+}
+
 interface ResearchTabProps {
   state: ResearchState;
   onStateChange: (state: ResearchState) => void;
-  onSearchWithStrategy?: (query: string, expandedQuery: string, targetRepos?: string[]) => void;
+  onSearchWithStrategy?: (query: string, expandedQuery: string, strategy?: StrategyHandoff) => void;
+  onNavigateToWebsets?: () => void;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTabProps) => {
+const ResearchTab = ({ state, onStateChange, onSearchWithStrategy, onNavigateToWebsets }: ResearchTabProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -167,8 +174,9 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy }: ResearchTab
           jobTitle={state.jobTitle}
           companyName={state.companyName}
           onStrategyChange={(strategy) => update({ strategy })}
-          onSearch={(short, expanded, targetRepos) => onSearchWithStrategy?.(short, expanded, targetRepos)}
+          onSearch={(short, expanded, strategyData) => onSearchWithStrategy?.(short, expanded, strategyData)}
           onCopy={(text) => { navigator.clipboard.writeText(text); toast({ title: "Strategy copied to clipboard" }); }}
+          onNavigateToWebsets={onNavigateToWebsets}
         />
       )}
 

@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { SlidersHorizontal, MapPin, X, Gem, Zap, Loader2 } from "lucide-react";
+import { SlidersHorizontal, MapPin, X, Gem, Zap, Loader2, AlertTriangle } from "lucide-react";
 import ExportButton from "@/components/ExportButton";
 
 type SeniorityFilter = "any" | "junior" | "mid" | "senior";
@@ -24,6 +24,9 @@ interface SearchFiltersProps {
   // Gems
   showGemsOnly: boolean;
   onToggleGems: () => void;
+  // Ungettable
+  showUngettable: boolean;
+  onToggleUngettable: () => void;
   // Results limit
   resultLimit: number;
   onResultLimitChange: (val: number) => void;
@@ -47,6 +50,7 @@ const SearchFilters = ({
   showSkillPanel, onToggleSkillPanel,
   locationFilter, onLocationChange, locationSuggestions,
   showGemsOnly, onToggleGems,
+  showUngettable, onToggleUngettable,
   resultLimit, onResultLimitChange,
   enrichProgress, onBatchEnrich,
   availableLanguages, languageFilter, onLanguageChange,
@@ -113,6 +117,14 @@ const SearchFilters = ({
               showGemsOnly ? 'bg-warning/10 text-warning border-warning/30' : 'border-border text-muted-foreground hover:text-foreground'
             }`}>
             <Gem className="w-3 h-3" /> Hidden Gems
+          </button>
+
+          <button onClick={onToggleUngettable}
+            className={`flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-full border transition-colors ${
+              showUngettable ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'border-border text-muted-foreground hover:text-foreground'
+            }`}
+            title="Show high-profile candidates (founders, CEOs, industry leaders) that are typically harder to recruit">
+            <AlertTriangle className="w-3 h-3" /> Show Ungettable
           </button>
 
           <div className="flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-full border border-border bg-secondary">

@@ -20,6 +20,23 @@ function headers(apiKey: string): Record<string, string> {
   };
 }
 
+/** Strip prompt injection patterns from user-supplied text */
+function sanitizeInput(text: string): string {
+  if (!text) return text;
+  let sanitized = text
+    // Strip XML-like system/role tags
+    .replace(/<\/?(?:system|human|assistant|admin|root)>/gi, '')
+    // Remove common injection phrases
+    .replace(/ignore\s+(all\s+)?(previous|prior|above)\s+(instructions?|prompts?|rules?)/gi, '')
+    .replace(/disregard\s+(all\s+)?(previous|prior|above)\s+(instructions?|prompts?|rules?)/gi, '')
+    .replace(/you\s+are\s+now\s+(in\s+)?/gi, '');
+  // Truncate overly long inputs
+  if (sanitized.length > 50000) {
+    sanitized = sanitized.substring(0, 50000);
+  }
+  return sanitized;
+}
+
 // Non-streaming text completion
 export async function anthropicCall(
   system: string,
@@ -27,6 +44,7 @@ export async function anthropicCall(
   options?: AnthropicOptions
 ): Promise<string> {
   const apiKey = getApiKey();
+  const sanitizedPrompt = sanitizeInput(userPrompt);
   const res = await fetch(ANTHROPIC_API, {
     method: "POST",
     headers: headers(apiKey),
@@ -34,7 +52,7 @@ export async function anthropicCall(
       model: options?.model || "claude-haiku-4-5-20251001",
       max_tokens: options?.maxTokens || 4096,
       system,
-      messages: [{ role: "user", content: userPrompt }],
+      messages: [{ role: "user", content: sanitizedPrompt }],
     }),
   });
 
@@ -64,11 +82,12 @@ export async function anthropicToolCall(
   options?: AnthropicOptions
 ): Promise<{ toolName: string; toolInput: Record<string, unknown> } | null> {
   const apiKey = getApiKey();
+  const sanitizedPrompt = sanitizeInput(userPrompt);
   const body: Record<string, unknown> = {
     model: options?.model || "claude-haiku-4-5-20251001",
     max_tokens: options?.maxTokens || 1024,
     system,
-    messages: [{ role: "user", content: userPrompt }],
+    messages: [{ role: "user", content: sanitizedPrompt }],
     tools,
   };
   if (toolChoice) body.tool_choice = toolChoice;
@@ -102,6 +121,7 @@ export async function anthropicStream(
   options?: AnthropicOptions
 ): Promise<ReadableStream> {
   const apiKey = getApiKey();
+  const sanitizedPrompt = sanitizeInput(userPrompt);
   const res = await fetch(ANTHROPIC_API, {
     method: "POST",
     headers: headers(apiKey),
@@ -109,7 +129,7 @@ export async function anthropicStream(
       model: options?.model || "claude-haiku-4-5-20251001",
       max_tokens: options?.maxTokens || 4096,
       system,
-      messages: [{ role: "user", content: userPrompt }],
+      messages: [{ role: "user", content: sanitizedPrompt }],
       stream: true,
     }),
   });

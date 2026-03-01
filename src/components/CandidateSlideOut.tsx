@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   X, Star, MapPin, Clock, MessageSquare, Loader2, Sparkles, Copy, ClipboardCheck,
   ExternalLink, UserPlus, Check, Bookmark, BookmarkCheck, Github, Mail, Twitter,
-  Linkedin, ChevronDown,
+  Linkedin, ChevronDown, Tag, StickyNote, Plus,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +44,11 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
   const [outreachTone, setOutreachTone] = useState<string>("professional");
   const [copiedMsg, setCopiedMsg] = useState(false);
   const [toneOpen, setToneOpen] = useState(false);
+  // FEAT-004: Notes and tags
+  const [notes, setNotes] = useState("");
+  const [notesSaving, setNotesSaving] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
 
   const dev = developer;
 
@@ -54,16 +59,22 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  // Check if already in pipeline
+  // Check if already in pipeline (fetch notes + tags)
   const { data: pipelineRow } = useQuery({
     queryKey: ["pipeline-check", dev.username],
     queryFn: async () => {
-      const { data } = await supabase.from("pipeline").select("id").eq("github_username", dev.username).maybeSingle();
+      const { data } = await supabase.from("pipeline").select("id, notes, tags").eq("github_username", dev.username).maybeSingle();
       return data;
     },
   });
 
-  useEffect(() => { if (pipelineRow) setAddedToPipeline(true); }, [pipelineRow]);
+  useEffect(() => {
+    if (pipelineRow) {
+      setAddedToPipeline(true);
+      setNotes(pipelineRow.notes || "");
+      setTags(pipelineRow.tags || []);
+    }
+  }, [pipelineRow]);
 
   // Fetch enriched candidate data
   const { data: candidate } = useQuery({
@@ -79,7 +90,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
   const { data: settings } = useQuery({
     queryKey: ["settings-for-outreach"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("settings").select("key, value");
+      const { data } = await supabase.from("settings").select("key, value");
       const map: Record<string, string> = {};
       if (data) data.forEach((r: any) => { map[r.key] = r.value; });
       return map;
@@ -159,6 +170,35 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
     toast({ title: "Copied to clipboard" });
     setTimeout(() => setCopiedMsg(false), 1500);
   };
+
+  // FEAT-004: Save notes
+  const handleSaveNotes = useCallback(async () => {
+    if (!pipelineRow?.id) return;
+    setNotesSaving(true);
+    await supabase.from("pipeline").update({ notes }).eq("id", pipelineRow.id);
+    setNotesSaving(false);
+    toast({ title: "Notes saved" });
+  }, [notes, pipelineRow]);
+
+  // FEAT-004: Add tag
+  const handleAddTag = useCallback(async () => {
+    const tag = tagInput.trim().toLowerCase();
+    if (!tag || !pipelineRow?.id || tags.includes(tag)) { setTagInput(""); return; }
+    const newTags = [...tags, tag];
+    setTags(newTags);
+    setTagInput("");
+    await supabase.from("pipeline").update({ tags: newTags }).eq("id", pipelineRow.id);
+    queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+  }, [tagInput, tags, pipelineRow, queryClient]);
+
+  // FEAT-004: Remove tag
+  const handleRemoveTag = useCallback(async (tag: string) => {
+    if (!pipelineRow?.id) return;
+    const newTags = tags.filter((t) => t !== tag);
+    setTags(newTags);
+    await supabase.from("pipeline").update({ tags: newTags }).eq("id", pipelineRow.id);
+    queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+  }, [tags, pipelineRow, queryClient]);
 
   const topLanguages = (candidate?.top_languages as any[]) || dev.topLanguages || [];
   const highlights = (candidate?.highlights as string[]) || dev.highlights || [];
@@ -255,6 +295,71 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
               </a>
             )}
           </div>
+
+          {/* ===== NOTES & TAGS (FEAT-004) ===== */}
+          {addedToPipeline && pipelineRow && (
+            <div className="glass rounded-xl p-4 space-y-3">
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <StickyNote className="w-3.5 h-3.5 text-muted-foreground" />
+                  <h3 className="font-display text-xs font-semibold text-foreground">Notes</h3>
+                </div>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  onBlur={handleSaveNotes}
+                  rows={3}
+                  placeholder="Add notes about this candidate..."
+                  className="w-full bg-secondary/50 border border-border rounded-lg p-2.5 text-xs text-foreground font-body outline-none resize-none focus:border-primary/30 placeholder:text-muted-foreground"
+                />
+                {notesSaving && <span className="text-[10px] text-muted-foreground font-display">Saving...</span>}
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+                  <h3 className="font-display text-xs font-semibold text-foreground">Tags</h3>
+                </div>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 text-[10px] font-display px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => handleRemoveTag(tag)}
+                        className="text-primary/60 hover:text-primary transition-colors"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                  {tags.length === 0 && !tagInput && (
+                    <span className="text-[10px] text-muted-foreground/60 font-display">No tags yet</span>
+                  )}
+                </div>
+                <form
+                  onSubmit={(e) => { e.preventDefault(); handleAddTag(); }}
+                  className="flex items-center gap-1.5"
+                >
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    placeholder="Add tag..."
+                    className="flex-1 bg-secondary/50 border border-border rounded-lg py-1.5 px-2.5 text-[11px] text-foreground font-body outline-none focus:border-primary/30 placeholder:text-muted-foreground"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!tagInput.trim()}
+                    className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors disabled:opacity-40"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* ===== ABOUT ===== */}
           {about && (

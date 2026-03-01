@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Menu, X, Users, Sparkles, Crown, Layers } from "lucide-react";
+import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Menu, X, Users, Sparkles, Crown, Layers, Sun, Moon } from "lucide-react";
 import sourcekitLogo from "@/assets/sourcekit-bare.svg";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWatchlist } from "@/hooks/useWatchlist";
@@ -32,6 +32,18 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
   const { count: watchlistCount } = useWatchlist();
   const { subscription } = useSubscription();
   const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  // FEAT-007: Theme toggle
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("sourcekit-theme") as "dark" | "light") || "dark";
+    }
+    return "dark";
+  });
+  useEffect(() => {
+    document.documentElement.classList.toggle("light", theme === "light");
+    localStorage.setItem("sourcekit-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -118,6 +130,13 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
             {userEmail || "Signed in"}
           </p>
         </div>
+        <button
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+        >
+          {theme === "dark" ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
+          <span className="font-display text-xs tracking-wide">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+        </button>
         <button
           onClick={() => supabase.auth.signOut()}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"

@@ -58,6 +58,55 @@
     --font-display: 'JetBrains Mono', monospace;
     --font-body: 'Inter', system-ui, sans-serif;
   }
+
+  /* FEAT-007: Light mode override */
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 220 20% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 12%;
+
+    --primary: 174 72% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 220 14% 40%;
+
+    --muted: 220 14% 95%;
+    --muted-foreground: 215 12% 50%;
+
+    --accent: 174 72% 40%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 14% 88%;
+    --input: 220 14% 88%;
+    --ring: 174 72% 40%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 20% 12%;
+    --sidebar-primary: 174 72% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 95%;
+    --sidebar-accent-foreground: 220 20% 12%;
+    --sidebar-border: 220 14% 88%;
+    --sidebar-ring: 174 72% 40%;
+
+    --glow: 174 72% 40%;
+    --surface: 220 14% 96%;
+    --surface-hover: 220 14% 92%;
+    --text-dim: 215 12% 55%;
+    --text-secondary: 215 12% 42%;
+    --success: 142 60% 42%;
+    --warning: 38 92% 50%;
+    --info: 210 80% 50%;
+  }
 }
 
 @layer base {

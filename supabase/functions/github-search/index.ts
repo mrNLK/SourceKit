@@ -2,11 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { anthropicCall } from "../_shared/anthropic.ts";
 import { checkSearchGate, incrementSearchCount } from "../_shared/gate.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 const GITHUB_API = "https://api.github.com";
 const EXA_API = "https://api.exa.ai/search";
@@ -19,7 +15,9 @@ function getSupabase() {
   );
 }
 
-async function githubFetch(url: string) {
+const MAX_RETRIES = 3;
+
+async function githubFetch(url: string, attempt = 0): Promise<any> {
   const headers: Record<string, string> = {
     'Accept': 'application/vnd.github.v3+json',
     'User-Agent': 'SourceKit-App',
@@ -28,15 +26,50 @@ async function githubFetch(url: string) {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(url, { headers });
+
   if (res.status === 403 || res.status === 429) {
     const remaining = res.headers.get('x-ratelimit-remaining');
-    if (remaining === '0') throw new Error('RATE_LIMITED');
+    if (remaining === '0' || res.status === 429) {
+      if (attempt >= MAX_RETRIES) {
+        const resetHeader = res.headers.get('x-ratelimit-reset');
+        const retryAfter = resetHeader ? Math.max(Math.ceil((parseInt(resetHeader, 10) * 1000 - Date.now()) / 1000), 10) : 60;
+        const err = new Error('RATE_LIMITED');
+        (err as any).retryAfterSeconds = retryAfter;
+        throw err;
+      }
+
+      // Calculate wait: use reset header if available, else exponential backoff
+      const resetHeader = res.headers.get('x-ratelimit-reset');
+      let waitMs: number;
+      if (resetHeader) {
+        const resetTime = parseInt(resetHeader, 10) * 1000;
+        waitMs = Math.max(resetTime - Date.now(), 1000);
+        // Cap at 60s to avoid absurdly long waits
+        waitMs = Math.min(waitMs, 60000);
+      } else {
+        waitMs = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+      }
+      // Add jitter (0-500ms)
+      waitMs += Math.random() * 500;
+
+      console.log(`GitHub rate limited, retry ${attempt + 1}/${MAX_RETRIES} in ${Math.round(waitMs)}ms`);
+      await new Promise(r => setTimeout(r, waitMs));
+      return githubFetch(url, attempt + 1);
+    }
   }
+
   if (!res.ok) {
     console.error(`GitHub API error: ${res.status} for ${url}`);
     return null;
   }
   return res.json();
+}
+
+async function hashQuery(query: string): Promise<string> {
+  const data = new TextEncoder().encode(query.toLowerCase().trim());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 const langColors: Record<string, string> = {
@@ -55,12 +88,35 @@ function getLangColor(lang: string): string {
   return langColors[lang] || `hsl(${Math.abs(lang.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 360}, 50%, 55%)`;
 }
 
+// Curated fallback repos for common search patterns (P12)
+const REPO_HINTS: Record<string, { owner: string; name: string }[]> = {
+  'rust': [{ owner: 'rust-lang', name: 'rust' }, { owner: 'tokio-rs', name: 'tokio' }, { owner: 'denoland', name: 'deno' }],
+  'react': [{ owner: 'facebook', name: 'react' }, { owner: 'vercel', name: 'next.js' }, { owner: 'remix-run', name: 'remix' }],
+  'python': [{ owner: 'python', name: 'cpython' }, { owner: 'django', name: 'django' }, { owner: 'pallets', name: 'flask' }],
+  'machine learning': [{ owner: 'pytorch', name: 'pytorch' }, { owner: 'tensorflow', name: 'tensorflow' }, { owner: 'huggingface', name: 'transformers' }],
+  'ml ': [{ owner: 'pytorch', name: 'pytorch' }, { owner: 'tensorflow', name: 'tensorflow' }, { owner: 'huggingface', name: 'transformers' }],
+  'kubernetes': [{ owner: 'kubernetes', name: 'kubernetes' }, { owner: 'helm', name: 'helm' }, { owner: 'istio', name: 'istio' }],
+  'k8s': [{ owner: 'kubernetes', name: 'kubernetes' }, { owner: 'helm', name: 'helm' }, { owner: 'istio', name: 'istio' }],
+  'security': [{ owner: 'OWASP', name: 'CheatSheetSeries' }, { owner: 'zaproxy', name: 'zaproxy' }, { owner: 'sqlmapproject', name: 'sqlmap' }],
+  'go ': [{ owner: 'golang', name: 'go' }, { owner: 'gin-gonic', name: 'gin' }, { owner: 'gofiber', name: 'fiber' }],
+  'golang': [{ owner: 'golang', name: 'go' }, { owner: 'gin-gonic', name: 'gin' }, { owner: 'gofiber', name: 'fiber' }],
+  'typescript': [{ owner: 'microsoft', name: 'TypeScript' }, { owner: 'trpc', name: 'trpc' }, { owner: 'colinhacks', name: 'zod' }],
+  'ios': [{ owner: 'apple', name: 'swift' }, { owner: 'Alamofire', name: 'Alamofire' }],
+  'swift': [{ owner: 'apple', name: 'swift' }, { owner: 'Alamofire', name: 'Alamofire' }],
+  'android': [{ owner: 'android', name: 'architecture-components-samples' }, { owner: 'square', name: 'retrofit' }],
+  'vue': [{ owner: 'vuejs', name: 'core' }, { owner: 'vuejs', name: 'router' }, { owner: 'nuxt', name: 'nuxt' }],
+  'svelte': [{ owner: 'sveltejs', name: 'svelte' }, { owner: 'sveltejs', name: 'kit' }],
+  'node': [{ owner: 'nodejs', name: 'node' }, { owner: 'expressjs', name: 'express' }, { owner: 'fastify', name: 'fastify' }],
+  'accessibility': [{ owner: 'facebook', name: 'react' }, { owner: 'jsx-eslint', name: 'eslint-plugin-jsx-a11y' }],
+  'a11y': [{ owner: 'facebook', name: 'react' }, { owner: 'jsx-eslint', name: 'eslint-plugin-jsx-a11y' }],
+};
+
 // Step 1: Parse query with AI
 async function parseQuery(query: string): Promise<{ repos: { owner: string; name: string }[]; skills: string[]; location: string | null; seniority: string | null }> {
   try {
     const text = await anthropicCall(
-      'You are a technical recruiting assistant. Given a hiring query, identify the most relevant GitHub repositories where ideal candidates would be active contributors. Also generate 4 ranked skill criteria. Return valid JSON only, no markdown, no code fences: { "repos": [{"owner": "string", "name": "string"}], "skills": ["string"], "location": "string or null", "seniority": "string or null" }',
-      `Parse this recruiting search query:\n\n"${query}"\n\nIdentify 3-6 GitHub repositories where the best candidates for this role would be active contributors. For example, "React experts" → repos like facebook/react, vercel/next.js. "ML infrastructure engineers" → pytorch/pytorch, huggingface/transformers, etc.`
+      'You are a technical recruiting assistant. Given a hiring query, identify the most relevant GitHub repositories where ideal candidates would be active contributors. If the query mentions specific repos after a dash, colon, or "repos like", extract and use those exact repos. Otherwise, infer the best 3-6 repos for the described role. Also generate 4 ranked skill criteria. Return valid JSON only, no markdown, no code fences: { "repos": [{"owner": "string", "name": "string"}], "skills": ["string"], "location": "string or null", "seniority": "string or null" }',
+      `Parse this recruiting search query:\n\n"${query}"\n\nIdentify 3-6 GitHub repositories where the best candidates for this role would be active contributors. For example, "React experts" → repos like facebook/react, vercel/next.js. "ML infrastructure engineers" → pytorch/pytorch, huggingface/transformers. "Rust systems engineers — repos like rust-lang/rust, tokio-rs/tokio" → use those exact repos.`
     );
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -80,16 +136,16 @@ async function parseQuery(query: string): Promise<{ repos: { owner: string; name
   return { repos: [], skills: [query], location: null, seniority: null };
 }
 
-// Step 2: Fetch contributors from repos — PARALLEL
+// Step 2a: Fetch contributors from repos — PARALLEL
 async function fetchContributors(repos: { owner: string; name: string }[], skills: string[]): Promise<Map<string, { username: string; commitCounts: Record<string, number> }>> {
   const contributorMap = new Map<string, { username: string; commitCounts: Record<string, number> }>();
 
-  // Fetch all repos in parallel instead of sequentially
+  // Fetch all repos in parallel (P19: increased per_page to 100 for better coverage)
   const repoResults = await Promise.all(
-    repos.slice(0, 6).map(async (repo) => {
+    repos.slice(0, 8).map(async (repo) => {
       const repoFullName = `${repo.owner}/${repo.name}`;
       try {
-        const contributors = await githubFetch(`${GITHUB_API}/repos/${repoFullName}/contributors?per_page=30`);
+        const contributors = await githubFetch(`${GITHUB_API}/repos/${repoFullName}/contributors?per_page=100`);
         return { repoFullName, contributors };
       } catch (e) {
         if ((e as Error).message === 'RATE_LIMITED') throw e;
@@ -103,30 +159,77 @@ async function fetchContributors(repos: { owner: string; name: string }[], skill
     if (!contributors || !Array.isArray(contributors)) continue;
     for (const c of contributors) {
       if (c.type !== 'User') continue;
-      const existing = contributorMap.get(c.login);
+      const login = c.login.toLowerCase(); // BUG-003: normalize to lowercase
+      const existing = contributorMap.get(login);
       if (existing) {
         existing.commitCounts[repoFullName] = c.contributions;
       } else {
-        contributorMap.set(c.login, {
-          username: c.login,
+        contributorMap.set(login, {
+          username: login,
           commitCounts: { [repoFullName]: c.contributions },
         });
       }
     }
   }
 
-  // Fallback to user search if no repo contributors found
-  if (contributorMap.size === 0 && skills.length > 0) {
-    const searchQuery = skills.join('+');
-    const searchData = await githubFetch(`${GITHUB_API}/search/users?q=${encodeURIComponent(searchQuery)}&per_page=20`);
-    if (searchData?.items) {
-      for (const user of searchData.items) {
-        contributorMap.set(user.login, { username: user.login, commitCounts: {} });
+  return contributorMap;
+}
+
+// Step 2b: Search GitHub Users API as parallel source (P11)
+async function searchGitHubUsers(
+  query: string,
+  skills: string[],
+  location: string | null
+): Promise<Map<string, { username: string; commitCounts: Record<string, number> }>> {
+  const userMap = new Map<string, { username: string; commitCounts: Record<string, number> }>();
+
+  try {
+    // Build GitHub search query with qualifiers
+    let searchQ = skills.slice(0, 3).join(' ');
+    if (location) searchQ += ` location:${location}`;
+
+    const data = await githubFetch(
+      `${GITHUB_API}/search/users?q=${encodeURIComponent(searchQ)}&per_page=25&sort=followers`
+    );
+
+    if (data?.items) {
+      for (const user of data.items) {
+        const login = user.login.toLowerCase(); // BUG-003: normalize
+        userMap.set(login, { username: login, commitCounts: {} });
       }
     }
+  } catch (e) {
+    if ((e as Error).message === 'RATE_LIMITED') throw e;
+    console.error('GitHub user search error:', e);
   }
 
-  return contributorMap;
+  return userMap;
+}
+
+// Step 2c: Exa semantic search for GitHub profiles (P15)
+async function searchExaForCandidates(query: string): Promise<string[]> {
+  const exaKey = Deno.env.get('EXA_API_KEY');
+  if (!exaKey) return [];
+
+  try {
+    const res = await fetch('https://api.exa.ai/search', {
+      method: 'POST',
+      headers: { 'x-api-key': exaKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `${query} github profile`,
+        numResults: 10,
+        includeDomains: ['github.com'],
+        type: 'neural',
+      }),
+    });
+    const data = await res.json();
+    return (data.results || [])
+      .map((r: any) => r.url?.match(/github\.com\/([^\/\?\#]+)/)?.[1]?.toLowerCase()) // BUG-003: normalize
+      .filter((u: string | undefined) => u && !u.includes('.') && u !== 'topics' && u !== 'search' && u !== 'explore');
+  } catch (e) {
+    console.error('Exa search error:', e);
+    return [];
+  }
 }
 
 // Step 2b: Parallel Exa search (P24)
@@ -201,7 +304,7 @@ async function enrichCandidates(
     toFetch.slice(0, 15).map(async (username) => {
       const [profile, repos] = await Promise.all([
         githubFetch(`${GITHUB_API}/users/${username}`),
-        githubFetch(`${GITHUB_API}/users/${username}/repos?sort=stars&per_page=30`),
+        githubFetch(`${GITHUB_API}/users/${username}/repos?sort=stars&per_page=15`),
       ]);
       if (!profile) return null;
 
@@ -250,7 +353,7 @@ async function enrichCandidates(
       if (highlights.length === 0) highlights.push(`${profile.public_repos} public repositories`);
 
       return {
-        github_username: username,
+        github_username: username.toLowerCase(), // BUG-003: normalize
         name: profile.name || username,
         avatar_url: profile.avatar_url,
         bio: profile.bio || `GitHub user with ${profile.public_repos} public repos.`,
@@ -293,13 +396,13 @@ async function enrichCandidates(
   return allCandidates;
 }
 
-// Step 4: AI scoring — skip candidates already scored, batch the rest
-async function scoreCandidates(candidates: any[], query: string, parsedCriteria: any): Promise<any[]> {
+// Step 4: AI scoring — skip candidates already scored for this query, batch the rest
+async function scoreCandidates(candidates: any[], query: string, parsedCriteria: any, queryHash: string): Promise<any[]> {
   if (candidates.length === 0) return candidates;
 
-  // Split into already-scored (from cache) and needs-scoring
-  const needsScoring = candidates.filter((c: any) => !c.summary || c.score === null || c.score === undefined || c.score === 0);
-  const alreadyScored = candidates.filter((c: any) => c.summary && c.score !== null && c.score !== undefined && c.score !== 0);
+  // Only reuse cached scores if they were scored for this exact query (by hash)
+  const needsScoring = candidates.filter((c: any) => !c.summary || c.score === null || c.score === undefined || c.score === 0 || c.query_hash !== queryHash);
+  const alreadyScored = candidates.filter((c: any) => c.summary && c.score !== null && c.score !== undefined && c.score !== 0 && c.query_hash === queryHash);
 
   console.log(`Scoring: ${needsScoring.length} need AI, ${alreadyScored.length} already cached`);
 
@@ -335,7 +438,24 @@ async function scoreCandidates(candidates: any[], query: string, parsedCriteria:
 
         try {
           const text = await anthropicCall(
-            'You are a technical recruiting expert. Score and summarize these GitHub contributors for the role described. For each, return a JSON array (no markdown, no code fences): [{ "username": "string", "score": 0-100, "summary": "1 concise line mentioning repos and commit counts", "about": "2-3 sentences", "is_hidden_gem": true/false }]. Hidden gem = high contributions but under 500 followers.',
+            `You are an elite technical recruiter scoring GitHub contributors for a specific role. For EACH candidate, analyze:
+
+1. RELEVANCE (40%): How closely do their contributions, languages, and repos match the search query?
+2. ACTIVITY (20%): Contribution volume. High commit counts in relevant repos score higher.
+3. SENIORITY SIGNALS (20%): Years on GitHub, stars received, whether they maintain popular projects.
+4. RECRUITABILITY (20%): Are they likely open to opportunities? Negative signals: founder/CEO/CTO/VP titles, 10K+ followers (industry leaders). Positive signals: moderate following, IC-level bio.
+
+SCORING BANDS:
+- 90-100: Perfect match — deep contributions to query-relevant repos, right seniority, likely recruitable
+- 70-89: Strong match — good contributions, some alignment gaps
+- 50-69: Moderate match — tangential contributions or seniority mismatch
+- 30-49: Weak match — minimal relevance or clearly unrecrutable (founders/CEOs with 10K+ followers)
+- 0-29: Poor match — wrong domain or bot accounts
+
+Return a JSON array (no markdown, no code fences): [{ "username": "string", "score": 0-100, "summary": "1 concise line mentioning repos and commit counts", "about": "2-3 sentences", "is_hidden_gem": true/false, "recruitable": true/false }]
+
+Hidden gem = high contributions but under 500 followers.
+recruitable = false if they are a founder, CEO, CTO, VP, or have >10K followers.`,
             `Search query: "${query}"\nCriteria: ${JSON.stringify(parsedCriteria)}\n\nCandidates:\n${JSON.stringify(candidateInfo)}`
           );
 
@@ -349,6 +469,7 @@ async function scoreCandidates(candidates: any[], query: string, parsedCriteria:
                 candidate.summary = s.summary;
                 candidate.about = s.about;
                 candidate.is_hidden_gem = s.is_hidden_gem;
+                candidate.recruitable = s.recruitable !== false; // default true if not specified
               }
             }
           }
@@ -362,7 +483,7 @@ async function scoreCandidates(candidates: any[], query: string, parsedCriteria:
     freshlyScored.push(...results.flat());
   }
 
-  // Batch upsert only freshly scored candidates
+  // Batch upsert only freshly scored candidates (include query_hash for cache scoping)
   const supabase = getSupabase();
   const toUpdate = freshlyScored
     .filter((c) => c.summary)
@@ -372,6 +493,7 @@ async function scoreCandidates(candidates: any[], query: string, parsedCriteria:
       summary: c.summary,
       about: c.about,
       is_hidden_gem: c.is_hidden_gem,
+      query_hash: queryHash,
     }));
 
   if (toUpdate.length > 0) {
@@ -381,27 +503,31 @@ async function scoreCandidates(candidates: any[], query: string, parsedCriteria:
   return [...alreadyScored, ...freshlyScored].sort((a, b) => (b.score || 0) - (a.score || 0));
 }
 
-// Step 5: Filter ungettable candidates (founders, C-suite)
-const UNGETTABLE_TITLE_PATTERN = /\b(co-?founder|founder|ceo|cto|cso|cpo|coo|cio|chief\s+(executive|technology|science|product|operating|information))\b/i;
-const UNGETTABLE_BLOCKLIST = new Set([
-  'torvalds', 'karpathy', 'gaborcselle', 'thomwolf', 'guido', 'gvanrossum',
-  'yyx990803', 'rauchg', 'tj', 'sindresorhus', 'maboroshi',
-]);
+// Step 5: Flag ungettable candidates (P10)
+const UNRECRUTABLE_TITLES = /\b(founder|co-founder|cofounder|ceo|chief executive|cto|chief technology|coo|chief operating|vp |vice president|managing partner|general partner|venture partner|president)\b/i;
+const FOLLOWER_THRESHOLD = 500;
 
-function detectUngettable(candidate: any): { reachability: string; reason: string } | null {
-  const username = (candidate.github_username || '').toLowerCase();
-  if (UNGETTABLE_BLOCKLIST.has(username)) {
-    return { reachability: 'low', reason: `Known high-profile individual` };
-  }
-  const bio = candidate.bio || '';
-  const match = bio.match(UNGETTABLE_TITLE_PATTERN);
-  if (match) {
-    return { reachability: 'low', reason: `Bio contains "${match[0]}"` };
-  }
-  if (candidate.followers > 5000) {
-    return { reachability: 'low', reason: `Very high visibility (${candidate.followers} followers)` };
-  }
-  return null;
+function flagUngettable(candidates: any[]): any[] {
+  return candidates.map(c => {
+    const bio = (c.bio || '') + ' ' + (c.about || '');
+    const highFollowers = (c.followers || 0) >= FOLLOWER_THRESHOLD;
+    const executiveTitle = UNRECRUTABLE_TITLES.test(bio);
+    const isUngettable = highFollowers || executiveTitle;
+    if (isUngettable) {
+      c.ungettable = true;
+      c.ungettableReason = highFollowers
+        ? `${(c.followers || 0).toLocaleString()} followers — likely industry leader`
+        : 'Bio mentions executive/founder role';
+      // Also check AI recruitable flag
+      if (c.recruitable === false) {
+        c.ungettable = true;
+      }
+    } else if (c.recruitable === false) {
+      c.ungettable = true;
+      c.ungettableReason = 'AI flagged as unlikely to be recruited';
+    }
+    return c;
+  });
 }
 
 serve(async (req) => {
@@ -424,25 +550,36 @@ serve(async (req) => {
       });
     }
 
-    // Support both GET (query string) and POST (body with targetRepos)
-    let query = '';
-    let directRepos: { owner: string; name: string }[] = [];
+    const url = new URL(req.url);
+    let query = url.searchParams.get('q') || '';
 
-    if (req.method === 'POST') {
-      const body = await req.json();
-      query = body.query || body.q || '';
-      if (body.targetRepos && Array.isArray(body.targetRepos)) {
-        directRepos = body.targetRepos.map((r: string) => {
-          const [owner, name] = r.split('/');
-          return { owner, name };
-        }).filter((r: any) => r.owner && r.name);
-      }
-    } else {
-      const url = new URL(req.url);
-      query = url.searchParams.get('q') || '';
+    // P19/P28: Accept POST body with targetRepos and structured strategy data
+    let bodyTargetRepos: { owner: string; name: string }[] = [];
+    let bodySkills: string[] = [];
+    let hideUngettable = true; // P21: default to hiding ungettable candidates
+    let streamMode = false; // FEAT-008: SSE streaming
+    if (req.method === 'POST' || (req.headers.get('content-type') || '').includes('json')) {
+      try {
+        const body = await req.json();
+        if (body.query) query = body.query;
+        if (body.targetRepos && Array.isArray(body.targetRepos)) {
+          bodyTargetRepos = body.targetRepos
+            .map((r: any) => {
+              if (typeof r === 'string') {
+                const [owner, name] = r.split('/');
+                return owner && name ? { owner, name } : null;
+              }
+              return r.owner && r.name ? { owner: r.owner, name: r.name } : null;
+            })
+            .filter(Boolean);
+        }
+        if (body.skills && Array.isArray(body.skills)) bodySkills = body.skills;
+        if (body.hideUngettable === false) hideUngettable = false;
+        if (body.stream === true) streamMode = true;
+      } catch { /* not JSON, use query param */ }
     }
 
-    if (!query && directRepos.length === 0) {
+    if (!query && bodyTargetRepos.length === 0) {
       return new Response(JSON.stringify({ error: 'Query parameter "q" or targetRepos is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -451,115 +588,258 @@ serve(async (req) => {
 
     const supabase = getSupabase();
     const t0 = Date.now();
+    const searchId = crypto.randomUUID();
+    const queryHash = await hashQuery(query);
 
-    // Step 1: Parse query with AI (skip if targetRepos provided directly)
-    let parsedCriteria: { repos: { owner: string; name: string }[]; skills: string[]; location: string | null; seniority: string | null };
-    if (directRepos.length > 0) {
-      // Use directly-provided repos, extract skills from query for scoring
-      parsedCriteria = {
-        repos: directRepos,
-        skills: query ? query.split(/[\s,]+/).filter(w => w.length > 2).slice(0, 6) : [],
-        location: null,
-        seniority: null,
-      };
-      console.log(`[${Date.now() - t0}ms] Using ${directRepos.length} direct target repos`);
-    } else {
-      parsedCriteria = await parseQuery(query);
-      console.log(`[${Date.now() - t0}ms] Parsed criteria:`, parsedCriteria);
-    }
-
-    // Step 2: Fetch contributors + Exa search IN PARALLEL (P24)
-    const [contributorMap, exaCandidates] = await Promise.all([
-      fetchContributors(parsedCriteria.repos, parsedCriteria.skills),
-      query ? searchExa(query) : Promise.resolve([]),
-    ]);
-    console.log(`[${Date.now() - t0}ms] Found ${contributorMap.size} GitHub contributors, ${exaCandidates.length} Exa results`);
-
-    // Merge Exa results: extract GitHub usernames from Exa URLs and add to contributor map
-    for (const exa of exaCandidates) {
-      const ghUsername = extractGitHubUsername(exa.profileUrl);
-      if (ghUsername && !contributorMap.has(ghUsername)) {
-        contributorMap.set(ghUsername, { username: ghUsername, commitCounts: {} });
+    // FEAT-008: SSE streaming helper
+    let sseController: ReadableStreamDefaultController<Uint8Array> | null = null;
+    const encoder = new TextEncoder();
+    function emitProgress(step: string, detail?: string) {
+      if (sseController) {
+        const data = JSON.stringify({ type: 'progress', step, detail, elapsed: Date.now() - t0 });
+        sseController.enqueue(encoder.encode(`data: ${data}\n\n`));
       }
     }
 
-    // Step 3: Enrich with profiles (with caching + batch upsert)
-    const candidates = await enrichCandidates(contributorMap, supabase);
-    console.log(`[${Date.now() - t0}ms] Enriched ${candidates.length} candidates`);
-
-    // Tag candidates with their source (P24)
-    const exaGitHubUsernames = new Set(
-      exaCandidates.map(e => extractGitHubUsername(e.profileUrl)).filter(Boolean) as string[]
-    );
-    for (const c of candidates) {
-      const inGithub = contributorMap.has(c.github_username);
-      const inExa = exaGitHubUsernames.has(c.github_username);
-      c._source = inGithub && inExa ? 'both' : inExa ? 'exa' : 'github';
+    if (streamMode) {
+      // Return SSE stream immediately; the search runs inside the stream body
+      const stream = new ReadableStream({
+        async start(controller) {
+          sseController = controller;
+          try {
+            await runSearch(controller);
+          } catch (e) {
+            const errData = JSON.stringify({ type: 'error', error: (e as Error).message });
+            controller.enqueue(encoder.encode(`data: ${errData}\n\n`));
+            controller.close();
+          }
+        },
+      });
+      return new Response(stream, {
+        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+      });
     }
 
-    // Step 4: AI scoring (batch size 25, concurrent)
-    const scored = await scoreCandidates(candidates, query, parsedCriteria);
+    // Non-streaming: run search inline and return JSON
+    async function runSearch(streamCtrl?: ReadableStreamDefaultController<Uint8Array>) {
+
+    // Step 1: Parse query with AI
+    emitProgress('parsing', 'Parsing your query with AI...');
+    const parsedCriteria = await parseQuery(query);
+    console.log(`[${Date.now() - t0}ms] Parsed criteria:`, parsedCriteria);
+    emitProgress('parsed', `Found ${parsedCriteria.repos.length} repos, ${parsedCriteria.skills.length} skills`);
+
+    // P19/P28: Merge strategy-provided repos (highest priority, skip validation)
+    if (bodyTargetRepos.length > 0) {
+      // Deduplicate: strategy repos first, then AI-parsed repos
+      const seen = new Set(bodyTargetRepos.map(r => `${r.owner}/${r.name}`.toLowerCase()));
+      const aiRepos = parsedCriteria.repos.filter(r => !seen.has(`${r.owner}/${r.name}`.toLowerCase()));
+      parsedCriteria.repos = [...bodyTargetRepos, ...aiRepos].slice(0, 8);
+      console.log(`[${Date.now() - t0}ms] Merged strategy repos:`, parsedCriteria.repos);
+    }
+
+    // Merge strategy-provided skills
+    if (bodySkills.length > 0) {
+      const existing = new Set(parsedCriteria.skills.map(s => s.toLowerCase()));
+      const newSkills = bodySkills.filter(s => !existing.has(s.toLowerCase()));
+      parsedCriteria.skills = [...parsedCriteria.skills, ...newSkills];
+    }
+
+    // Step 1b: Fallback to REPO_HINTS if no repos found (P12)
+    if (parsedCriteria.repos.length === 0) {
+      const queryLower = query.toLowerCase();
+      for (const [keyword, repos] of Object.entries(REPO_HINTS)) {
+        if (queryLower.includes(keyword)) {
+          parsedCriteria.repos = repos;
+          console.log(`[${Date.now() - t0}ms] Used REPO_HINTS fallback for "${keyword}":`, repos);
+          break;
+        }
+      }
+    }
+
+    // Step 1c: Validate AI-returned repos exist (P12) — skip if repos came from strategy
+    if (bodyTargetRepos.length === 0 && parsedCriteria.repos.length > 0 && parsedCriteria.repos.length <= 8) {
+      const validated = await Promise.all(
+        parsedCriteria.repos.map(async (r: { owner: string; name: string }) => {
+          const check = await githubFetch(`${GITHUB_API}/repos/${r.owner}/${r.name}`);
+          if (!check) console.log(`Repo ${r.owner}/${r.name} not found, removing`);
+          return check ? r : null;
+        })
+      );
+      parsedCriteria.repos = validated.filter(Boolean) as { owner: string; name: string }[];
+
+      // If all AI repos were invalid, fall back to REPO_HINTS
+      if (parsedCriteria.repos.length === 0) {
+        const queryLower = query.toLowerCase();
+        for (const [keyword, repos] of Object.entries(REPO_HINTS)) {
+          if (queryLower.includes(keyword)) {
+            parsedCriteria.repos = repos;
+            console.log(`[${Date.now() - t0}ms] All AI repos invalid, used REPO_HINTS for "${keyword}"`);
+            break;
+          }
+        }
+      }
+    }
+
+    // Step 2: Fetch candidates from ALL sources in parallel (P11, P15)
+    emitProgress('searching', `Searching ${parsedCriteria.repos.length} repositories...`);
+    const [contributorMap, userSearchMap, exaUsernames] = await Promise.all([
+      fetchContributors(parsedCriteria.repos, parsedCriteria.skills),
+      searchGitHubUsers(query, parsedCriteria.skills, parsedCriteria.location),
+      searchExaForCandidates(query),
+    ]);
+
+    // Merge: contributor data takes priority (has commit counts)
+    for (const [username, data] of userSearchMap) {
+      const key = username.toLowerCase(); // BUG-003: normalize
+      if (!contributorMap.has(key)) {
+        contributorMap.set(key, { ...data, username: key });
+      }
+    }
+    // Merge Exa-sourced usernames
+    for (const username of exaUsernames) {
+      const key = username.toLowerCase(); // BUG-003: normalize
+      if (!contributorMap.has(key)) {
+        contributorMap.set(key, { username: key, commitCounts: {} });
+      }
+    }
+
+    console.log(`[${Date.now() - t0}ms] Found ${contributorMap.size} candidates (contributors: ${contributorMap.size - userSearchMap.size - exaUsernames.length}, user search: ${userSearchMap.size}, exa: ${exaUsernames.length})`);
+    emitProgress('found', `Found ${contributorMap.size} candidates from ${parsedCriteria.repos.length} repos`);
+
+    // Step 3: Enrich with profiles (with caching + batch upsert)
+    emitProgress('enriching', `Fetching profiles for ${contributorMap.size} candidates...`);
+    const candidates = await enrichCandidates(contributorMap, supabase);
+    console.log(`[${Date.now() - t0}ms] Enriched ${candidates.length} candidates`);
+    emitProgress('enriched', `Enriched ${candidates.length} candidate profiles`);
+
+    // Step 4: AI scoring (batch size 25, concurrent, query-scoped cache)
+    emitProgress('scoring', `Scoring ${candidates.length} candidates with AI...`);
+    const scored = await scoreCandidates(candidates, query, parsedCriteria, queryHash);
     console.log(`[${Date.now() - t0}ms] Scored ${scored.length} candidates`);
+    emitProgress('scored', `Scored ${scored.length} candidates`);
 
-    // Step 5: Mark ungettable candidates
-    const results = scored.map((c: any) => {
-      const ungettable = detectUngettable(c);
-      return {
-        id: c.github_username,
-        username: c.github_username,
-        name: c.name,
-        avatarUrl: c.avatar_url,
-        bio: c.summary || c.bio,
-        about: c.about || '',
-        location: c.location,
-        totalContributions: Object.values(c.contributed_repos || {}).reduce((a: number, b: any) => a + (b as number), 0) as number,
-        publicRepos: c.public_repos,
-        followers: c.followers,
-        stars: c.stars,
-        topLanguages: c.top_languages || [],
-        highlights: c.highlights || [],
-        score: c.score || 0,
-        hiddenGem: c.is_hidden_gem || false,
-        joinedYear: c.joined_year,
-        contributedRepos: c.contributed_repos || {},
-        linkedinUrl: c.linkedin_url,
-        twitterUsername: c.twitter_username,
-        email: c.email,
-        githubUrl: c.github_url,
-        source: c._source || 'github',
-        ...(ungettable ? { reachability: ungettable.reachability, reachabilityReason: ungettable.reason } : {}),
-      };
-    });
+    // Step 5: Flag ungettable candidates (P10)
+    const flagged = flagUngettable(scored);
 
-    // Sort: reachable candidates first (same score range), then ungettable
-    results.sort((a: any, b: any) => {
-      const aUngettable = a.reachability === 'low' ? 1 : 0;
-      const bUngettable = b.reachability === 'low' ? 1 : 0;
-      if (aUngettable !== bUngettable) return aUngettable - bUngettable;
-      return (b.score || 0) - (a.score || 0);
-    });
+    // P21: Filter out ungettable candidates by default, or sort to bottom if showing all
+    let finalCandidates = flagged;
+    if (hideUngettable) {
+      finalCandidates = flagged.filter(c => !c.ungettable);
+      console.log(`[${Date.now() - t0}ms] Filtered ${flagged.length - finalCandidates.length} ungettable candidates`);
+    } else {
+      // Sort: recruitable candidates first, ungettable at bottom
+      finalCandidates.sort((a, b) => {
+        if (a.ungettable && !b.ungettable) return 1;
+        if (!a.ungettable && b.ungettable) return -1;
+        return (b.score || 0) - (a.score || 0);
+      });
+    }
 
-    // P20: Only increment search count if results were found
-    const creditCharged = results.length > 0;
-    if (gate.userId && creditCharged) {
+    // BUG-001: Insert search_results junction rows for history replay
+    try {
+      const candidateUsernames = finalCandidates.map((c: any) => c.github_username);
+      if (candidateUsernames.length > 0) {
+        const { data: candidateRows } = await supabase
+          .from('candidates')
+          .select('id, github_username')
+          .in('github_username', candidateUsernames);
+
+        if (candidateRows && candidateRows.length > 0) {
+          const usernameToId = new Map(candidateRows.map((r: any) => [r.github_username, r.id]));
+          const junctionRows = finalCandidates
+            .map((c: any, idx: number) => {
+              const candidateId = usernameToId.get(c.github_username);
+              if (!candidateId) return null;
+              return {
+                search_id: searchId,
+                candidate_id: candidateId,
+                rank: idx,
+                score: c.score || 0,
+              };
+            })
+            .filter(Boolean);
+
+          if (junctionRows.length > 0) {
+            await supabase.from('search_results').insert(junctionRows as any[]);
+          }
+        }
+      }
+      console.log(`[${Date.now() - t0}ms] Saved ${finalCandidates.length} search_results for searchId=${searchId}`);
+    } catch (e) {
+      console.error('Failed to insert search_results:', e);
+      // Non-fatal: search still returns results even if junction insert fails
+    }
+
+    // Format response
+    const results = finalCandidates.map((c: any) => ({
+      id: c.github_username,
+      username: c.github_username,
+      name: c.name,
+      avatarUrl: c.avatar_url,
+      bio: c.summary || c.bio,
+      about: c.about || '',
+      location: c.location,
+      totalContributions: Object.values(c.contributed_repos || {}).reduce((a: number, b: any) => a + (b as number), 0) as number,
+      publicRepos: c.public_repos,
+      followers: c.followers,
+      stars: c.stars,
+      topLanguages: c.top_languages || [],
+      highlights: c.highlights || [],
+      score: c.score || 0,
+      hiddenGem: c.is_hidden_gem || false,
+      recruitable: c.recruitable !== false,
+      ungettable: c.ungettable || false,
+      ungettableReason: c.ungettableReason || null,
+      joinedYear: c.joined_year,
+      contributedRepos: c.contributed_repos || {},
+      linkedinUrl: c.linkedin_url,
+      twitterUsername: c.twitter_username,
+      email: c.email,
+      githubUrl: c.github_url,
+    }));
+
+    // P20: Credit Guard — only increment when search returned results
+    if (gate.userId && results.length > 0) {
       await incrementSearchCount(gate.userId).catch(e => console.error('Failed to increment search count:', e));
     }
 
-    return new Response(JSON.stringify({
+    emitProgress('complete', `${results.length} results ready`);
+
+    const responsePayload = {
       results,
+      searchId,
       parsedCriteria,
       reposSearched: parsedCriteria.repos.map((r: any) => `${r.owner}/${r.name}`),
-      creditCharged,
-    }), {
+      ungettableCount: flagged.filter(c => c.ungettable).length,
+      totalBeforeFilter: flagged.length,
+    };
+
+    // FEAT-008: In streaming mode, emit result event and close stream
+    if (streamCtrl) {
+      const resultData = JSON.stringify({ type: 'result', data: responsePayload });
+      streamCtrl.enqueue(encoder.encode(`data: ${resultData}\n\n`));
+      streamCtrl.close();
+      return;
+    }
+
+    return new Response(JSON.stringify(responsePayload), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
+    } // end runSearch
+
+    return await runSearch() as Response;
+
   } catch (error) {
     console.error('Error in github-search:', error);
 
     if ((error as Error).message === 'RATE_LIMITED') {
+      const retryAfter = (error as any).retryAfterSeconds || 60;
       return new Response(JSON.stringify({
         error: 'Rate limit reached. Please try again in a few minutes.',
-        rateLimited: true
+        rateLimited: true,
+        retryAfterSeconds: retryAfter,
       }), {
         status: 429,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

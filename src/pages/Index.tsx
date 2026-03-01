@@ -11,13 +11,34 @@ import SettingsTab from "@/components/SettingsTab";
 import ResearchTab, { type ResearchState } from "@/components/ResearchTab";
 import { toast } from "@/hooks/use-toast";
 
+// P28: Structured strategy data passed through to SearchTab
+export interface StrategyHandoff {
+  targetRepos?: string[];
+  skills?: string[];
+}
+
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<ActiveTab>("research");
+  // BUG-005: Persist active tab across page refreshes
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    try {
+      const saved = localStorage.getItem("sourcekit-active-tab");
+      if (saved && ["search", "research", "history", "pipeline", "watchlist", "bulk", "websets", "settings"].includes(saved)) {
+        return saved as ActiveTab;
+      }
+    } catch {}
+    return "research";
+  });
   const [rerunQuery, setRerunQuery] = useState<string | undefined>();
   const [rerunExpanded, setRerunExpanded] = useState<string | undefined>();
-  const [rerunTargetRepos, setRerunTargetRepos] = useState<string[] | undefined>();
+  const [rerunStrategy, setRerunStrategy] = useState<StrategyHandoff | undefined>();
+  const [rerunSearchId, setRerunSearchId] = useState<string | undefined>();
   const [rerunKey, setRerunKey] = useState(0);
+
+  // BUG-005: Persist active tab to localStorage
+  useEffect(() => {
+    localStorage.setItem("sourcekit-active-tab", activeTab);
+  }, [activeTab]);
 
   // Handle payment success/cancelled URL params
   useEffect(() => {
@@ -39,23 +60,22 @@ const Index = () => {
     error: "",
   });
 
-  const handleRerun = useCallback((query: string, expandedQuery?: string) => {
+  const handleRerun = useCallback((query: string, expandedQuery?: string, searchId?: string) => {
     if (!query) {
       setActiveTab("search");
       return;
     }
     setRerunQuery(query);
     setRerunExpanded(expandedQuery);
-    setRerunTargetRepos(undefined);
+    setRerunSearchId(searchId);
     setRerunKey((k) => k + 1);
     setActiveTab("search");
   }, []);
 
-  // P28: Pass targetRepos from strategy directly to search
-  const handleSearchWithStrategy = useCallback((query: string, expandedQuery: string, targetRepos?: string[]) => {
+  const handleSearchWithStrategy = useCallback((query: string, expandedQuery: string, strategy?: StrategyHandoff) => {
     setRerunQuery(query);
     setRerunExpanded(expandedQuery);
-    setRerunTargetRepos(targetRepos);
+    setRerunStrategy(strategy);
     setRerunKey((k) => k + 1);
     setActiveTab("search");
   }, []);
@@ -68,7 +88,8 @@ const Index = () => {
           key={rerunKey}
           initialQuery={rerunQuery}
           initialExpandedQuery={rerunExpanded}
-          initialTargetRepos={rerunTargetRepos}
+          initialStrategy={rerunStrategy}
+          initialSearchId={rerunSearchId}
           autoSubmit={!!rerunQuery && rerunKey > 0}
           onNavigate={(tab) => setActiveTab(tab as ActiveTab)}
         />
@@ -78,6 +99,7 @@ const Index = () => {
           state={researchState}
           onStateChange={setResearchState}
           onSearchWithStrategy={handleSearchWithStrategy}
+          onNavigateToWebsets={() => setActiveTab("websets")}
         />
       )}
       {activeTab === "history" && <HistoryTab onRerun={handleRerun} />}

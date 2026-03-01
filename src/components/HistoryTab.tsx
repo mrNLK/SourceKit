@@ -1,10 +1,13 @@
-import { Search, FileText, RotateCw, Clock, SearchX } from "lucide-react";
+import { Search, FileText, RotateCw, Clock, SearchX, AlertCircle, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface HistoryTabProps {
-  onRerun: (query: string, expandedQuery?: string) => void;
+  onRerun: (query: string, expandedQuery?: string, searchId?: string) => void;
 }
 
 function relativeTime(dateStr: string): string {
@@ -40,6 +43,28 @@ const GROUP_ORDER = ["Today", "Yesterday", "This Week", "Older"];
 
 const HistoryTab = ({ onRerun }: HistoryTabProps) => {
   const [filter, setFilter] = useState("");
+  const queryClient = useQueryClient();
+
+  const handleDeleteOne = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const { error } = await supabase.from("search_history").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["search-history"] });
+    toast({ title: "Search removed" });
+  };
+
+  const handleClearAll = async () => {
+    const { error } = await supabase.from("search_history").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) {
+      toast({ title: "Clear failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["search-history"] });
+    toast({ title: "History cleared" });
+  };
 
   const { data: history = [], isLoading } = useQuery({
     queryKey: ["search-history"],
@@ -73,8 +98,24 @@ const HistoryTab = ({ onRerun }: HistoryTabProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Clock className="w-5 h-5 text-primary animate-pulse" />
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <Skeleton className="h-6 w-36" />
+        </div>
+        <Skeleton className="h-10 w-full mb-6 rounded-lg" />
+        <Skeleton className="h-4 w-20 mb-3" />
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="glass rounded-lg px-4 py-3 flex items-center gap-3">
+              <Skeleton className="w-8 h-8 rounded-lg" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -83,6 +124,15 @@ const HistoryTab = ({ onRerun }: HistoryTabProps) => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-display text-lg font-semibold text-foreground">Search History</h1>
+        {history.length > 0 && (
+          <button
+            onClick={handleClearAll}
+            className="flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"
+          >
+            <Trash2 className="w-3 h-3" />
+            Clear All
+          </button>
+        )}
       </div>
 
       {/* Filter input */}
@@ -140,7 +190,7 @@ const HistoryTab = ({ onRerun }: HistoryTabProps) => {
                 return (
                   <div
                     key={item.id}
-                    onClick={() => onRerun(item.query, meta.expanded_query)}
+                    onClick={() => onRerun(item.query, meta.expanded_query, item.id)}
                     className="glass rounded-lg px-4 py-3 flex items-center gap-3 group hover:glow-border transition-all cursor-pointer"
                   >
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
@@ -150,27 +200,59 @@ const HistoryTab = ({ onRerun }: HistoryTabProps) => {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="font-display text-sm font-medium text-foreground truncate">{title}</p>
+                      <p className="font-display text-sm font-medium text-foreground truncate" title={item.query}>{title}</p>
                       <p className="text-[11px] text-muted-foreground font-display mt-0.5">{relativeTime(item.created_at)}</p>
                     </div>
 
-                    {item.result_count != null && (
-                      <span className={`text-[10px] font-display font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
-                        item.result_count === 0
-                          ? 'bg-destructive/10 text-destructive border-destructive/20'
-                          : 'bg-secondary text-secondary-foreground border-border'
-                      }`}>
-                        {item.result_count} {item.result_count === 1 ? 'result' : 'results'}
+                    {/* P23: Show status badge for all searches including failures */}
+                    {/* BUG-002: Error recovery — tooltip with error reason + Retry button */}
+                    {meta.status === 'error' ? (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-[10px] font-display font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20 cursor-help inline-flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" />
+                                Failed
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <p className="text-xs">{meta.error || 'Unknown error'}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onRerun(item.query, meta.expanded_query); }}
+                          className="text-[10px] font-display font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    ) : meta.status === 'no_results' ? (
+                      <span className="text-[10px] font-display font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+                        0 results
                       </span>
-                    )}
+                    ) : item.result_count != null ? (
+                      <span className="text-[10px] font-display font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border shrink-0">
+                        {item.result_count} found
+                      </span>
+                    ) : null}
 
-                    <button
-                      onClick={() => onRerun(item.query, meta.expanded_query)}
-                      className="flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-                    >
-                      <RotateCw className="w-3 h-3" />
-                      Re-run
-                    </button>
+                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 shrink-0">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onRerun(item.query, meta.expanded_query, item.id); }}
+                        className="flex items-center gap-1.5 text-xs font-display px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors"
+                      >
+                        <RotateCw className="w-3 h-3" />
+                        Re-run
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteOne(e, item.id)}
+                        className="flex items-center justify-center w-7 h-7 rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}

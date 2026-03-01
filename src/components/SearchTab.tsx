@@ -1,13 +1,24 @@
-import { Search, ExternalLink, SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Loader2, ExternalLink, SlidersHorizontal, ChevronDown, ChevronUp, Bookmark, BookmarkCheck, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { searchDevelopers, enrichLinkedIn } from "@/lib/api";
+import { searchDevelopers, searchDevelopersStreaming, loadSearchResults, enrichLinkedIn, type SearchOptions, type StreamProgress } from "@/lib/api";
 import CandidateSlideOut from "@/components/CandidateSlideOut";
 import UpgradeModal from "@/components/UpgradeModal";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "@/hooks/use-toast";
 import type { Developer } from "@/types/developer";
+import { useSavedSearches, type SavedSearch } from "@/hooks/useSavedSearches";
+import {
+  DEFAULT_SUGGESTIONS,
+  isLikelyBot,
+  computeSkillMatch,
+  estimateSeniority,
+  type SuggestionChip,
+  type SkillFilter,
+  type SeniorityFilter,
+} from "@/lib/search-helpers";
 
 import OnboardingCard from "@/components/search/OnboardingCard";
 import SuggestionChips from "@/components/search/SuggestionChips";
@@ -18,82 +29,56 @@ import SearchProgress from "@/components/search/SearchProgress";
 import SkillPriorities from "@/components/search/SkillPriorities";
 
 // ---------------------------------------------------------------------------
-// Types & constants
+// Types
 // ---------------------------------------------------------------------------
+
+// P28: Structured strategy data from Research tab
+interface StrategyHandoff {
+  targetRepos?: string[];
+  skills?: string[];
+}
 
 interface SearchTabProps {
   initialQuery?: string;
   initialExpandedQuery?: string;
-  initialTargetRepos?: string[];
+  initialStrategy?: StrategyHandoff;
+  initialSearchId?: string;
   autoSubmit?: boolean;
   onNavigate?: (tab: string) => void;
 }
-
-import type { SuggestionChip } from "@/components/search/SuggestionChips";
-interface SkillFilter { id: string; text: string; }
-
-const DEFAULT_SUGGESTIONS: SuggestionChip[] = [
-  { label: "Rust systems engineers", expandedQuery: "Rust systems engineers", targetRepos: ["rust-lang/rust", "tokio-rs/tokio", "servo/servo", "denoland/deno", "tauri-apps/tauri", "solana-labs/solana"] },
-  { label: "React accessibility experts", expandedQuery: "React accessibility experts", targetRepos: ["facebook/react", "vercel/next.js", "jsx-eslint/eslint-plugin-jsx-a11y", "radix-ui/primitives", "shadcn-ui/ui"] },
-  { label: "ML infrastructure", expandedQuery: "ML infrastructure engineers", targetRepos: ["pytorch/pytorch", "tensorflow/tensorflow", "ray-project/ray", "mlflow/mlflow", "huggingface/transformers"] },
-  { label: "Kubernetes contributors", expandedQuery: "Kubernetes contributors", targetRepos: ["kubernetes/kubernetes", "helm/helm", "argoproj/argo-cd", "istio/istio", "cilium/cilium"] },
-  { label: "Security researchers", expandedQuery: "Security researchers", targetRepos: ["OWASP/CheatSheetSeries", "zaproxy/zaproxy", "projectdiscovery/nuclei", "hashicorp/vault", "aquasecurity/trivy"] },
-];
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const BOT_USERNAME_PATTERN = /\b(bot|dependabot|renovate|greenkeeper|snyk|codecov|github-actions|automator|copilot)\b/i;
-function isLikelyBot(dev: any): boolean {
-  if (BOT_USERNAME_PATTERN.test(dev.username || "")) return true;
-  if ((dev.username || "").endsWith("-bot") || (dev.username || "").endsWith("[bot]")) return true;
-  return false;
-}
-
-function computeSkillMatch(dev: any, skills: SkillFilter[]): number {
-  if (skills.length === 0) return -1;
-  const activeSkills = skills.filter(s => s.text.trim());
-  if (activeSkills.length === 0) return -1;
-  const searchText = [dev.bio || "", dev.about || "", dev.name || "", ...(dev.topLanguages || []).map((l: any) => l.name || ""), ...(dev.highlights || []), ...Object.keys(dev.contributedRepos || {})].join(" ").toLowerCase();
-  let totalPossible = 0, earned = 0;
-  activeSkills.forEach((skill, idx) => {
-    const weight = Math.max(2, 10 - idx * 2);
-    totalPossible += weight;
-    const keywords = skill.text.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-    const matched = keywords.filter(kw => searchText.includes(kw)).length;
-    if (keywords.length > 0) earned += weight * (matched / keywords.length);
-  });
-  return totalPossible > 0 ? Math.round((earned / totalPossible) * 100) : 0;
-}
-
-type SeniorityFilter = "any" | "junior" | "mid" | "senior";
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, autoSubmit, onNavigate }: SearchTabProps) => {
+const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initialSearchId, autoSubmit, onNavigate }: SearchTabProps) => {
   const queryClient = useQueryClient();
 
   // -- Search state --
   const [query, setQuery] = useState(initialQuery || "");
-  const [activeQuery, setActiveQuery] = useState("");
+  // BUG-002 fix: Initialize activeQuery eagerly when autoSubmit to avoid race condition
+  const [activeQuery, setActiveQuery] = useState(() => {
+    if (autoSubmit && initialQuery && !initialSearchId) {
+      return initialExpandedQuery || initialQuery;
+    }
+    return "";
+  });
   const [expandedQuery, setExpandedQuery] = useState(initialExpandedQuery || "");
-  const [activeTargetRepos, setActiveTargetRepos] = useState<string[] | undefined>(undefined);
   const [showExpandedQuery, setShowExpandedQuery] = useState(false);
+  const [activeStrategy, setActiveStrategy] = useState<StrategyHandoff | undefined>(initialStrategy);
+  const [activeSearchId, setActiveSearchId] = useState<string | undefined>(initialSearchId);
   const autoSubmitDone = useRef(false);
   const historySavedForQuery = useRef<string>("");
 
-  // -- Filter state --
-  const savedFilters = useRef(() => { try { return JSON.parse(localStorage.getItem('sourcekit-filters') || '{}'); } catch { return {}; } });
-  const sf = savedFilters.current();
+  // -- Filter state (FEAT-002: persisted to localStorage) --
+  const [sf] = useState<Record<string, any>>(() => { try { return JSON.parse(localStorage.getItem('sourcekit-filters') || '{}'); } catch { return {}; } });
   const [seniorityFilter, setSeniorityFilter] = useState<SeniorityFilter>(sf.seniority || "any");
   const [skillFilters, setSkillFilters] = useState<SkillFilter[]>(sf.skills || []);
   const [showSkillPanel, setShowSkillPanel] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [showGemsOnly, setShowGemsOnly] = useState(false);
-  const [resultLimit, setResultLimit] = useState(20);
+  const [showGemsOnly, setShowGemsOnly] = useState(sf.showGemsOnly ?? false);
+  const [showUngettable, setShowUngettable] = useState(sf.showUngettable ?? false);
+  const [resultLimit, setResultLimit] = useState(sf.resultLimit || 20);
   const [locationFilter, setLocationFilter] = useState("");
   const [languageFilter, setLanguageFilter] = useState(sf.language || "");
   const [minScore, setMinScore] = useState(sf.minScore || 0);
@@ -111,32 +96,137 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
   const [expandCount, setExpandCount] = useState(0);
   const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
   const rateLimitRetryRef = useRef(0);
+  const rateLimitTotalRef = useRef(0);
+  const [searchStep, setSearchStep] = useState(0);
+  // FEAT-008: Real-time streaming progress
+  const [streamSteps, setStreamSteps] = useState<{ step: string; detail?: string; done: boolean }[]>([]);
 
-  // Persist filters
+  // FEAT-006: Saved searches (bookmarks)
+  const { savedSearches, isSaved: checkIsSaved, saveSearch, deleteSearch } = useSavedSearches();
+  const isSaved = checkIsSaved(query);
+  const handleSaveSearch = () => saveSearch(query, expandedQuery, {
+    seniority: seniorityFilter, skills: skillFilters, language: languageFilter,
+    minScore, showGemsOnly, showUngettable, resultLimit,
+  });
+  const handleDeleteSaved = (id: string) => deleteSearch(id);
+  const handleLoadSaved = (saved: SavedSearch) => {
+    setQuery(saved.query);
+    setExpandedQuery(saved.expanded_query || "");
+    setActiveStrategy(undefined);
+    setActiveSearchId(undefined);
+    // Restore filters if present
+    if (saved.filters) {
+      const f = saved.filters;
+      if (f.seniority) setSeniorityFilter(f.seniority);
+      if (f.skills) setSkillFilters(f.skills);
+      if (f.language !== undefined) setLanguageFilter(f.language);
+      if (f.minScore !== undefined) setMinScore(f.minScore);
+      if (f.showGemsOnly !== undefined) setShowGemsOnly(f.showGemsOnly);
+      if (f.showUngettable !== undefined) setShowUngettable(f.showUngettable);
+      if (f.resultLimit) setResultLimit(f.resultLimit);
+    }
+    // Auto-submit
+    setActiveQuery(saved.expanded_query || saved.query);
+  };
+
+  // FEAT-002: Persist all filters to localStorage
   useEffect(() => {
-    localStorage.setItem('sourcekit-filters', JSON.stringify({ seniority: seniorityFilter, skills: skillFilters, language: languageFilter, minScore }));
-  }, [seniorityFilter, skillFilters, languageFilter, minScore]);
+    localStorage.setItem('sourcekit-filters', JSON.stringify({
+      seniority: seniorityFilter, skills: skillFilters, language: languageFilter,
+      minScore, showGemsOnly, showUngettable, resultLimit,
+    }));
+  }, [seniorityFilter, skillFilters, languageFilter, minScore, showGemsOnly, showUngettable, resultLimit]);
 
-  // Auto-submit for re-run from history or strategy
+  // Auto-submit for re-run from history (BUG-002: activeQuery is now set eagerly in useState init)
   useEffect(() => {
     if (autoSubmit && initialQuery && !autoSubmitDone.current) {
       autoSubmitDone.current = true;
-      setExpandedQuery(initialExpandedQuery || "");
-      setActiveTargetRepos(initialTargetRepos);
-      setActiveQuery(initialExpandedQuery || initialQuery);
       setQuery(initialQuery);
+      setExpandedQuery(initialExpandedQuery || "");
+      if (initialSearchId) {
+        // BUG-001: History replay — load cached results via junction table
+        setActiveSearchId(initialSearchId);
+      }
+      // Note: activeQuery is already initialized eagerly for non-searchId case (BUG-002 fix)
     }
-  }, [autoSubmit, initialQuery, initialExpandedQuery, initialTargetRepos]);
+  }, [autoSubmit, initialQuery, initialExpandedQuery, initialSearchId]);
 
-  // -- Data fetching --
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["github-search", activeQuery, activeTargetRepos?.slice().sort().join(',')],
-    queryFn: () => searchDevelopers(activeQuery, activeTargetRepos),
-    enabled: !!activeQuery,
+  // -- Data fetching (FEAT-008: streaming with real-time progress) --
+  const { data: freshData, isLoading: freshLoading, error: freshError } = useQuery({
+    queryKey: ["github-search", activeQuery, activeStrategy?.targetRepos?.join(','), showUngettable],
+    queryFn: () => {
+      setStreamSteps([]);
+      return searchDevelopersStreaming(
+        activeQuery,
+        {
+          targetRepos: activeStrategy?.targetRepos,
+          skills: activeStrategy?.skills,
+          hideUngettable: !showUngettable,
+        },
+        (p: StreamProgress) => {
+          setStreamSteps(prev => {
+            // Mark all previous steps as done, add/update current step
+            const updated = prev.map(s => ({ ...s, done: true }));
+            const existing = updated.findIndex(s => s.step === p.step);
+            if (existing >= 0) {
+              updated[existing] = { step: p.step, detail: p.detail, done: false };
+            } else {
+              updated.push({ step: p.step, detail: p.detail, done: false });
+            }
+            return updated;
+          });
+        },
+      ).catch((err) => {
+        // Fall back to non-streaming if SSE fails (e.g. edge function doesn't support it yet)
+        if (err.message === 'No response body') {
+          return searchDevelopers(activeQuery, {
+            targetRepos: activeStrategy?.targetRepos,
+            skills: activeStrategy?.skills,
+            hideUngettable: !showUngettable,
+          });
+        }
+        throw err;
+      });
+    },
+    enabled: !!activeQuery && !activeSearchId,
     staleTime: 1000 * 60 * 5,
   });
 
-  useEffect(() => { setExpandedResults([]); setExpandCount(0); }, [activeQuery]);
+  // BUG-001: Cached search results for history replay
+  const { data: cachedData, isLoading: cachedLoading, error: cachedError } = useQuery({
+    queryKey: ["cached-search", activeSearchId],
+    queryFn: () => loadSearchResults(activeSearchId!),
+    enabled: !!activeSearchId,
+    staleTime: Infinity,
+  });
+
+  // BUG-001: Fallback — if cached results are empty (pre-migration history), re-run search
+  useEffect(() => {
+    if (activeSearchId && cachedData && cachedData.results.length === 0) {
+      setActiveSearchId(undefined);
+      setActiveQuery(expandedQuery || query);
+    }
+  }, [activeSearchId, cachedData, expandedQuery, query]);
+
+  // BUG-001: Unified data from either path
+  const isHistoryReplay = !!activeSearchId;
+  const data = isHistoryReplay ? cachedData : freshData;
+  const isLoading = isHistoryReplay ? cachedLoading : freshLoading;
+  const error = isHistoryReplay ? cachedError : freshError;
+
+  // FEAT-008: Streaming progress replaces fake timed steps
+  const SEARCH_STEPS_FALLBACK = ["Parsing your query...", "Searching repositories...", "Fetching contributor profiles...", "Scoring candidates with AI...", "Ranking results..."];
+  const stepDelays = [0, 3000, 6000, 12000, 18000];
+  useEffect(() => {
+    // Only use fallback timers when streaming steps are empty (e.g. cached path)
+    if (!isLoading || streamSteps.length > 0) { if (!isLoading) setSearchStep(0); return; }
+    const timers = stepDelays.map((delay, i) =>
+      i === 0 ? null : setTimeout(() => setSearchStep(i), delay)
+    );
+    return () => timers.forEach(t => t && clearTimeout(t));
+  }, [isLoading, streamSteps.length]);
+
+  useEffect(() => { setExpandedResults([]); setExpandCount(0); setStreamSteps([]); }, [activeQuery]);
 
   // Rate-limit auto-retry with countdown
   const isRateLimited = !!error && (error as Error).message === 'RATE_LIMITED';
@@ -144,7 +234,9 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
     if (!isRateLimited) { setRateLimitCountdown(0); return; }
     const attempt = rateLimitRetryRef.current;
     if (attempt >= 3) return; // stop after 3 retries
-    const wait = attempt === 0 ? 30 : attempt === 1 ? 60 : 90;
+    const serverRetry = (error as any)?.retryAfterSeconds;
+    const wait = serverRetry ? Math.min(serverRetry + attempt * 10, 120) : (attempt === 0 ? 30 : attempt === 1 ? 60 : 90);
+    rateLimitTotalRef.current = wait;
     setRateLimitCountdown(wait);
     const interval = setInterval(() => {
       setRateLimitCountdown(prev => {
@@ -171,13 +263,20 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
     let combined: any[];
     if (expandedResults.length === 0) { combined = baseResults; }
     else { const seen = new Set(baseResults.map((d: any) => d.username)); combined = [...baseResults, ...expandedResults.filter((d: any) => !seen.has(d.username))]; }
-    return combined.filter((d: any) => !isLikelyBot(d));
+    // P17: Deduplicate by username (case-insensitive)
+    const seen = new Map<string, any>();
+    for (const d of combined) {
+      const key = (d.username || '').toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.set(key, d);
+    }
+    return [...seen.values()].filter((d: any) => !isLikelyBot(d));
   }, [baseResults, expandedResults]);
 
-  // P23: Save search history for ALL searches (including 0 results)
-  // P20: Show toast when credit was not charged (0-result search)
+  // P23: Save search history for ALL searches (including 0 results and errors)
+  // BUG-001: Skip saving when replaying from history; use searchId as PK to link junction rows
   useEffect(() => {
-    if (data && activeQuery && historySavedForQuery.current !== activeQuery) {
+    if (data && activeQuery && !isHistoryReplay && historySavedForQuery.current !== activeQuery) {
       historySavedForQuery.current = activeQuery;
       // Show toast if no credit was charged
       if (data.creditCharged === false) {
@@ -185,7 +284,9 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
       }
       (async () => {
         try {
-          await supabase.from("search_history").insert({ query: query || activeQuery, action_type: "search", result_count: baseResults.length, metadata: { expanded_query: expandedQuery || activeQuery, skills: parsedCriteria?.skills || [], location: parsedCriteria?.location || null, seniority: parsedCriteria?.seniority || null } } as any);
+          const insertRow: any = { query: query || activeQuery, action_type: "search", result_count: baseResults.length, metadata: { expanded_query: expandedQuery || activeQuery, skills: parsedCriteria?.skills || [], location: parsedCriteria?.location || null, seniority: parsedCriteria?.seniority || null, status: baseResults.length > 0 ? 'success' : 'no_results' } };
+          if (data.searchId) insertRow.id = data.searchId;
+          await supabase.from("search_history").insert(insertRow as any);
           queryClient.invalidateQueries({ queryKey: ["search-history"] });
           // Only fire search-complete event if credit was charged (so counter refreshes correctly)
           if (data.creditCharged !== false) {
@@ -196,6 +297,21 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
+
+  // P23: Also record failed searches (errors)
+  useEffect(() => {
+    if (error && activeQuery && !isHistoryReplay && historySavedForQuery.current !== activeQuery) {
+      historySavedForQuery.current = activeQuery;
+      (async () => {
+        try {
+          const errorMsg = (error as Error).message;
+          await supabase.from("search_history").insert({ query: query || activeQuery, action_type: "search", result_count: 0, metadata: { expanded_query: expandedQuery || activeQuery, status: 'error', error: errorMsg } } as any);
+          queryClient.invalidateQueries({ queryKey: ["search-history"] });
+        } catch { /* silent */ }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   const { data: pipelineUsernames } = useQuery({
     queryKey: ["pipeline-usernames"],
@@ -214,13 +330,6 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
     return results.map((dev: any) => ({ ...dev, skillMatch: computeSkillMatch(dev, activeSkills) }));
   }, [results, skillFilters]);
 
-  const estimateSeniority = useCallback((dev: any): SeniorityFilter => {
-    const yearsActive = new Date().getFullYear() - (dev.joinedYear || new Date().getFullYear());
-    if (yearsActive >= 8 || dev.score >= 70) return "senior";
-    if (yearsActive >= 4 || dev.score >= 40) return "mid";
-    return "junior";
-  }, []);
-
   const filtered = useMemo(() => {
     let list = resultsWithSkillMatch;
     if (showGemsOnly) list = list.filter((d: any) => d.hiddenGem);
@@ -228,8 +337,14 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
     if (seniorityFilter !== "any") list = list.filter((d: any) => estimateSeniority(d) === seniorityFilter);
     if (languageFilter) list = list.filter((d: any) => (d.topLanguages || []).some((l: any) => l.name === languageFilter));
     if (minScore > 0) list = list.filter((d: any) => (d.score || 0) >= minScore);
+    // Sort ungettable candidates to the bottom
+    list = [...list].sort((a: any, b: any) => {
+      if (a.ungettable && !b.ungettable) return 1;
+      if (!a.ungettable && b.ungettable) return -1;
+      return 0;
+    });
     return list.slice(0, resultLimit);
-  }, [resultsWithSkillMatch, showGemsOnly, locationFilter, resultLimit, seniorityFilter, estimateSeniority, languageFilter, minScore]);
+  }, [resultsWithSkillMatch, showGemsOnly, locationFilter, resultLimit, seniorityFilter, languageFilter, minScore]);
 
   const funnelCounts = useMemo(() => {
     const total = results.length;
@@ -251,17 +366,18 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) { toast({ title: "Enter a search query", description: "Type a skill, language, or domain to search for engineers." }); return; }
-    // P22: Reset expanded query and target repos when user initiates a new manual search
-    setExpandedQuery("");
-    setActiveTargetRepos(undefined);
+    // P22: Clear strategy when doing a manual search (prevents stale strategy data)
+    if (!expandedQuery) setActiveStrategy(undefined);
+    setActiveSearchId(undefined);
     setActiveQuery(buildSearchQuery());
   };
 
-  // P25: Chips pass targetRepos directly to the Contributors API
   const handleChipSubmit = (chip: SuggestionChip) => {
     setQuery(chip.label);
     setExpandedQuery(chip.expandedQuery);
-    setActiveTargetRepos(chip.targetRepos);
+    // P25: Pass pre-configured repos directly as strategy data
+    setActiveStrategy(chip.targetRepos ? { targetRepos: chip.targetRepos } : undefined);
+    setActiveSearchId(undefined);
     setActiveQuery(chip.expandedQuery);
   };
 
@@ -322,7 +438,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
   const handleSkillDragEnd = () => setDragIdx(null);
 
   const hasActiveSkills = skillFilters.some(s => s.text.trim());
-  const hasActiveFilters = showGemsOnly || !!locationFilter || seniorityFilter !== "any" || !!languageFilter || minScore > 0;
+  const hasActiveFilters = showGemsOnly || showUngettable || !!locationFilter || seniorityFilter !== "any" || !!languageFilter || minScore > 0;
   const currentResultCount = results.length;
   const maxResults = 50;
   const canExpand = currentResultCount < maxResults && !!activeQuery && !isLoading;
@@ -338,9 +454,16 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
         <form onSubmit={handleSearch} className="relative mb-2">
           <div className="relative glass rounded-xl glow-border transition-all duration-300 focus-within:glow-sm">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input type="text" value={query} onChange={(e) => { setQuery(e.target.value); setExpandedQuery(""); setActiveTargetRepos(undefined); setShowExpandedQuery(false); }}
-              placeholder="Search by skill, language, or domain..." className="w-full bg-transparent text-foreground placeholder:text-muted-foreground py-3.5 pl-12 pr-28 text-sm outline-none font-body" />
-            <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-5 py-2 rounded-lg font-display text-xs font-medium hover:opacity-90 transition-opacity">Search</button>
+            <input type="text" value={query} onChange={(e) => { setQuery(e.target.value); setExpandedQuery(''); setShowExpandedQuery(false); setActiveStrategy(undefined); }}
+              placeholder="Search by skill, language, or domain..." className="w-full bg-transparent text-foreground placeholder:text-muted-foreground py-3.5 pl-12 pr-36 text-sm outline-none font-body" />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+              {query.trim() && (
+                <button type="button" onClick={handleSaveSearch} className="p-1.5 rounded-md text-muted-foreground hover:text-primary transition-colors" title={isSaved ? "Remove bookmark" : "Bookmark this search"}>
+                  {isSaved ? <BookmarkCheck className="w-4 h-4 text-primary" /> : <Bookmark className="w-4 h-4" />}
+                </button>
+              )}
+              <button type="submit" className="bg-primary text-primary-foreground px-5 py-2 rounded-lg font-display text-xs font-medium hover:opacity-90 transition-opacity">Search</button>
+            </div>
           </div>
         </form>
 
@@ -358,18 +481,83 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
           </Collapsible>
         )}
 
-        {!activeQuery && !expandedQuery && (
+        {!activeQuery && !activeSearchId && !expandedQuery && (
           <div className="space-y-4 mb-8 mt-4">
             <OnboardingCard />
+            {savedSearches.length > 0 && (
+              <div>
+                <p className="text-[10px] font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2">Saved Searches</p>
+                <div className="flex flex-wrap gap-2">
+                  {savedSearches.map((s: any) => (
+                    <div key={s.id} className="group flex items-center gap-1 bg-primary/10 border border-primary/20 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-primary/20 transition-colors" onClick={() => handleLoadSaved(s)}>
+                      <Bookmark className="w-3 h-3 text-primary shrink-0" />
+                      <span className="text-xs font-display text-foreground truncate max-w-[200px]">{s.name}</span>
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteSaved(s.id); }} className="ml-1 p-0.5 rounded text-muted-foreground/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity" title="Remove">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <SuggestionChips suggestions={DEFAULT_SUGGESTIONS} onSubmit={handleChipSubmit} />
           </div>
         )}
 
-        <SearchProgress
-          isLoading={isLoading}
-          hasTargetRepos={!!activeTargetRepos && activeTargetRepos.length > 0}
-          repoCount={activeTargetRepos?.length}
-        />
+        {isLoading && (
+          <div className="glass rounded-xl p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+              <span className="font-display text-sm font-semibold text-foreground">Analyzing your query with AI...</span>
+            </div>
+            <div className="space-y-2">
+              {streamSteps.length > 0 ? (
+                /* FEAT-008: Real-time streaming progress */
+                streamSteps.map((s, i) => {
+                  const active = i === streamSteps.length - 1 && !s.done;
+                  return (
+                    <div key={`${s.step}-${i}`} className={`flex items-center gap-2 transition-opacity duration-300 ${s.done || active ? 'opacity-100' : 'opacity-40'}`}>
+                      <div className={`w-2 h-2 rounded-full ${s.done ? 'bg-green-400' : active ? 'bg-primary animate-pulse' : 'bg-muted-foreground/30'}`} />
+                      <span className={`text-xs font-display ${s.done ? 'text-green-400' : active ? 'text-foreground' : 'text-muted-foreground'}`}>
+                        {s.step}{s.detail ? ` --- ${s.detail}` : ''}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                /* Fallback: timed steps for cached/non-streaming path */
+                SEARCH_STEPS_FALLBACK.map((label, i) => {
+                  const done = i < searchStep;
+                  const active = i === searchStep;
+                  return (
+                    <div key={label} className={`flex items-center gap-2 transition-opacity duration-300 ${!done && !active ? 'opacity-40' : 'opacity-100'}`}>
+                      <div className={`w-2 h-2 rounded-full ${done ? 'bg-green-400' : active ? 'bg-primary animate-pulse' : 'bg-muted-foreground/30'}`} />
+                      <span className={`text-xs font-display ${done ? 'text-green-400' : active ? 'text-foreground' : 'text-muted-foreground'}`}>{label}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            {/* Skeleton result cards for perceived performance */}
+            <div className="space-y-3 mt-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="glass rounded-lg p-4 flex items-start gap-3">
+                  <Skeleton className="w-10 h-10 rounded-full shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-64" />
+                    <div className="flex gap-2 mt-1">
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                      <Skeleton className="h-5 w-14 rounded-full" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {parsedCriteria && !isLoading && (
           <div className="glass rounded-xl p-4 mb-6">
@@ -399,6 +587,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
               skillFilters={skillFilters} showSkillPanel={showSkillPanel} onToggleSkillPanel={() => setShowSkillPanel(!showSkillPanel)}
               locationFilter={locationFilter} onLocationChange={setLocationFilter} locationSuggestions={locationSuggestions}
               showGemsOnly={showGemsOnly} onToggleGems={() => setShowGemsOnly(!showGemsOnly)}
+              showUngettable={showUngettable} onToggleUngettable={() => setShowUngettable(!showUngettable)}
               resultLimit={resultLimit} onResultLimitChange={setResultLimit}
               enrichProgress={enrichProgress} onBatchEnrich={handleBatchEnrich}
               availableLanguages={availableLanguages} languageFilter={languageFilter} onLanguageChange={setLanguageFilter}
@@ -426,7 +615,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
             {isRateLimited && rateLimitCountdown > 0 && (
               <div className="mt-3 w-full max-w-xs mx-auto">
                 <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                  <div className="h-full bg-primary/60 rounded-full transition-all duration-1000" style={{ width: `${(1 - rateLimitCountdown / (rateLimitRetryRef.current === 0 ? 30 : rateLimitRetryRef.current === 1 ? 60 : 90)) * 100}%` }} />
+                  <div className="h-full bg-primary/60 rounded-full transition-all duration-1000" style={{ width: `${(1 - rateLimitCountdown / (rateLimitTotalRef.current || 30)) * 100}%` }} />
                 </div>
               </div>
             )}
@@ -436,7 +625,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialTargetRepos, aut
           </div>
         )}
 
-        {!isLoading && !error && activeQuery && (
+        {!isLoading && !error && (activeQuery || activeSearchId) && (
           <SearchResults
             filtered={filtered} results={results}
             isExpanding={isExpanding} canExpand={canExpand}

@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders } from "../_shared/cors.ts"
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,10 +7,10 @@ serve(async (req) => {
   }
 
   try {
-    const { query, role, company, exa_api_key, parallel_api_key } = await req.json()
+    const { query, role, company } = await req.json()
 
-    const exaApiKey = exa_api_key || Deno.env.get('EXA_API_KEY')
-    const parallelApiKey = parallel_api_key || Deno.env.get('PARALLEL_API_KEY')
+    const exaApiKey = Deno.env.get('EXA_API_KEY')
+    const parallelApiKey = Deno.env.get('PARALLEL_API_KEY')
 
     if (!exaApiKey && !parallelApiKey) {
       return new Response(

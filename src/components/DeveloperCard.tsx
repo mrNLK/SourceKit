@@ -1,4 +1,4 @@
-import { Star, GitFork, MapPin, Gem, Bookmark, BookmarkCheck, Linkedin, Loader2, UserPlus, Check, Copy, ClipboardCheck, Github, Mail, Twitter } from "lucide-react";
+import { Star, GitFork, MapPin, Gem, Bookmark, BookmarkCheck, Linkedin, Loader2, UserPlus, Check, Copy, ClipboardCheck, Github, Mail, Twitter, AlertTriangle, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import type { Developer } from "@/types/developer";
@@ -83,6 +83,7 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
       window.open(linkedinUrl, '_blank');
       return;
     }
+    if (linkedinLoading) return; // Prevent double-click
     setLinkedinLoading(true);
     try {
       const result = await enrichLinkedIn(developer.username, developer.name, developer.location, developer.bio);
@@ -157,22 +158,10 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
                   Hidden Gem
                 </span>
               )}
-              {developer.reachability === 'low' && (
-                <span className="text-[10px] font-display font-semibold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                  title={developer.reachabilityReason || 'Founder/C-Suite — may not respond to outreach'}>
-                  Founder/C-Suite
-                </span>
-              )}
-              {developer.source === 'exa' && (
-                <span className="text-[10px] font-display font-semibold px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20"
-                  title="Found via Exa semantic search">
-                  Exa
-                </span>
-              )}
-              {developer.source === 'both' && (
-                <span className="text-[10px] font-display font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                  title="Found via both GitHub and Exa">
-                  GitHub + Exa
+              {developer.ungettable && (
+                <span className="flex items-center gap-1 text-amber-400 text-xs font-display" title={developer.ungettableReason || 'Likely not recruitable'}>
+                  <AlertTriangle className="w-3 h-3" />
+                  Ungettable
                 </span>
               )}
               {inPipeline && (
@@ -193,6 +182,14 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
                     {repo.split('/').pop()} · {count as number} commits
                   </span>
                 ))}
+              </div>
+            )}
+
+            {/* P26: Top achievement badge */}
+            {developer.highlights && developer.highlights.length > 0 && (
+              <div className="flex items-center gap-1.5 mb-2">
+                <Trophy className="w-3 h-3 text-amber-400 shrink-0" />
+                <span className="text-[11px] text-secondary-foreground font-display truncate">{developer.highlights[0]}</span>
               </div>
             )}
 
@@ -226,6 +223,7 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
           {/* Score */}
           <div className="flex flex-col items-center shrink-0 z-10 relative">
             <div className={`w-11 h-11 rounded-lg flex items-center justify-center font-display text-sm font-bold ${
+              developer.ungettable ? "bg-secondary text-muted-foreground border border-border opacity-60" :
               developer.score >= 70 ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" :
               developer.score >= 40 ? "bg-amber-500/15 text-amber-400 border border-amber-500/30" :
               developer.score >= 1 ? "bg-red-500/15 text-red-400 border border-red-500/30" :

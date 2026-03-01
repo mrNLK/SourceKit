@@ -1,8 +1,13 @@
-import { useState, useCallback } from 'react'
-import { Layers, Plus, RefreshCw, Trash2, ArrowLeft, Download, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
+import { useState, useCallback, useMemo } from 'react'
+import { Layers, Plus, RefreshCw, Trash2, ArrowLeft, ChevronDown, ChevronUp, Loader2, UserPlus, Check } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { useWebsets } from '@/hooks/useWebsets'
 import { createWebset, deleteWebset } from '@/services/websets'
+import { supabase } from '@/integrations/supabase/client'
+import WebsetEEAView from '@/components/websets/WebsetEEAView'
+import EEAErrorBoundary from '@/components/websets/EEAErrorBoundary'
+import { EEAViewSkeleton } from '@/components/websets/EEASkeleton'
+import MonitorPanel from '@/components/websets/MonitorPanel'
 
 const WebsetsTab = () => {
   const {
@@ -22,6 +27,62 @@ const WebsetsTab = () => {
 
   // Detail view
   const [viewingWebsetId, setViewingWebsetId] = useState<string | null>(null)
+  const [addedItems, setAddedItems] = useState<Set<string>>(new Set())
+  const [addingItem, setAddingItem] = useState<string | null>(null)
+  const [isBatchImporting, setIsBatchImporting] = useState(false)
+
+  const handleAddToPipeline = useCallback(async (item: { id: string; title: string; url: string }) => {
+    if (addingItem || addedItems.has(item.id)) return
+    setAddingItem(item.id)
+    try {
+      const username = item.url ? new URL(item.url).pathname.replace(/^\//, '').replace(/\//g, '-') : item.id
+      const { error } = await supabase.from('pipeline').upsert({
+        github_username: username,
+        name: item.title || username,
+        avatar_url: '',
+        stage: 'sourced',
+      }, { onConflict: 'github_username' })
+      if (error) throw error
+      setAddedItems(prev => new Set(prev).add(item.id))
+      toast({ title: `${item.title || 'Item'} added to pipeline`, description: 'Added to Sourced stage.' })
+    } catch {
+      toast({ title: 'Failed to add to pipeline', variant: 'destructive' })
+    } finally {
+      setAddingItem(null)
+    }
+  }, [addingItem, addedItems])
+
+  const handleBatchImport = useCallback(async (batchItems: { id: string; title: string; url: string }[]) => {
+    if (isBatchImporting) return
+    setIsBatchImporting(true)
+    let added = 0
+    let failed = 0
+    try {
+      for (const item of batchItems) {
+        if (addedItems.has(item.id)) continue
+        try {
+          const username = item.url ? new URL(item.url).pathname.replace(/^\//, '').replace(/\//g, '-') : item.id
+          const { error } = await supabase.from('pipeline').upsert({
+            github_username: username,
+            name: item.title || username,
+            avatar_url: '',
+            stage: 'sourced',
+          }, { onConflict: 'github_username' })
+          if (error) throw error
+          setAddedItems(prev => new Set(prev).add(item.id))
+          added++
+        } catch {
+          failed++
+        }
+      }
+      toast({
+        title: `Batch import: ${added} added${failed > 0 ? `, ${failed} failed` : ''}`,
+        variant: failed > 0 ? 'destructive' : 'default',
+      })
+    } finally {
+      setIsBatchImporting(false)
+    }
+  }, [isBatchImporting, addedItems])
 
   const handleCreate = useCallback(async () => {
     if (!query.trim()) return
@@ -97,6 +158,13 @@ const WebsetsTab = () => {
     }
   }
 
+  // Resolve EEA signals for the current detail view
+  const viewingRef = useMemo(
+    () => websetRefs.find(r => r.id === viewingWebsetId),
+    [websetRefs, viewingWebsetId]
+  )
+  const hasEEASignals = viewingRef?.eeaSignals && viewingRef.eeaSignals.length > 0
+
   // Detail view
   if (viewingWebsetId) {
     return (
@@ -114,7 +182,9 @@ const WebsetsTab = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Layers className="w-5 h-5 text-primary" />
-                <h2 className="font-display text-base font-semibold">Webset Details</h2>
+                <h2 className="font-display text-base font-semibold">
+                  {hasEEASignals ? 'EEA Webset' : 'Webset Details'}
+                </h2>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${statusColor(activeWebset.status)}`}>
@@ -136,6 +206,7 @@ const WebsetsTab = () => {
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {activeWebset.itemCount || 0} items
+              {hasEEASignals && ` \u00B7 ${viewingRef!.eeaSignals!.filter(s => s.enabled).length} EEA criteria`}
             </p>
           </div>
         )}
@@ -153,7 +224,28 @@ const WebsetsTab = () => {
           </div>
         )}
 
-        {items.length > 0 && (
+        {/* Loading skeleton */}
+        {isLoading && hasEEASignals && items.length === 0 && (
+          <EEAViewSkeleton count={Math.min(viewingRef?.count || 5, 8)} />
+        )}
+
+        {/* EEA-enriched view when signals are available */}
+        {items.length > 0 && hasEEASignals && (
+          <EEAErrorBoundary fallbackMessage="Failed to render EEA enrichment data. An item may have unexpected property format.">
+            <WebsetEEAView
+              items={items}
+              signals={viewingRef!.eeaSignals!}
+              onAddToPipeline={handleAddToPipeline}
+              onBatchImport={handleBatchImport}
+              addedItems={addedItems}
+              addingItem={addingItem}
+              isBatchImporting={isBatchImporting}
+            />
+          </EEAErrorBoundary>
+        )}
+
+        {/* Generic item list fallback */}
+        {items.length > 0 && !hasEEASignals && (
           <>
             <p className="text-sm text-muted-foreground">{items.length} items</p>
             <div className="space-y-2">
@@ -187,11 +279,31 @@ const WebsetsTab = () => {
                         </div>
                       )}
                     </div>
+                    <button
+                      onClick={() => handleAddToPipeline(item)}
+                      disabled={addingItem === item.id || addedItems.has(item.id)}
+                      className="shrink-0 inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 disabled:opacity-50 transition-colors"
+                      title={addedItems.has(item.id) ? 'Added to pipeline' : 'Add to pipeline'}
+                    >
+                      {addingItem === item.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : addedItems.has(item.id) ? (
+                        <Check className="w-3 h-3 text-green-400" />
+                      ) : (
+                        <UserPlus className="w-3 h-3" />
+                      )}
+                      {addedItems.has(item.id) ? 'Added' : 'Pipeline'}
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           </>
+        )}
+
+        {/* Monitor management */}
+        {activeWebset && (
+          <MonitorPanel websetId={activeWebset.id} defaultQuery={viewingRef?.query} />
         )}
 
         {!isLoading && items.length === 0 && !error && (

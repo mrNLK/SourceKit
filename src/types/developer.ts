@@ -21,7 +21,7 @@ export interface Developer {
   linkedinUrl?: string | null;
   twitterUsername?: string | null;
   email?: string | null;
-  source?: 'github' | 'exa' | 'both';
-  reachability?: 'low';
-  reachabilityReason?: string;
+  ungettable?: boolean;
+  ungettableReason?: string;
+  recruitable?: boolean;
 }

@@ -1,11 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { anthropicToolCall } from "../_shared/anthropic.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -20,6 +16,31 @@ serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Check for cached enrichment (within 30 days, confidence >= medium)
+    const supabaseCheck = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const { data: cached } = await supabaseCheck
+      .from('candidates')
+      .select('linkedin_url, linkedin_confidence, linkedin_fetched_at')
+      .eq('github_username', username)
+      .single();
+
+    if (cached?.linkedin_url && cached?.linkedin_fetched_at) {
+      const fetchedAt = new Date(cached.linkedin_fetched_at).getTime();
+      const thirtyDaysAgo = Date.now() - 30 * 86400000;
+      const confidence = cached.linkedin_confidence || 'low';
+      if (fetchedAt > thirtyDaysAgo && (confidence === 'high' || confidence === 'medium')) {
+        console.log(`Returning cached LinkedIn for ${username} (${confidence}, ${cached.linkedin_url})`);
+        return new Response(JSON.stringify({
+          linkedin_url: cached.linkedin_url,
+          confidence,
+          reasoning: 'Cached result',
+          cached: true,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     const EXA_API_KEY = Deno.env.get('EXA_API_KEY');
@@ -96,12 +117,13 @@ serve(async (req) => {
       result = { linkedin_url: bestResult?.url || null, confidence: 'low', reasoning: 'No AI matching available' };
     }
 
-    // Update candidate in DB
+    // Update candidate in DB (include fetched_at for dedup/cooldown)
     if (result.linkedin_url) {
       const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
       await supabase.from('candidates').update({
         linkedin_url: result.linkedin_url,
         linkedin_confidence: result.confidence,
+        linkedin_fetched_at: new Date().toISOString(),
       }).eq('github_username', username);
     }
 

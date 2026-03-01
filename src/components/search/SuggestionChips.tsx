@@ -1,8 +1,4 @@
-export interface SuggestionChip {
-  label: string;
-  expandedQuery: string;
-  targetRepos?: string[];
-}
+import type { SuggestionChip } from "@/lib/search-helpers";
 
 interface SuggestionChipsProps {
   suggestions: SuggestionChip[];

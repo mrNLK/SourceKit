@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import ReactMarkdown from "react-markdown";
 import ExportButton from "@/components/ExportButton";
+import CandidateCompare from "@/components/CandidateCompare";
+import BulkOutreachModal from "@/components/BulkOutreachModal";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -54,6 +56,8 @@ const BulkActionsTab = () => {
   const [chatInput, setChatInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [outreachOpen, setOutreachOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch pipeline candidates joined with candidate details
@@ -220,6 +224,17 @@ const BulkActionsTab = () => {
     if (action.minSelection && count < action.minSelection) return;
     if (action.maxSelection && count > action.maxSelection) return;
 
+    // FEAT-001: Open comparison modal instead of streaming to chat
+    if (actionId === "compare") {
+      setCompareOpen(true);
+      return;
+    }
+    // FEAT-003: Open outreach modal for structured per-candidate messages
+    if (actionId === "outreach") {
+      setOutreachOpen(true);
+      return;
+    }
+
     const label = action.label;
     setMessages(prev => [...prev, { role: "user", content: `🔧 ${label} (${actionId === "insights" ? pipelineCandidates.length : count} candidates)` }]);
     streamAction(actionId);
@@ -250,6 +265,16 @@ const BulkActionsTab = () => {
 
   return (
     <div>
+      <CandidateCompare
+        open={compareOpen}
+        onOpenChange={setCompareOpen}
+        candidates={selectedCandidates}
+      />
+      <BulkOutreachModal
+        open={outreachOpen}
+        onOpenChange={setOutreachOpen}
+        candidates={selectedCandidates}
+      />
       <div className="flex items-center justify-between mb-4">
         <h1 className="font-display text-lg font-semibold text-foreground">Bulk Actions</h1>
         <ExportButton data={selected.size > 0 ? pipelineCandidates.filter((c: any) => selected.has(c.id)) : pipelineCandidates} filename="sourcekit-bulk" label={selected.size > 0 ? `Export ${selected.size}` : "Export All"} />
