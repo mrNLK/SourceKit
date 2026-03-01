@@ -47,7 +47,7 @@ const SearchResults = () => {
     queryKey: ["pipeline-usernames"],
     queryFn: async () => {
       const { data } = await supabase.from('pipeline').select('github_username');
-      return new Set((data || []).map((r: any) => r.github_username));
+      return new Set((data || []).map((r) => r.github_username));
     },
     staleTime: 1000 * 30,
   });
@@ -56,7 +56,7 @@ const SearchResults = () => {
   const phase: SearchPhase = isLoading ? 'scoring' : 'done';
 
   const availableLocations = useMemo(() => {
-    const locs = results.map((d: any) => d.location).filter((l: string) => l && l.trim());
+    const locs = results.map((d) => d.location).filter((l: string) => l && l.trim());
     return [...new Set(locs)] as string[];
   }, [results]);
 
@@ -67,16 +67,16 @@ const SearchResults = () => {
 
   const filtered = useMemo(() => {
     let list = results;
-    if (showGemsOnly) list = list.filter((d: any) => d.hiddenGem);
+    if (showGemsOnly) list = list.filter((d) => d.hiddenGem);
     if (locationFilter) {
-      list = list.filter((d: any) => d.location && d.location.toLowerCase().includes(locationFilter.toLowerCase()));
+      list = list.filter((d) => d.location && d.location.toLowerCase().includes(locationFilter.toLowerCase()));
     }
     return list.slice(0, resultLimit);
   }, [results, showGemsOnly, locationFilter, resultLimit]);
 
   const handleBatchEnrich = useCallback(async () => {
     if (enrichProgress) return;
-    const toEnrich = filtered.filter((d: any) => !d.linkedinUrl && !enrichedUsernames.has(d.username));
+    const toEnrich = filtered.filter((d) => !d.linkedinUrl && !enrichedUsernames.has(d.username));
     const alreadyHave = filtered.length - toEnrich.length;
     setEnrichProgress({ current: 0, total: toEnrich.length, skipped: alreadyHave });
 
@@ -350,7 +350,7 @@ const SearchResults = () => {
             {/* Results */}
             {!isLoading && !error && (
               <div className="grid gap-3">
-                {filtered.map((dev: any) => (
+                {filtered.map((dev) => (
                   <DeveloperCard
                     key={dev.id}
                     developer={dev}

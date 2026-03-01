@@ -3,8 +3,8 @@ import DeveloperCard from "@/components/DeveloperCard";
 import type { Developer } from "@/types/developer";
 
 interface SearchResultsProps {
-  filtered: any[];
-  results: any[];
+  filtered: Developer[];
+  results: Developer[];
   isExpanding: boolean;
   canExpand: boolean;
   currentResultCount: number;
@@ -58,7 +58,7 @@ const SearchResults = ({
     )}
 
     <div className="grid gap-3">
-      {filtered.map((dev: any) => (
+      {filtered.map((dev) => (
         <div key={dev.id} className="relative">
           <button
             onClick={(e) => { e.stopPropagation(); onToggleBatchSelect(dev.username); }}

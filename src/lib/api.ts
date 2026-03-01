@@ -35,8 +35,10 @@ async function invokeFunction(name: string, params?: Record<string, string>, bod
   return res.json();
 }
 
+import type { Developer } from '@/types/developer';
+
 export interface SearchResponse {
-  results: any[];
+  results: Developer[];
   searchId?: string;
   parsedCriteria: {
     repos: { owner: string; name: string }[];

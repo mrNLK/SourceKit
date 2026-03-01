@@ -843,7 +843,7 @@ export function computeEEA(data: CandidateData): EEAProfile {
  * Convert a Developer search result (camelCase) or candidate row (snake_case)
  * into the shape computeEEA expects.
  */
-export function developerToCandidate(dev: any): CandidateData {
+export function developerToCandidate(dev: Record<string, unknown>): CandidateData {
   return {
     stars: dev.stars ?? dev.totalStars ?? 0,
     followers: dev.followers ?? 0,
