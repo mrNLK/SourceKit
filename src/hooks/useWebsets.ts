@@ -43,30 +43,42 @@ export function useWebsets() {
 
   const addWebsetRef = useCallback(async (ref: WebsetRef) => {
     setWebsetRefs(prev => [ref, ...prev])
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.user?.id) {
-      await supabase.from('webset_refs').upsert({
-        id: ref.id,
-        user_id: session.user.id,
-        query: ref.query,
-        count: ref.count,
-        status: ref.status,
-        created_at: ref.createdAt,
-      }, { onConflict: 'id,user_id' })
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user?.id) {
+        const { error } = await supabase.from('webset_refs').upsert({
+          id: ref.id,
+          user_id: session.user.id,
+          query: ref.query,
+          count: ref.count,
+          status: ref.status,
+          created_at: ref.createdAt,
+        }, { onConflict: 'id,user_id' })
+        if (error) console.error('Failed to persist webset ref:', error.message)
+      }
+    } catch (err) {
+      console.error('Failed to persist webset ref:', err)
     }
   }, [])
 
   const removeWebsetRef = useCallback(async (id: string) => {
-    setWebsetRefs(prev => prev.filter(r => r.id !== id))
+    const prev = websetRefs
+    setWebsetRefs(p => p.filter(r => r.id !== id))
     if (activeWebset?.id === id) {
       setActiveWebset(null)
       setItems([])
     }
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.user?.id) {
-      await supabase.from('webset_refs').delete().eq('id', id).eq('user_id', session.user.id)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user?.id) {
+        const { error } = await supabase.from('webset_refs').delete().eq('id', id).eq('user_id', session.user.id)
+        if (error) { console.error('Failed to delete webset ref:', error.message); setWebsetRefs(prev) }
+      }
+    } catch (err) {
+      console.error('Failed to delete webset ref:', err)
+      setWebsetRefs(prev)
     }
-  }, [activeWebset])
+  }, [activeWebset, websetRefs])
 
   const setActiveWebsetId = useCallback(async (id: string) => {
     setIsLoading(true)
@@ -121,14 +133,21 @@ export function useWebsets() {
   }, [activeWebset])
 
   const clearAll = useCallback(async () => {
+    const prev = websetRefs
     setWebsetRefs([])
     setActiveWebset(null)
     setItems([])
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.user?.id) {
-      await supabase.from('webset_refs').delete().eq('user_id', session.user.id)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user?.id) {
+        const { error } = await supabase.from('webset_refs').delete().eq('user_id', session.user.id)
+        if (error) { console.error('Failed to clear webset refs:', error.message); setWebsetRefs(prev) }
+      }
+    } catch (err) {
+      console.error('Failed to clear webset refs:', err)
+      setWebsetRefs(prev)
     }
-  }, [])
+  }, [websetRefs])
 
   return {
     websetRefs,
