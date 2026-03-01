@@ -107,4 +107,4 @@ supabase/
 
 ## License
 
-This project is proprietary. All rights reserved.
+This project is source-available. The code is publicly visible for transparency and review, but no license is granted for redistribution or commercial use. All rights reserved by the author.

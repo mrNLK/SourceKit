@@ -35,6 +35,18 @@ function daysInStage(updatedAt: string): { days: number; label: string; color: s
   return { days, label: `${days}d`, color: "text-red-400" };
 }
 
+interface PipelineCandidate {
+  id: string;
+  github_username: string;
+  name: string | null;
+  avatar_url: string | null;
+  stage: string;
+  notes: string | null;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
 interface PipelineTabProps {
   onNavigateToSearch?: () => void;
 }
@@ -42,7 +54,7 @@ interface PipelineTabProps {
 const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
   const queryClient = useQueryClient();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
-  const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<PipelineCandidate | null>(null);
   const { isWatched, toggle: toggleWatchlist } = useWatchlist();
   const { settings } = useSettings();
   const [sortByScore, setSortByScore] = useState(false);
@@ -52,9 +64,9 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
   const { data: candidates = [], isLoading } = useQuery({
     queryKey: ["pipeline"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("pipeline").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("pipeline").select("id, github_username, name, avatar_url, stage, notes, tags, created_at, updated_at").order("created_at", { ascending: false }).returns<PipelineCandidate[]>();
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
@@ -62,11 +74,11 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
   const { data: candidateScores = {} } = useQuery({
     queryKey: ["candidate-scores"],
     queryFn: async () => {
-      const usernames = candidates.map((c: any) => c.github_username);
+      const usernames = candidates.map((c: PipelineCandidate) => c.github_username);
       if (usernames.length === 0) return {};
       const { data } = await supabase.from("candidates").select("github_username, score").in("github_username", usernames);
       const map: Record<string, number> = {};
-      (data || []).forEach((r: any) => { map[r.github_username] = r.score || 0; });
+      (data || []).forEach((r: { github_username: string; score: number | null }) => { map[r.github_username] = r.score || 0; });
       return map;
     },
     enabled: candidates.length > 0,
@@ -75,8 +87,8 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
   // All unique tags across candidates
   const allTags = useMemo(() => {
     const tags = new Set<string>();
-    candidates.forEach((c: any) => {
-      ((c as any).tags || []).forEach((t: string) => tags.add(t));
+    candidates.forEach((c: PipelineCandidate) => {
+      (c.tags || []).forEach((t: string) => tags.add(t));
     });
     return [...tags].sort();
   }, [candidates]);
@@ -85,16 +97,16 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
   const filteredCandidates = useMemo(() => {
     let list = candidates;
     if (activeStageFilter) {
-      list = list.filter((c: any) => c.stage === activeStageFilter);
+      list = list.filter((c: PipelineCandidate) => c.stage === activeStageFilter);
     }
     if (activeTagFilters.size > 0) {
-      list = list.filter((c: any) => {
-        const cTags = (c as any).tags || [];
+      list = list.filter((c: PipelineCandidate) => {
+        const cTags = c.tags || [];
         return [...activeTagFilters].some(t => cTags.includes(t));
       });
     }
     if (sortByScore) {
-      list = [...list].sort((a: any, b: any) => {
+      list = [...list].sort((a: PipelineCandidate, b: PipelineCandidate) => {
         const sa = candidateScores[a.github_username] || 0;
         const sb = candidateScores[b.github_username] || 0;
         return sb - sa;
@@ -111,7 +123,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["pipeline"] });
-      const candidate = candidates.find((c: any) => c.id === variables.id);
+      const candidate = candidates.find((c: PipelineCandidate) => c.id === variables.id);
       const stageLabel = STAGES.find(s => s.id === variables.stage)?.label || variables.stage;
       toast({ title: `Moved ${candidate?.name || candidate?.github_username || "candidate"} to ${stageLabel}` });
       // Fire-and-forget webhook notification
@@ -161,7 +173,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
 
   const handleBack = useCallback(() => setSelectedCandidate(null), []);
 
-  const handleShareToSlack = async (candidate: any) => {
+  const handleShareToSlack = async (candidate: PipelineCandidate) => {
     try {
       const webhookUrl = settings.slack_webhook_url;
       if (!webhookUrl) {
@@ -204,7 +216,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
   const stageCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     STAGES.forEach(s => { counts[s.id] = 0; });
-    candidates.forEach((c: any) => { counts[c.stage] = (counts[c.stage] || 0) + 1; });
+    candidates.forEach((c: PipelineCandidate) => { counts[c.stage] = (counts[c.stage] || 0) + 1; });
     return counts;
   }, [candidates]);
 
@@ -354,7 +366,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
       {/* Kanban columns — show filtered view if stage filter active, else kanban */}
       {activeStageFilter ? (
         <div className="space-y-2">
-          {filteredCandidates.map((c: any) => (
+          {filteredCandidates.map((c: PipelineCandidate) => (
             <PipelineCard
               key={c.id}
               c={c}
@@ -379,9 +391,9 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {STAGES.map((stage) => {
             const items = (sortByScore
-              ? [...filteredCandidates].sort((a: any, b: any) => (candidateScores[b.github_username] || 0) - (candidateScores[a.github_username] || 0))
+              ? [...filteredCandidates].sort((a: PipelineCandidate, b: PipelineCandidate) => (candidateScores[b.github_username] || 0) - (candidateScores[a.github_username] || 0))
               : filteredCandidates
-            ).filter((c: any) => c.stage === stage.id);
+            ).filter((c: PipelineCandidate) => c.stage === stage.id);
             return (
               <div
                 key={stage.id}
@@ -399,7 +411,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
                   {items.length === 0 && (
                     <p className="text-[11px] text-muted-foreground/30 text-center py-4">Drop candidates here</p>
                   )}
-                  {items.map((c: any) => (
+                  {items.map((c: PipelineCandidate) => (
                     <PipelineCard
                       key={c.id}
                       c={c}
@@ -429,7 +441,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
 // ---- Pipeline Card with notes/tags/share ----
 
 interface PipelineCardProps {
-  c: any;
+  c: PipelineCandidate;
   score: number;
   stage: typeof STAGES[number];
   onDragStart: () => void;
@@ -450,7 +462,7 @@ function PipelineCard({ c, score, stage, onDragStart, onClick, onRemove, onWatch
   const [tagInput, setTagInput] = useState("");
   const [showMoveMenu, setShowMoveMenu] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  const tags: string[] = (c as any).tags || [];
+  const tags: string[] = c.tags || [];
   const stageTime = daysInStage(c.updated_at || c.created_at);
   const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 

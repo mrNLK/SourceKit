@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Developer } from '@/types/developer';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -236,6 +237,41 @@ export function notifyStageChange(params: {
 }) {
   // Fire-and-forget: don't await or block on webhook delivery
   invokeFunction('notify-pipeline-change', undefined, params).catch(() => {});
+}
+
+// SPA-only settings cache, scoped to current session.
+// Cleared on auth change (App.tsx) and settings save (SettingsTab).
+let settingsCache: Record<string, string> | null = null;
+let settingsCacheUserId: string | null = null;
+
+export async function loadSettings(): Promise<Record<string, string>> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id ?? null;
+  let query = supabase.from('settings').select('key, value');
+  if (userId) query = query.eq('user_id', userId);
+  const { data, error } = await query;
+  if (error) console.error('Failed to load settings:', error.message);
+  const map: Record<string, string> = {};
+  if (data) {
+    data.forEach((r) => { map[r.key] = r.value; });
+  }
+  settingsCache = map;
+  settingsCacheUserId = userId;
+  return map;
+}
+
+export function clearSettingsCache() {
+  settingsCache = null;
+  settingsCacheUserId = null;
+}
+
+export async function getSetting(key: string): Promise<string> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id ?? null;
+  if (!settingsCache || settingsCacheUserId !== userId) {
+    await loadSettings();
+  }
+  return settingsCache?.[key] || '';
 }
 
 export interface ExaCandidateResult {

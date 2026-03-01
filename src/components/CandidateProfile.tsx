@@ -10,6 +10,7 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 import { toast } from "@/hooks/use-toast";
 import { EEAFull } from "@/components/EEASignals";
 import { notifyStageChange } from "@/lib/api";
+import type { Language } from "@/types/developer";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -137,7 +138,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
   };
 
   const score = candidate?.score || 0;
-  const topLanguages = (candidate?.top_languages as any[]) || [];
+  const topLanguages = (candidate?.top_languages as Language[]) || [];
   const highlights = (candidate?.highlights as string[]) || [];
   const contributedRepos = (candidate?.contributed_repos as Record<string, number>) || {};
   const about = candidate?.about || candidate?.summary || null;
@@ -348,7 +349,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
             <div className="glass rounded-xl p-5">
               <h2 className="font-display text-sm font-semibold text-foreground mb-3">Skills</h2>
               <div className="flex flex-wrap gap-2">
-                {topLanguages.map((lang: any) => (
+                {topLanguages.map((lang: Language) => (
                   <span
                     key={lang.name}
                     className="text-xs font-display px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20"
@@ -359,7 +360,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
               </div>
               {/* Language bar */}
               <div className="flex gap-0.5 h-2 rounded-full overflow-hidden mt-4">
-                {topLanguages.map((lang: any) => (
+                {topLanguages.map((lang: Language) => (
                   <div
                     key={lang.name}
                     style={{ width: `${lang.percentage}%`, backgroundColor: lang.color }}
@@ -440,7 +441,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
               <p className="text-sm text-muted-foreground italic">No outreach messages yet.</p>
             ) : (
               <div className="space-y-3">
-                {outreachHistory.map((h: any) => (
+                {outreachHistory.map((h: { id: string; message: string; created_at: string }) => (
                   <div key={h.id} className="group/msg p-4 rounded-lg bg-secondary/50 border border-border relative">
                     <p className="text-sm text-secondary-foreground leading-relaxed pr-8">{h.message}</p>
                     <div className="flex items-center mt-2">

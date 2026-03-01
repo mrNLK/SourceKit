@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { anthropicCall } from "../_shared/anthropic.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -13,7 +13,7 @@ serve(async (req) => {
     if (!github_username) {
       return new Response(JSON.stringify({ error: 'Missing github_username' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -27,18 +27,18 @@ serve(async (req) => {
     });
 
     return new Response(JSON.stringify({ message: message || 'Could not generate message.' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   } catch (e) {
     console.error('generate-outreach error:', e);
     if ((e as Error).message === 'RATE_LIMITED') {
       return new Response(JSON.stringify({ error: 'Rate limited. Try again shortly.' }), {
-        status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 429, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 });

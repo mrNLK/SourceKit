@@ -21,10 +21,10 @@ CREATE INDEX IF NOT EXISTS idx_user_subscriptions_stripe_customer ON user_subscr
 -- RLS policies
 ALTER TABLE user_subscriptions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "Users can read own subscription"
-  ON user_subscriptions FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own subscription') THEN
+  CREATE POLICY "Users can read own subscription" ON user_subscriptions FOR SELECT USING (auth.uid() = user_id);
+END IF; END $$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage subscriptions"
-  ON user_subscriptions FOR ALL
-  USING (auth.role() = 'service_role');
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Service role can manage subscriptions') THEN
+  CREATE POLICY "Service role can manage subscriptions" ON user_subscriptions FOR ALL USING (auth.role() = 'service_role');
+END IF; END $$;

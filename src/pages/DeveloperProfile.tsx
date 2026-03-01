@@ -4,15 +4,33 @@ import { ArrowLeft, Star, GitFork, Users, MapPin, Calendar, ExternalLink, Gem, Z
 import { GitBranch } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getDeveloperProfile } from "@/lib/api";
+import type { Developer, Language } from "@/types/developer";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+
+interface DeveloperInterest {
+  theme: string;
+  count: number;
+  repos: string[];
+}
+
+interface DeveloperRepo {
+  name: string;
+  url: string;
+  stars: number;
+  forks: number;
+  description?: string;
+  language?: string;
+  languageColor?: string;
+  topics?: string[];
+}
 
 const DeveloperProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const routeStateDeveloper = (location.state as any)?.developer ?? null;
+  const routeStateDeveloper = (location.state as { developer?: Developer } | null)?.developer ?? null;
   const [lookupUsername, setLookupUsername] = useState("");
   const [expandedSkills, setExpandedSkills] = useState<Record<string, boolean>>({});
   const [skillTab, setSkillTab] = useState<"technical" | "domain">("technical");
@@ -62,11 +80,11 @@ const DeveloperProfile = () => {
   }
 
   const recentActivity = developer.recentActivity || [];
-  const maxCommits = recentActivity.length ? Math.max(...recentActivity.map((a: any) => a.commits), 1) : 1;
+  const maxCommits = recentActivity.length ? Math.max(...recentActivity.map((a: { month: string; commits: number }) => a.commits), 1) : 1;
   const breakdown = developer.contributionBreakdown || {};
   const skills: string[] = developer.skills || [];
-  const interests: any[] = developer.interests || [];
-  const topRepos: any[] = developer.topRepos || [];
+  const interests: DeveloperInterest[] = developer.interests || [];
+  const topRepos: DeveloperRepo[] = developer.topRepos || [];
 
   // Working style quadrant
   const repoCount = developer.publicRepos || 0;
@@ -117,7 +135,7 @@ const DeveloperProfile = () => {
     developer.website && { label: "website", url: developer.website.startsWith("http") ? developer.website : `https://${developer.website}`, icon: Globe },
     developer.linkedinUrl && { label: "linkedin", url: developer.linkedinUrl, icon: Linkedin },
     developer.twitterUsername && { label: "twitter", url: `https://twitter.com/${developer.twitterUsername}`, icon: Twitter },
-  ].filter(Boolean) as { label: string; url: string; icon: any }[];
+  ].filter(Boolean) as { label: string; url: string; icon: React.ComponentType<{ className?: string }> }[];
 
   const toggleSkillExpand = (key: string) => {
     setExpandedSkills(prev => ({ ...prev, [key]: !prev[key] }));
@@ -231,7 +249,7 @@ const DeveloperProfile = () => {
               <TrendingUp className="w-4 h-4 text-primary" /> Recent Activity
             </h3>
             <div className="flex items-end gap-2 h-24">
-              {recentActivity.map((a: any, i: number) => (
+              {recentActivity.map((a: { month: string; commits: number }, i: number) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
                   <div
                     className="w-full rounded-t bg-primary/60 hover:bg-primary transition-colors min-h-[2px]"
@@ -303,7 +321,7 @@ const DeveloperProfile = () => {
           <div className="glass rounded-xl p-5">
             <h3 className="font-display text-sm font-semibold text-foreground mb-4">Top Languages</h3>
             <div className="space-y-2.5">
-              {developer.topLanguages.map((lang: any) => (
+              {developer.topLanguages.map((lang: Language) => (
                 <div key={lang.name}>
                   <div className="flex items-center justify-between text-sm mb-1">
                     <span className="flex items-center gap-2 text-secondary-foreground">
@@ -329,7 +347,7 @@ const DeveloperProfile = () => {
               <span className="text-xs text-muted-foreground font-normal ml-1">(from forked repositories)</span>
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {interests.map((g: any) => (
+              {interests.map((g: DeveloperInterest) => (
                 <div key={g.theme} className="rounded-lg bg-secondary/50 border border-border p-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-sm font-display font-semibold text-foreground">{g.theme}</span>
@@ -375,7 +393,7 @@ const DeveloperProfile = () => {
           <div className="glass rounded-xl p-5">
             <h3 className="font-display text-sm font-semibold text-foreground mb-4">Top Repositories</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {topRepos.map((repo: any) => (
+              {topRepos.map((repo: DeveloperRepo) => (
                 <a key={repo.name} href={repo.url} target="_blank" rel="noopener noreferrer"
                   className="rounded-lg bg-secondary/40 border border-border p-4 hover:border-primary/30 hover:bg-secondary/60 transition-colors group">
                   <div className="flex items-start justify-between mb-1.5">

@@ -14,55 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
-      eea_signal_templates: {
-        Row: {
-          id: string
-          user_id: string | null
-          role_category: string
-          signal_name: string
-          webset_criterion: string
-          enrichment_description: string
-          enrichment_format: string
-          enrichment_options: Json | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          role_category: string
-          signal_name: string
-          webset_criterion: string
-          enrichment_description: string
-          enrichment_format?: string
-          enrichment_options?: Json | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          role_category?: string
-          signal_name?: string
-          webset_criterion?: string
-          enrichment_description?: string
-          enrichment_format?: string
-          enrichment_options?: Json | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       candidates: {
         Row: {
           about: string | null
           avatar_url: string | null
           bio: string | null
+          company: string
           contributed_repos: Json | null
           created_at: string
+          created_by: string | null
+          eea_confidence: string | null
+          eea_enriched_at: string | null
+          eea_enrichment: Json | null
           email: string | null
+          enrichment_data: Json | null
           fetched_at: string
           followers: number | null
+          github_handle: string | null
+          github_profile: Json | null
           github_url: string | null
           github_username: string
           highlights: string[] | null
@@ -71,12 +40,24 @@ export type Database = {
           joined_year: number | null
           linkedin_confidence: string | null
           linkedin_url: string | null
+          linkedin_verified: boolean | null
           location: string | null
           name: string | null
+          notes: string | null
+          org_memberships: string[] | null
+          profile_url: string | null
           public_repos: number | null
+          readme_snippets: string[] | null
+          recent_commits: string[] | null
+          role: string | null
           score: number | null
+          signals: Json | null
+          source: string
+          stage: string
           stars: number | null
           summary: string | null
+          tags: string[] | null
+          title: string | null
           top_languages: Json | null
           twitter_username: string | null
           updated_at: string
@@ -85,11 +66,19 @@ export type Database = {
           about?: string | null
           avatar_url?: string | null
           bio?: string | null
+          company?: string
           contributed_repos?: Json | null
           created_at?: string
+          created_by?: string | null
+          eea_confidence?: string | null
+          eea_enriched_at?: string | null
+          eea_enrichment?: Json | null
           email?: string | null
+          enrichment_data?: Json | null
           fetched_at?: string
           followers?: number | null
+          github_handle?: string | null
+          github_profile?: Json | null
           github_url?: string | null
           github_username: string
           highlights?: string[] | null
@@ -98,12 +87,24 @@ export type Database = {
           joined_year?: number | null
           linkedin_confidence?: string | null
           linkedin_url?: string | null
+          linkedin_verified?: boolean | null
           location?: string | null
           name?: string | null
+          notes?: string | null
+          org_memberships?: string[] | null
+          profile_url?: string | null
           public_repos?: number | null
+          readme_snippets?: string[] | null
+          recent_commits?: string[] | null
+          role?: string | null
           score?: number | null
+          signals?: Json | null
+          source?: string
+          stage?: string
           stars?: number | null
           summary?: string | null
+          tags?: string[] | null
+          title?: string | null
           top_languages?: Json | null
           twitter_username?: string | null
           updated_at?: string
@@ -112,11 +113,19 @@ export type Database = {
           about?: string | null
           avatar_url?: string | null
           bio?: string | null
+          company?: string
           contributed_repos?: Json | null
           created_at?: string
+          created_by?: string | null
+          eea_confidence?: string | null
+          eea_enriched_at?: string | null
+          eea_enrichment?: Json | null
           email?: string | null
+          enrichment_data?: Json | null
           fetched_at?: string
           followers?: number | null
+          github_handle?: string | null
+          github_profile?: Json | null
           github_url?: string | null
           github_username?: string
           highlights?: string[] | null
@@ -125,15 +134,45 @@ export type Database = {
           joined_year?: number | null
           linkedin_confidence?: string | null
           linkedin_url?: string | null
+          linkedin_verified?: boolean | null
           location?: string | null
           name?: string | null
+          notes?: string | null
+          org_memberships?: string[] | null
+          profile_url?: string | null
           public_repos?: number | null
+          readme_snippets?: string[] | null
+          recent_commits?: string[] | null
+          role?: string | null
           score?: number | null
+          signals?: Json | null
+          source?: string
+          stage?: string
           stars?: number | null
           summary?: string | null
+          tags?: string[] | null
+          title?: string | null
           top_languages?: Json | null
           twitter_username?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      ideas: {
+        Row: {
+          created_at: string
+          id: number
+          title: string
+        }
+        Insert: {
+          created_at: string
+          id?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          title?: string
         }
         Relationships: []
       }
@@ -184,6 +223,9 @@ export type Database = {
           id: string
           name: string | null
           notes: string | null
+          priority: string | null
+          source: string | null
+          source_query: string | null
           stage: string
           tags: string[] | null
           updated_at: string
@@ -195,6 +237,9 @@ export type Database = {
           id?: string
           name?: string | null
           notes?: string | null
+          priority?: string | null
+          source?: string | null
+          source_query?: string | null
           stage?: string
           tags?: string[] | null
           updated_at?: string
@@ -206,78 +251,20 @@ export type Database = {
           id?: string
           name?: string | null
           notes?: string | null
+          priority?: string | null
+          source?: string | null
+          source_query?: string | null
           stage?: string
           tags?: string[] | null
           updated_at?: string
         }
         Relationships: []
       }
-      saved_searches: {
-        Row: {
-          id: string
-          name: string
-          query: string
-          expanded_query: string | null
-          filters: Json
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          query: string
-          expanded_query?: string | null
-          filters?: Json
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          query?: string
-          expanded_query?: string | null
-          filters?: Json
-          created_at?: string
-        }
-        Relationships: []
-      }
-      search_results: {
-        Row: {
-          id: string
-          search_id: string
-          candidate_id: string
-          rank: number
-          score: number | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          search_id: string
-          candidate_id: string
-          rank?: number
-          score?: number | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          search_id?: string
-          candidate_id?: string
-          rank?: number
-          score?: number | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "search_results_candidate_id_fkey"
-            columns: ["candidate_id"]
-            isOneToOne: false
-            referencedRelation: "candidates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       search_history: {
         Row: {
           action_type: string
           created_at: string
+          created_by: string | null
           id: string
           metadata: Json | null
           query: string
@@ -286,6 +273,7 @@ export type Database = {
         Insert: {
           action_type?: string
           created_at?: string
+          created_by?: string | null
           id?: string
           metadata?: Json | null
           query: string
@@ -294,6 +282,7 @@ export type Database = {
         Update: {
           action_type?: string
           created_at?: string
+          created_by?: string | null
           id?: string
           metadata?: Json | null
           query?: string
@@ -303,32 +292,201 @@ export type Database = {
       }
       settings: {
         Row: {
-          user_id: string
+          created_at: string
           key: string
-          value: string
           updated_at: string
+          user_id: string
+          value: string
         }
         Insert: {
-          user_id: string
+          created_at?: string
           key: string
-          value?: string
           updated_at?: string
+          user_id: string
+          value?: string
         }
         Update: {
-          user_id?: string
+          created_at?: string
           key?: string
-          value?: string
           updated_at?: string
+          user_id?: string
+          value?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "settings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
+        Relationships: []
+      }
+      shortlisted_candidates: {
+        Row: {
+          candidate_data: Json | null
+          created_at: string | null
+          id: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          candidate_data?: Json | null
+          created_at?: string | null
+          id?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          candidate_data?: Json | null
+          created_at?: string | null
+          id?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      talent_index_jobs: {
+        Row: {
+          created_at: string
+          id: string
+          mode: string
+          payload: Json
+          progress: number
+          query: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at: string
+          id: string
+          mode: string
+          payload: Json
+          progress: number
+          query: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mode?: string
+          payload?: Json
+          progress?: number
+          query?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      talent_searches: {
+        Row: {
+          candidate_count: number
+          created_at: string
+          id: string
+          mode: string
+          payload: Json
+          query: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          candidate_count: number
+          created_at: string
+          id: string
+          mode: string
+          payload: Json
+          query: string
+          updated_at: string
+          user_id: string
+        }
+        Update: {
+          candidate_count?: number
+          created_at?: string
+          id?: string
+          mode?: string
+          payload?: Json
+          query?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      talent_watchlist_state: {
+        Row: {
+          created_at: string
+          payload: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at: string
+          payload: Json
+          updated_at: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          payload?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      usage_tracking: {
+        Row: {
+          called_at: string | null
+          function_name: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          called_at?: string | null
+          function_name: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          called_at?: string | null
+          function_name?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string | null
+          current_period_end: string | null
+          id: string
+          plan: string | null
+          search_limit: number | null
+          searches_used: number | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_period_end?: string | null
+          id?: string
+          plan?: string | null
+          search_limit?: number | null
+          searches_used?: number | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_period_end?: string | null
+          id?: string
+          plan?: string | null
+          search_limit?: number | null
+          searches_used?: number | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       watchlist_items: {
         Row: {
@@ -362,34 +520,28 @@ export type Database = {
       }
       webset_refs: {
         Row: {
-          id: string
-          user_id: string
-          query: string
           count: number
-          status: string
-          eea_signals: Json | null
           created_at: string
-          updated_at: string
+          id: string
+          query: string
+          status: string
+          user_id: string
         }
         Insert: {
-          id: string
-          user_id: string
-          query: string
           count?: number
-          status?: string
-          eea_signals?: Json | null
           created_at?: string
-          updated_at?: string
+          id: string
+          query: string
+          status?: string
+          user_id: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          query?: string
           count?: number
-          status?: string
-          eea_signals?: Json | null
           created_at?: string
-          updated_at?: string
+          id?: string
+          query?: string
+          status?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -398,7 +550,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_searches_used: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

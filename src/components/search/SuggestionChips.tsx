@@ -3,11 +3,12 @@ import type { SuggestionChip } from "@/lib/search-helpers";
 interface SuggestionChipsProps {
   suggestions: SuggestionChip[];
   onSubmit: (chip: SuggestionChip) => void;
+  label?: string;
 }
 
-const SuggestionChips = ({ suggestions, onSubmit }: SuggestionChipsProps) => (
+const SuggestionChips = ({ suggestions, onSubmit, label }: SuggestionChipsProps) => (
   <>
-    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium font-display">Example searches — click to run</p>
+    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium font-display">{label || "Example searches"} — click to run</p>
     <div className="flex flex-wrap gap-2">
       {suggestions.map((chip) => (
         <button key={chip.label} onClick={() => onSubmit(chip)}

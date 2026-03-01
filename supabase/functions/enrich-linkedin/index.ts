@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { anthropicToolCall } from "../_shared/anthropic.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -14,7 +14,7 @@ serve(async (req) => {
     if (!username) {
       return new Response(JSON.stringify({ error: 'username is required' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -38,7 +38,7 @@ serve(async (req) => {
           reasoning: 'Cached result',
           cached: true,
         }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
         });
       }
     }
@@ -47,7 +47,7 @@ serve(async (req) => {
     if (!EXA_API_KEY) {
       return new Response(JSON.stringify({ error: 'EXA_API_KEY not configured' }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -71,7 +71,7 @@ serve(async (req) => {
       console.error('Exa API error:', exaRes.status, await exaRes.text());
       return new Response(JSON.stringify({ error: 'LinkedIn search failed' }), {
         status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -80,7 +80,7 @@ serve(async (req) => {
 
     if (results.length === 0) {
       return new Response(JSON.stringify({ linkedin_url: null, confidence: 'low', reasoning: 'No LinkedIn profiles found' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -128,13 +128,13 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error in enrich-linkedin:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 });

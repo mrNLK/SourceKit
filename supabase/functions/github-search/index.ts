@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { anthropicCall } from "../_shared/anthropic.ts";
 import { checkSearchGate, incrementSearchCount } from "../_shared/gate.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 const GITHUB_API = "https://api.github.com";
 const EXA_API = "https://api.exa.ai/search";
@@ -532,7 +532,7 @@ function flagUngettable(candidates: any[]): any[] {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -546,7 +546,7 @@ serve(async (req) => {
         search_limit: gate.searchLimit,
       }), {
         status: 402,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -582,7 +582,7 @@ serve(async (req) => {
     if (!query && bodyTargetRepos.length === 0) {
       return new Response(JSON.stringify({ error: 'Query parameter "q" or targetRepos is required' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -616,7 +616,7 @@ serve(async (req) => {
         },
       });
       return new Response(stream, {
-        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
       });
     }
 
@@ -824,7 +824,7 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify(responsePayload), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
 
     } // end runSearch
@@ -842,13 +842,13 @@ serve(async (req) => {
         retryAfterSeconds: retryAfter,
       }), {
         status: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 });

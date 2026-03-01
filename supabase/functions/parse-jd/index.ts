@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 /**
  * Extract text from a JD URL using Parallel.ai (JS-rendered pages) with
@@ -69,7 +69,7 @@ function extractWithFetch(html: string): string {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -78,7 +78,7 @@ serve(async (req) => {
     if (!url || typeof url !== 'string') {
       return new Response(JSON.stringify({ error: 'Missing url parameter' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -92,7 +92,7 @@ serve(async (req) => {
     } catch {
       return new Response(JSON.stringify({ error: 'Invalid URL. Please provide a valid http/https URL.' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -120,7 +120,7 @@ serve(async (req) => {
       if (!response.ok) {
         return new Response(JSON.stringify({ error: `Failed to fetch URL: HTTP ${response.status}` }), {
           status: 422,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
         });
       }
 
@@ -140,18 +140,18 @@ serve(async (req) => {
         text: text,
       }), {
         status: 422,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
     return new Response(JSON.stringify({ text, url, chars: text.length, source }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   } catch (e) {
     console.error('parse-jd error:', e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Failed to parse job description' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 });

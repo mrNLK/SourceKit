@@ -1,3 +1,5 @@
+import type { Language } from "@/types/developer";
+
 export interface Developer {
   id: string;
   username: string;
@@ -9,7 +11,7 @@ export interface Developer {
   publicRepos: number;
   followers: number;
   stars: number;
-  topLanguages: { name: string; percentage: number; color: string }[];
+  topLanguages: Language[];
   highlights: string[];
   score: number;
   hiddenGem: boolean;

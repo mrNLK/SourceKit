@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { anthropicCall, anthropicToolCall } from "../_shared/anthropic.ts";
 import { checkSearchGate, incrementSearchCount } from "../_shared/gate.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -19,7 +19,7 @@ serve(async (req) => {
         search_limit: gate.searchLimit,
       }), {
         status: 402,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -28,7 +28,7 @@ serve(async (req) => {
     if (action !== 'start') {
       return new Response(JSON.stringify({ error: 'Invalid action' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -39,7 +39,7 @@ serve(async (req) => {
     if (!hasJD && !hasManual) {
       return new Response(JSON.stringify({ error: 'Provide either job_description text, or both job_title and company_name' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -185,19 +185,19 @@ I need:
       company_name: company_name || '',
       source: hasJD ? 'job_description' : 'manual',
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   } catch (e) {
     console.error('research-role error:', e);
     if ((e as Error).message === 'RATE_LIMITED') {
       return new Response(JSON.stringify({ error: 'Rate limited. Please try again in a moment.' }), {
         status: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 });
