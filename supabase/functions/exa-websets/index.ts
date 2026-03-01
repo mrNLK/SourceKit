@@ -1,8 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = [
+  'https://getsourcekit.vercel.app',
+  'http://localhost:5173',
+]
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin') || ''
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
 }
 
 const WEBSETS_BASE = 'https://api.exa.ai/websets/v0'
@@ -10,25 +19,25 @@ const ALLOWED_ACTIONS = ['create', 'list', 'get', 'items', 'enrich', 'delete']
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: getCorsHeaders(req) })
   }
 
   try {
     const body = await req.json()
-    const { action, exa_api_key, ...params } = body
+    const { action, ...params } = body
 
     if (!action || !ALLOWED_ACTIONS.includes(action)) {
       return new Response(
         JSON.stringify({ error: `Invalid action. Must be one of: ${ALLOWED_ACTIONS.join(', ')}` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       )
     }
 
-    const apiKey = exa_api_key || Deno.env.get('EXA_API_KEY')
+    const apiKey = Deno.env.get('EXA_API_KEY')
     if (!apiKey) {
       return new Response(
         JSON.stringify({ error: 'EXA_API_KEY not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       )
     }
 
@@ -72,7 +81,7 @@ serve(async (req) => {
         if (!webset_id) {
           return new Response(
             JSON.stringify({ error: 'webset_id is required' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
           )
         }
         response = await fetch(`${WEBSETS_BASE}/websets/${webset_id}`, { headers })
@@ -84,7 +93,7 @@ serve(async (req) => {
         if (!webset_id) {
           return new Response(
             JSON.stringify({ error: 'webset_id is required' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
           )
         }
         const qs = new URLSearchParams()
@@ -99,7 +108,7 @@ serve(async (req) => {
         if (!webset_id) {
           return new Response(
             JSON.stringify({ error: 'webset_id is required' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
           )
         }
         response = await fetch(`${WEBSETS_BASE}/websets/${webset_id}/enrichments`, {
@@ -115,7 +124,7 @@ serve(async (req) => {
         if (!webset_id) {
           return new Response(
             JSON.stringify({ error: 'webset_id is required' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
           )
         }
         response = await fetch(`${WEBSETS_BASE}/websets/${webset_id}`, {
@@ -128,7 +137,7 @@ serve(async (req) => {
       default:
         return new Response(
           JSON.stringify({ error: 'Unknown action' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         )
     }
 
@@ -138,13 +147,13 @@ serve(async (req) => {
       JSON.stringify(data),
       {
         status: response.status,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       }
     )
   } catch (error) {
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     )
   }
 })

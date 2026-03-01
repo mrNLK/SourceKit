@@ -1,7 +1,10 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "sourceproof",
   "private": true,
   "version": "0.0.0",
+  "engines": {
+    "node": ">=18"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

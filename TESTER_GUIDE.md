@@ -1,6 +1,6 @@
 # SourceKit Talent Finder — Tester Guide
 
-**URL:** https://github-stars.lovable.app
+**URL:** https://getsourcekit.vercel.app
 
 ---
 
@@ -114,9 +114,9 @@ When you click "Find LinkedIn" on a candidate, the app uses **Exa** (a semantic 
 
 ## Getting Started
 
-Go to **https://github-stars.lovable.app** — **no login required.** The app is ready to use immediately.
+Go to **https://getsourcekit.vercel.app** — **Google SSO login is required.** Sign in with your Google account to get started.
 
-> **Note:** Because there's no login, data is shared. Best for solo testing.
+> **Note:** Each user's data is isolated via Supabase Auth. Your searches, pipeline, and watchlist are private to your account.
 
 ---
 
@@ -352,7 +352,7 @@ Configure defaults:
 
 ## Important Notes
 
-- **No login required** — Data is shared (no user isolation). Best for solo testing.
+- **Google SSO required** — Sign in with your Google account. Data is isolated per user.
 - **GitHub API rate limits** — If searches fail, wait a few minutes before retrying
 - **LinkedIn enrichment** depends on publicly available data — some lookups may fail
 - **Browser data persists** — Clearing cookies resets shortlist/filter preferences

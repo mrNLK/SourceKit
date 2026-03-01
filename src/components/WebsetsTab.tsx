@@ -1,7 +1,6 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { Layers, Plus, RefreshCw, Trash2, ArrowLeft, Download, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
-import { getSetting } from '@/lib/api'
 import { useWebsets } from '@/hooks/useWebsets'
 import { createWebset, deleteWebset } from '@/services/websets'
 
@@ -10,12 +9,6 @@ const WebsetsTab = () => {
     websetRefs, activeWebset, items, isLoading, error,
     addWebsetRef, removeWebsetRef, setActiveWebsetId, refreshActiveWebset,
   } = useWebsets()
-
-  const [exaApiKey, setExaApiKey] = useState('')
-
-  useEffect(() => {
-    getSetting('exa_api_key').then(setExaApiKey)
-  }, [])
 
   // Create form state
   const [query, setQuery] = useState('')
@@ -32,10 +25,6 @@ const WebsetsTab = () => {
 
   const handleCreate = useCallback(async () => {
     if (!query.trim()) return
-    if (!exaApiKey) {
-      toast({ title: 'Set your Exa API key in Settings first', variant: 'destructive' })
-      return
-    }
     setIsCreating(true)
     try {
       const criteria = criteriaInputs
@@ -48,7 +37,6 @@ const WebsetsTab = () => {
       const result = await createWebset(
         query.trim(),
         Math.min(count, 100),
-        exaApiKey,
         { criteria: criteria.length > 0 ? criteria : undefined, enrichments },
       )
 
@@ -73,27 +61,27 @@ const WebsetsTab = () => {
     } finally {
       setIsCreating(false)
     }
-  }, [query, count, exaApiKey, criteriaInputs, enrichmentDesc, enrichmentFormat, addWebsetRef])
+  }, [query, count, criteriaInputs, enrichmentDesc, enrichmentFormat, addWebsetRef])
 
   const handleDelete = useCallback(async (id: string) => {
     try {
-      await deleteWebset(id, exaApiKey)
+      await deleteWebset(id)
       removeWebsetRef(id)
       if (viewingWebsetId === id) setViewingWebsetId(null)
       toast({ title: 'Webset deleted' })
     } catch {
       toast({ title: 'Failed to delete webset', variant: 'destructive' })
     }
-  }, [exaApiKey, removeWebsetRef, viewingWebsetId])
+  }, [removeWebsetRef, viewingWebsetId])
 
   const handleViewWebset = useCallback(async (id: string) => {
     setViewingWebsetId(id)
-    await setActiveWebsetId(id, exaApiKey)
-  }, [exaApiKey, setActiveWebsetId])
+    await setActiveWebsetId(id)
+  }, [setActiveWebsetId])
 
   const handleRefresh = useCallback(async () => {
-    await refreshActiveWebset(exaApiKey)
-  }, [exaApiKey, refreshActiveWebset])
+    await refreshActiveWebset()
+  }, [refreshActiveWebset])
 
   const addCriteriaInput = () => setCriteriaInputs(prev => [...prev, ''])
   const updateCriteriaInput = (i: number, val: string) => {

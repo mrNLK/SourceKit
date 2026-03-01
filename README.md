@@ -91,7 +91,7 @@ src/
 ├── components/      # UI components (search, pipeline, research, bulk actions)
 ├── hooks/           # Custom React hooks (subscriptions, etc.)
 ├── integrations/    # Supabase client and type definitions
-├── lib/             # API helpers and utilities
+├── lib/             # API helpers, utilities, and scoring (eea.ts)
 ├── pages/           # Route-level page components
 ├── services/        # External service integrations (Exa/Websets)
 ├── types/           # TypeScript type definitions

@@ -49,13 +49,13 @@ export function useWebsets() {
     }
   }, [activeWebset])
 
-  const setActiveWebsetId = useCallback(async (id: string, exaApiKey?: string) => {
+  const setActiveWebsetId = useCallback(async (id: string) => {
     setIsLoading(true)
     setError(null)
     try {
       const [webset, websetItems] = await Promise.all([
-        getWebset(id, exaApiKey),
-        getWebsetItems(id, exaApiKey),
+        getWebset(id),
+        getWebsetItems(id),
       ])
       setActiveWebset(webset)
       setItems(websetItems)
@@ -70,14 +70,14 @@ export function useWebsets() {
     }
   }, [])
 
-  const refreshActiveWebset = useCallback(async (exaApiKey?: string) => {
+  const refreshActiveWebset = useCallback(async () => {
     if (!activeWebset) return
     setIsLoading(true)
     setError(null)
     try {
       const [webset, websetItems] = await Promise.all([
-        getWebset(activeWebset.id, exaApiKey),
-        getWebsetItems(activeWebset.id, exaApiKey),
+        getWebset(activeWebset.id),
+        getWebsetItems(activeWebset.id),
       ])
       setActiveWebset(webset)
       setItems(websetItems)
