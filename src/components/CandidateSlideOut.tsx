@@ -11,7 +11,7 @@ import { EEAFull } from "@/components/EEASignals";
 import { notifyStageChange } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import OutreachTemplateEditor from "@/components/OutreachTemplateEditor";
-import type { Developer } from "@/types/developer";
+import type { Developer, Language } from "@/types/developer";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -274,7 +274,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
     queryClient.invalidateQueries({ queryKey: ["pipeline"] });
   }, [tags, pipelineRow, queryClient]);
 
-  const topLanguages = (candidate?.top_languages as { name: string; percentage: number; color: string }[]) || dev.topLanguages || [];
+  const topLanguages = (candidate?.top_languages as Language[]) || dev.topLanguages || [];
   const highlights = (candidate?.highlights as string[]) || dev.highlights || [];
   const contributedRepos = (candidate?.contributed_repos as Record<string, number>) || dev.contributedRepos || {};
   const about = candidate?.about || dev.about || null;

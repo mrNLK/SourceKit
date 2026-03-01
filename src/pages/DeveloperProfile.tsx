@@ -4,7 +4,7 @@ import { ArrowLeft, Star, GitFork, Users, MapPin, Calendar, ExternalLink, Gem, Z
 import { GitBranch } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getDeveloperProfile } from "@/lib/api";
-import type { Developer } from "@/types/developer";
+import type { Developer, Language } from "@/types/developer";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -321,7 +321,7 @@ const DeveloperProfile = () => {
           <div className="glass rounded-xl p-5">
             <h3 className="font-display text-sm font-semibold text-foreground mb-4">Top Languages</h3>
             <div className="space-y-2.5">
-              {developer.topLanguages.map((lang: { name: string; percentage: number; color: string }) => (
+              {developer.topLanguages.map((lang: Language) => (
                 <div key={lang.name}>
                   <div className="flex items-center justify-between text-sm mb-1">
                     <span className="flex items-center gap-2 text-secondary-foreground">

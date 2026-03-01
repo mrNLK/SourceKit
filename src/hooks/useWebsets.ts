@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import type { Webset, WebsetItem } from '@/services/websets'
 import { getWebset, getWebsetItems } from '@/services/websets'
@@ -13,6 +13,8 @@ export interface WebsetRef {
 
 export function useWebsets() {
   const [websetRefs, setWebsetRefs] = useState<WebsetRef[]>([])
+  const websetRefsRef = useRef(websetRefs)
+  websetRefsRef.current = websetRefs
   const [activeWebset, setActiveWebset] = useState<Webset | null>(null)
   const [items, setItems] = useState<WebsetItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -63,8 +65,12 @@ export function useWebsets() {
   }, [])
 
   const removeWebsetRef = useCallback(async (id: string) => {
-    const prev = websetRefs
-    setWebsetRefs(p => p.filter(r => r.id !== id))
+    // Capture snapshot atomically inside the updater to avoid stale closures
+    let snapshot: WebsetRef[] = []
+    setWebsetRefs(prev => {
+      snapshot = prev
+      return prev.filter(r => r.id !== id)
+    })
     if (activeWebset?.id === id) {
       setActiveWebset(null)
       setItems([])
@@ -73,13 +79,13 @@ export function useWebsets() {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user?.id) {
         const { error } = await supabase.from('webset_refs').delete().eq('id', id).eq('user_id', session.user.id)
-        if (error) { console.error('Failed to delete webset ref:', error.message); setWebsetRefs(prev) }
+        if (error) { console.error('Failed to delete webset ref:', error.message); setWebsetRefs(snapshot) }
       }
     } catch (err) {
       console.error('Failed to delete webset ref:', err)
-      setWebsetRefs(prev)
+      setWebsetRefs(snapshot)
     }
-  }, [activeWebset, websetRefs])
+  }, [activeWebset])
 
   // supabase, getWebset, getWebsetItems are stable module-level imports — safe to omit from deps
   const setActiveWebsetId = useCallback(async (id: string) => {
@@ -135,21 +141,24 @@ export function useWebsets() {
   }, [activeWebset])
 
   const clearAll = useCallback(async () => {
-    const prev = websetRefs
-    setWebsetRefs([])
+    let snapshot: WebsetRef[] = []
+    setWebsetRefs(prev => {
+      snapshot = prev
+      return []
+    })
     setActiveWebset(null)
     setItems([])
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user?.id) {
         const { error } = await supabase.from('webset_refs').delete().eq('user_id', session.user.id)
-        if (error) { console.error('Failed to clear webset refs:', error.message); setWebsetRefs(prev) }
+        if (error) { console.error('Failed to clear webset refs:', error.message); setWebsetRefs(snapshot) }
       }
     } catch (err) {
       console.error('Failed to clear webset refs:', err)
-      setWebsetRefs(prev)
+      setWebsetRefs(snapshot)
     }
-  }, [websetRefs])
+  }, [])
 
   return {
     websetRefs,
