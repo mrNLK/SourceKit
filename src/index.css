@@ -218,6 +218,17 @@
     @apply bg-secondary/50;
   }
 
+  /* Logo mark micro-interactions */
+  .logo-mark {
+    transition: filter 200ms ease;
+  }
+  .logo-mark:hover {
+    filter: drop-shadow(0 0 8px rgba(0,229,160,0.25));
+  }
+  .logo-mark.active {
+    filter: drop-shadow(0 0 16px rgba(0,229,160,0.35));
+  }
+
   /* Scrollbar hide utility */
   .scrollbar-hide {
     -ms-overflow-style: none;

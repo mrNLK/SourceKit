@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Menu, X, Users, Sparkles, Crown, Layers, Sun, Moon, BookOpen } from "lucide-react";
-import sourcekitLogo from "@/assets/sourcekit-bare.svg";
+import { SourceKitMark } from "@/components/brand/SourceKitMark";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -61,9 +61,9 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
-        <img src={sourcekitLogo} alt="SourceKit" className="w-7 h-7" />
-        <span className="font-display text-sm tracking-tight">
-          <span className="text-foreground font-bold">Source</span><span className="text-muted-foreground font-normal">Kit</span>
+        <SourceKitMark className="w-7 h-7 text-primary" />
+        <span className="text-sm tracking-tight">
+          <span className="text-foreground font-semibold">Source</span><span className="text-[#9E9E9E] font-medium">Kit</span>
         </span>
       </div>
 
@@ -189,9 +189,9 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
-              <img src={sourcekitLogo} alt="SourceKit" className="w-5 h-5" />
-              <span className="font-display text-sm">
-                <span className="text-foreground font-bold">Source</span><span className="text-muted-foreground font-normal">Kit</span>
+              <SourceKitMark className="w-5 h-5 text-primary" />
+              <span className="text-sm">
+                <span className="text-foreground font-semibold">Source</span><span className="text-[#9E9E9E] font-medium">Kit</span>
               </span>
             </div>
           </header>

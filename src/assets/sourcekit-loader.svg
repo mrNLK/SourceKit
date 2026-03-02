@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="SourceKit loading">
+  <style>
+    :root { --accent: #00E5A0; }
+    .g { transform-origin: 128px 128px; animation: sk-rot 1.1s linear infinite; }
+    .p { stroke: var(--accent); fill: none; stroke-linecap: round; }
+    .d { fill: var(--accent); animation: sk-pulse 1.1s ease-in-out infinite; transform-origin: 128px 128px; }
+    @keyframes sk-rot { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes sk-pulse { 0%, 100% { transform: scale(0.9); opacity: 0.75; } 50% { transform: scale(1.05); opacity: 1; } }
+  </style>
+
+  <g class="g">
+    <path class="p" d="M88 72 L56 128 L88 184" stroke-width="20"/>
+    <path class="p" d="M168 72 L200 128 L168 184" stroke-width="20"/>
+    <line class="p" x1="128" y1="88" x2="128" y2="64" stroke-width="11"/>
+    <line class="p" x1="128" y1="192" x2="128" y2="168" stroke-width="11"/>
+    <circle class="d" cx="128" cy="128" r="10"/>
+  </g>
+</svg>
