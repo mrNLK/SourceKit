@@ -224,10 +224,10 @@
   }
   .logo-mark:hover {
     transform: scale(1.06);
-    filter: drop-shadow(0 0 8px rgba(0,229,160,0.25));
+    filter: drop-shadow(0 0 8px hsl(var(--glow) / 0.25));
   }
   .logo-mark.active {
-    filter: drop-shadow(0 0 16px rgba(0,229,160,0.35));
+    filter: drop-shadow(0 0 16px hsl(var(--glow) / 0.35));
   }
 
   /* Hero mark container with subtle radial field effect */
@@ -235,8 +235,8 @@
     background:
       radial-gradient(
         circle,
-        rgba(0,229,160,0.08) 0%,
-        rgba(0,229,160,0.02) 40%,
+        hsl(var(--glow) / 0.08) 0%,
+        hsl(var(--glow) / 0.02) 40%,
         transparent 70%
       );
   }

@@ -262,7 +262,7 @@ const HistoryTab = ({ onRerun }: HistoryTabProps) => {
       })}
 
       {filtered.length === 0 && history.length > 0 && (
-        <p className="text-center text-muted-foreground py-12 font-display text-sm">No history matches "{filter}"</p>
+        <p className="text-center text-muted-foreground py-12 text-sm">No history matches "{filter}"</p>
       )}
     </div>
   );

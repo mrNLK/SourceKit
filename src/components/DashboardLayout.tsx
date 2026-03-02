@@ -63,7 +63,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
         <SourceKitMark className="w-7 h-7 text-primary" />
         <span className="text-sm tracking-tight">
-          <span className="text-foreground font-semibold">Source</span><span className="text-[#9E9E9E] font-medium">Kit</span>
+          <span className="text-foreground font-semibold">Source</span><span className="text-muted-foreground font-medium">Kit</span>
         </span>
       </div>
 
@@ -127,7 +127,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
       {/* Bottom section */}
       <div className="border-t border-border px-3 py-4 space-y-2">
         <div className="px-3 py-1.5">
-          <p className="text-[11px] font-display text-muted-foreground truncate">
+          <p className="text-[11px] text-muted-foreground truncate">
             {userEmail || "Signed in"}
           </p>
         </div>
@@ -191,7 +191,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
             <div className="flex items-center gap-2">
               <SourceKitMark className="w-5 h-5 text-primary" />
               <span className="text-sm">
-                <span className="text-foreground font-semibold">Source</span><span className="text-[#9E9E9E] font-medium">Kit</span>
+                <span className="text-foreground font-semibold">Source</span><span className="text-muted-foreground font-medium">Kit</span>
               </span>
             </div>
           </header>

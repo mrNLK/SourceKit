@@ -429,7 +429,7 @@ const BulkActionsTab = () => {
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-sm text-muted-foreground font-display">
+                    <td colSpan={5} className="p-8 text-center text-sm text-muted-foreground">
                       {pipelineCandidates.length === 0
                         ? "No candidates in pipeline. Add candidates from Search first."
                         : "No candidates match filters."}

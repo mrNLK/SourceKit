@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import sourcekitStacked from "@/assets/sourcekit-stacked.svg";
+import { SourceKitMark } from "@/components/brand/SourceKitMark";
 import { Button } from "@/components/ui/button";
 
 const Auth = () => {
@@ -26,7 +26,11 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-8 text-center">
         <div className="flex flex-col items-center gap-4">
-          <img src={sourcekitStacked} alt="SourceKit" className="w-40" />
+          <SourceKitMark className="w-12 h-12 text-primary" />
+          <div className="text-lg tracking-tight">
+            <span className="text-foreground font-semibold">Source</span>
+            <span className="text-muted-foreground font-medium">Kit</span>
+          </div>
           <p className="text-sm text-muted-foreground">Sign in to start sourcing</p>
         </div>
 
@@ -58,7 +62,7 @@ const Auth = () => {
               fill="#EA4335"
             />
           </svg>
-          {loading ? "Signing in…" : "Continue with Google"}
+          {loading ? "Signing in..." : "Continue with Google"}
         </Button>
       </div>
     </div>

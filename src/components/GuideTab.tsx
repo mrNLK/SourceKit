@@ -62,10 +62,6 @@ const RECIPE_EXAMPLE = {
   ],
 };
 
-interface GuideTabProps {
-  onNavigate?: (tab: string) => void;
-}
-
 /* ─── TLDR View (default) ─── */
 const TLDRView = () => (
   <div className="space-y-6">
@@ -298,7 +294,7 @@ const FullGuideView = () => (
 );
 
 /* ─── Main GuideTab ─── */
-const GuideTab = ({ onNavigate }: GuideTabProps) => {
+const GuideTab = () => {
   const [view, setView] = useState<"tldr" | "full">("tldr");
 
   return (
