@@ -260,6 +260,33 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_searches: {
+        Row: {
+          created_at: string
+          expanded_query: string | null
+          filters: Json
+          id: string
+          name: string
+          query: string
+        }
+        Insert: {
+          created_at?: string
+          expanded_query?: string | null
+          filters?: Json
+          id?: string
+          name: string
+          query: string
+        }
+        Update: {
+          created_at?: string
+          expanded_query?: string | null
+          filters?: Json
+          id?: string
+          name?: string
+          query?: string
+        }
+        Relationships: []
+      }
       search_history: {
         Row: {
           action_type: string
