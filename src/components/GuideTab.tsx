@@ -1,4 +1,4 @@
-import { ExternalLink, Sparkles, Search, GitBranch, ChevronRight, Lightbulb, BookOpen, Target, Trophy } from "lucide-react";
+import { ExternalLink, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,9 +30,9 @@ const PRO_TIPS = [
 ];
 
 const INPUT_METHODS = [
-  { icon: Sparkles, title: "Role + Company", desc: "Claude infers the stack, finds repos, builds your strategy" },
-  { icon: Search, title: "Paste a JD", desc: "AI parses requirements, technologies, and seniority level" },
-  { icon: GitBranch, title: "Paste a Job URL", desc: "Parallel.ai extracts JDs from Lever, Greenhouse, Ashby" },
+  { title: "Role + Company", desc: "Claude infers the stack, finds repos, builds your strategy" },
+  { title: "Paste a JD", desc: "AI parses requirements, technologies, and seniority level" },
+  { title: "Paste a Job URL", desc: "Parallel.ai extracts JDs from Lever, Greenhouse, Ashby" },
 ];
 
 const EEA_ARTIFACTS = [
@@ -72,7 +72,6 @@ const GuideTab = ({ onNavigate }: GuideTabProps) => {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <BookOpen className="w-5 h-5 text-primary" />
             <h1 className="text-lg font-display font-bold text-foreground">Quick Reference</h1>
             <Badge variant="outline" className="text-[10px] font-display">v2.0</Badge>
           </div>
@@ -117,8 +116,7 @@ const GuideTab = ({ onNavigate }: GuideTabProps) => {
           <h2 className="text-xs font-display font-semibold text-primary uppercase tracking-wider mb-4">Three Ways to Start</h2>
           <div className="grid grid-cols-3 gap-3">
             {INPUT_METHODS.map((method) => (
-              <div key={method.title} className="rounded-lg border border-border p-3 space-y-2">
-                <method.icon className="w-4 h-4 text-primary" />
+              <div key={method.title} className="rounded-lg border border-border p-3 space-y-1.5">
                 <div className="text-xs font-display font-bold text-foreground">{method.title}</div>
                 <div className="text-[11px] text-muted-foreground leading-snug">{method.desc}</div>
               </div>
@@ -131,22 +129,19 @@ const GuideTab = ({ onNavigate }: GuideTabProps) => {
       <Card>
         <CardContent className="pt-5 pb-4">
           <h2 className="text-xs font-display font-semibold text-primary uppercase tracking-wider mb-4">Quick Start</h2>
-          <ol className="space-y-0">
+          <div className="space-y-0">
             {QUICK_START.map((step, i) => (
-              <li key={i} className={`flex items-start gap-3 py-2.5 ${
+              <div key={i} className={`py-2.5 ${
                 i < QUICK_START.length - 1 ? "border-b border-border" : ""
               }`}>
-                <span className="shrink-0 w-5 h-5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-display font-semibold flex items-center justify-center mt-0.5">
-                  {i + 1}
-                </span>
                 <div className="text-sm">
                   <span className="font-semibold text-foreground">{step.title}</span>
                   {" "}
                   <span className="text-muted-foreground">{step.desc}</span>
                 </div>
-              </li>
+              </div>
             ))}
-          </ol>
+          </div>
         </CardContent>
       </Card>
 
@@ -156,10 +151,9 @@ const GuideTab = ({ onNavigate }: GuideTabProps) => {
           <h2 className="text-xs font-display font-semibold text-primary uppercase tracking-wider mb-4">Pro Tips</h2>
           <div className="space-y-0">
             {PRO_TIPS.map((tip, i) => (
-              <div key={i} className={`flex items-start gap-3 py-2.5 ${
+              <div key={i} className={`py-2.5 ${
                 i < PRO_TIPS.length - 1 ? "border-b border-border" : ""
               }`}>
-                <Lightbulb className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
                 <div className="text-sm">
                   <span className="font-semibold text-foreground">{tip.title}.</span>
                   {" "}
@@ -174,10 +168,7 @@ const GuideTab = ({ onNavigate }: GuideTabProps) => {
       {/* EEA Artifact Types */}
       <Card>
         <CardContent className="pt-5 pb-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Target className="w-3.5 h-3.5 text-primary" />
-            <h2 className="text-xs font-display font-semibold text-primary uppercase tracking-wider">EEA Artifact Types</h2>
-          </div>
+          <h2 className="text-xs font-display font-semibold text-primary uppercase tracking-wider mb-4">EEA Artifact Types</h2>
           <p className="text-xs text-muted-foreground mb-3">
             Evidence of Exceptional Ability - verifiable signals that put someone in the top 5-10%. Pick 3-5 per role as Webset criteria.
           </p>
@@ -197,10 +188,7 @@ const GuideTab = ({ onNavigate }: GuideTabProps) => {
       {/* Webset Recipe Example */}
       <Card>
         <CardContent className="pt-5 pb-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Trophy className="w-3.5 h-3.5 text-primary" />
-            <h2 className="text-xs font-display font-semibold text-primary uppercase tracking-wider">Webset Recipe: {RECIPE_EXAMPLE.role}</h2>
-          </div>
+          <h2 className="text-xs font-display font-semibold text-primary uppercase tracking-wider mb-4">Webset Recipe: {RECIPE_EXAMPLE.role}</h2>
           <div className="space-y-3">
             <div>
               <div className="text-[10px] font-display font-semibold text-primary uppercase tracking-wider mb-1">Query</div>
