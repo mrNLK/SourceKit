@@ -1,0 +1,45 @@
+SourceKit Guide Tab Screenshots - Capture Notes
+================================================
+Date: 2026-03-02
+Viewport: 1280x800
+App: https://getsourcekit.vercel.app/
+
+CAPTURED SUCCESSFULLY (in ~/Downloads/):
+- step-1-input.png    : Empty New Search tab with role/company input fields
+- step-2-repos.png    : AI-generated repo list for "Staff ML Engineer" at "Anthropic"
+                        Shows: openai/gpt-2, huggingface/transformers, openai/gym,
+                        EleutherAI/gpt-neox, NVIDIA/Megatron-LM, pytorch/pytorch
+- step-4-pipeline.png : Pipeline kanban board with 5 stages
+                        (Sourced, Contacted, Responded, Screen, Offer)
+                        Thomas Wolf in Contacted stage
+- bonus-webset.png    : Websets tab showing create form and empty state
+
+NEEDS RETAKING:
+- step-3-results.png  : Candidate result cards after running search
+  REASON: Exa search API returned "No engineers found" for all queries attempted.
+  Tried: AI strategy search, 3 historical searches, direct repo query.
+  FIX: Retry when Exa API is operational.
+
+- bonus-candidate-detail.png  : Requires search results (blocked by Exa API)
+- bonus-search-filters.png    : Requires search results for filter controls
+- bonus-enrichment.png        : Requires candidate data to enrich
+
+MANUAL STEPS REQUIRED:
+VM disk was full, preventing automated file copy. Run these commands:
+
+  # Create target dirs
+  mkdir -p ~/SourceProof/public/screenshots
+  mkdir -p ~/Desktop/sourcekit-docs/screenshots
+
+  # Copy from Downloads to both targets
+  cp ~/Downloads/step-1-input.png ~/Downloads/step-2-repos.png \
+     ~/Downloads/step-4-pipeline.png ~/Downloads/bonus-webset.png \
+     ~/SourceProof/public/screenshots/
+
+  cp ~/Downloads/step-1-input.png ~/Downloads/step-2-repos.png \
+     ~/Downloads/step-4-pipeline.png ~/Downloads/bonus-webset.png \
+     ~/Desktop/sourcekit-docs/screenshots/
+
+  # Also copy this notes file
+  cp ~/SourceProof/public/screenshots/screenshots-notes.txt \
+     ~/Desktop/sourcekit-docs/screenshots/
