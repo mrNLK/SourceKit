@@ -87,6 +87,7 @@ const Index = () => {
     setRerunQuery(query);
     setRerunExpanded(expandedQuery);
     setRerunStrategy(strategy);
+    setRerunSearchId(undefined);
     setRerunKey((k) => k + 1);
     setActiveTab("search");
   }, []);

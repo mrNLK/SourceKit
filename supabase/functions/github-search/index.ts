@@ -561,7 +561,7 @@ serve(async (req) => {
     if (req.method === 'POST' || (req.headers.get('content-type') || '').includes('json')) {
       try {
         const body = await req.json();
-        if (body.query) query = body.query;
+        if (typeof body.query === 'string' && body.query) query = body.query;
         if (body.targetRepos && Array.isArray(body.targetRepos)) {
           bodyTargetRepos = body.targetRepos
             .map((r: any) => {
@@ -576,7 +576,16 @@ serve(async (req) => {
         if (body.skills && Array.isArray(body.skills)) bodySkills = body.skills;
         if (body.hideUngettable === false) hideUngettable = false;
         if (body.stream === true) streamMode = true;
-      } catch { /* not JSON, use query param */ }
+      } catch (e) {
+        console.error('Failed to parse request body:', e);
+        // For POST requests, body parsing failure is an error — don't silently fall through
+        if (req.method === 'POST' && !query) {
+          return new Response(JSON.stringify({ error: 'Invalid request body — expected JSON with "query" field' }), {
+            status: 400,
+            headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+          });
+        }
+      }
     }
 
     if (!query && bodyTargetRepos.length === 0) {
