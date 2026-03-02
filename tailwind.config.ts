@@ -14,6 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
+        sans: ['DM Sans', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
         display: ['JetBrains Mono', 'monospace'],
         body: ['DM Sans', 'system-ui', 'sans-serif'],
       },
@@ -58,6 +60,20 @@ export default {
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
         info: "hsl(var(--info))",
+        /* Brand system v2.0 utilities */
+        brand: {
+          accent: "var(--accent-primary)",
+          bg: {
+            base: "var(--bg-base)",
+            elevated: "var(--bg-elevated)",
+            surface: "var(--bg-surface)",
+          },
+          fg: {
+            primary: "var(--fg-primary)",
+            secondary: "var(--fg-secondary)",
+            muted: "var(--fg-muted)",
+          },
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

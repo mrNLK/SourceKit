@@ -57,6 +57,19 @@
 
     --font-display: 'JetBrains Mono', monospace;
     --font-body: 'DM Sans', system-ui, sans-serif;
+
+    /* Brand system v2.0 semantic tokens */
+    --accent-primary: #00E5A0;
+    --accent-strong: #00C896;
+    --accent-subtle: rgba(0,229,160,0.12);
+    --bg-base: #0A0A0F;
+    --bg-elevated: #111116;
+    --bg-surface: #15151B;
+    --fg-primary: #FFFFFF;
+    --fg-secondary: #A1A1AA;
+    --fg-muted: #6B7280;
+    --border-subtle: #1F1F26;
+    --border-focus: #00E5A0;
   }
 
   /* FEAT-007: Light mode override */
@@ -106,6 +119,19 @@
     --success: 142 60% 42%;
     --warning: 38 92% 50%;
     --info: 210 80% 50%;
+
+    /* Brand system v2.0 light mode overrides */
+    --accent-primary: #00A97A;
+    --accent-strong: #009068;
+    --accent-subtle: rgba(0,169,122,0.10);
+    --bg-base: #FFFFFF;
+    --bg-elevated: #F6F7F9;
+    --bg-surface: #EEEEF0;
+    --fg-primary: #0A0A0F;
+    --fg-secondary: #52525B;
+    --fg-muted: #6B7280;
+    --border-subtle: #E4E4E7;
+    --border-focus: #00A97A;
   }
 }
 

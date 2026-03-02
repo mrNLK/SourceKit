@@ -1,22 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 180" width="680" height="180" fill="none">
-  <defs>
-    <style>@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600&amp;display=swap');</style>
-  </defs>
-  <!-- Icon container -->
-  <rect x="12" y="12" width="156" height="156" rx="34" fill="#0A0A0F"/>
-  <rect x="12" y="12" width="156" height="156" rx="34" fill="none" stroke="#1F1F26" stroke-width="1"/>
-  <!-- Icon mark centered at (90, 90), scaled to fit container -->
-  <g transform="translate(90,90) scale(0.55)">
-    <path d="M-40,-56 L-72,0 L-40,56" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <path d="M40,-56 L72,0 L40,56" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <path d="M-32,-32 L-16,0 L-32,32" stroke="#00E5A0" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <path d="M32,-32 L16,0 L32,32" stroke="#00E5A0" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <line x1="0" y1="-40" x2="0" y2="-64" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
-    <line x1="0" y1="40" x2="0" y2="64" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
-    <circle cx="0" cy="0" r="10" fill="#00E5A0"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="160" viewBox="0 0 640 160">
+  <rect width="640" height="160" fill="transparent"/>
+  <g transform="translate(40,20) scale(0.46875)">
+    <path d="M88 72 L56 128 L88 184" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" fill="none"/>
+    <path d="M168 72 L200 128 L168 184" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" fill="none"/>
+    <line x1="128" y1="88" x2="128" y2="64" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
+    <line x1="128" y1="192" x2="128" y2="168" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
+    <circle cx="128" cy="128" r="10" fill="#00E5A0"/>
   </g>
-  <!-- Wordmark -->
-  <text x="192" y="103" font-family="'DM Sans',sans-serif" font-size="50" letter-spacing="-0.5">
-    <tspan fill="#ffffff" font-weight="600">Source</tspan><tspan fill="#9E9E9E" font-weight="500">Kit</tspan>
-  </text>
+  <text x="200" y="98" font-family="DM Sans, Inter, system-ui, sans-serif" font-size="56" font-weight="600" fill="#FFFFFF">Source</text>
+  <text x="392" y="98" font-family="DM Sans, Inter, system-ui, sans-serif" font-size="56" font-weight="500" fill="#9E9E9E">Kit</text>
 </svg>

@@ -1,8 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 80" width="460" height="80" fill="none">
-  <defs>
-    <style>@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600&amp;display=swap');</style>
-  </defs>
-  <text x="0" y="58" font-family="'DM Sans',sans-serif" font-size="54" letter-spacing="-1">
-    <tspan fill="#ffffff" font-weight="600">Source</tspan><tspan fill="#9E9E9E" font-weight="500">Kit</tspan>
-  </text>
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="80" viewBox="0 0 440 80">
+  <rect width="440" height="80" fill="transparent"/>
+  <text x="0" y="56" font-family="DM Sans, Inter, system-ui, sans-serif" font-size="56" font-weight="600" fill="#FFFFFF">Source</text>
+  <text x="250" y="56" font-family="DM Sans, Inter, system-ui, sans-serif" font-size="56" font-weight="500" fill="#9E9E9E">Kit</text>
 </svg>
