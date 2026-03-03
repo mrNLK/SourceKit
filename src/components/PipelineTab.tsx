@@ -7,7 +7,9 @@ import CandidateProfile from "@/components/CandidateProfile";
 import ExportButton from "@/components/ExportButton";
 import PipelineAnalytics from "@/components/pipeline/PipelineAnalytics";
 import EEAMetadata from "@/components/pipeline/EEAMetadata";
+import PresenceAvatars from "@/components/pipeline/PresenceAvatars";
 import { useWatchlist } from "@/hooks/useWatchlist";
+import { usePipelineRealtime } from "@/hooks/usePipelineRealtime";
 import { toast } from "@/hooks/use-toast";
 import { notifyStageChange } from "@/lib/api";
 import { useSettings } from "@/hooks/useSettings";
@@ -56,6 +58,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
   const [selectedCandidate, setSelectedCandidate] = useState<PipelineCandidate | null>(null);
   const { isWatched, toggle: toggleWatchlist } = useWatchlist();
   const { settings } = useSettings();
+  const { presenceState, trackViewing } = usePipelineRealtime();
   const [sortByScore, setSortByScore] = useState(false);
   const [activeStageFilter, setActiveStageFilter] = useState<string | null>(null);
   const [activeTagFilters, setActiveTagFilters] = useState<Set<string>>(new Set());
@@ -213,7 +216,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
     }
   };
 
-  const handleBack = useCallback(() => setSelectedCandidate(null), []);
+  const handleBack = useCallback(() => { setSelectedCandidate(null); trackViewing(null); }, [trackViewing]);
 
   const handleShareToSlack = async (candidate: PipelineCandidate) => {
     try {
@@ -430,10 +433,11 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
               stage={STAGES.find(s => s.id === c.stage) || STAGES[0]}
               stageChangedAt={stageChangeTimes[c.id]}
               onDragStart={() => setDraggedItem(c.id)}
-              onClick={() => setSelectedCandidate(c)}
+              onClick={() => { setSelectedCandidate(c); trackViewing(c.id); }}
               onRemove={() => { if (window.confirm(`Remove ${c.name || c.github_username}?`)) removeMutation.mutate(c.id); }}
               onWatch={() => toggleWatchlist(c.github_username, c.name, c.avatar_url)}
               isWatched={isWatched(c.github_username)}
+              presenceUsers={presenceState[c.id] || []}
               onNotesChange={(notes) => notesMutation.mutate({ id: c.id, notes })}
               onTagsChange={(tags) => tagsMutation.mutate({ id: c.id, tags })}
               onShareSlack={() => handleShareToSlack(c)}
@@ -476,10 +480,11 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
                       stage={stage}
                       stageChangedAt={stageChangeTimes[c.id]}
                       onDragStart={() => setDraggedItem(c.id)}
-                      onClick={() => setSelectedCandidate(c)}
+                      onClick={() => { setSelectedCandidate(c); trackViewing(c.id); }}
                       onRemove={() => { if (window.confirm(`Remove ${c.name || c.github_username}?`)) removeMutation.mutate(c.id); }}
                       onWatch={() => toggleWatchlist(c.github_username, c.name, c.avatar_url)}
                       isWatched={isWatched(c.github_username)}
+                      presenceUsers={presenceState[c.id] || []}
                       onNotesChange={(notes) => notesMutation.mutate({ id: c.id, notes })}
                       onTagsChange={(tags) => tagsMutation.mutate({ id: c.id, tags })}
                       onShareSlack={() => handleShareToSlack(c)}
@@ -508,13 +513,14 @@ interface PipelineCardProps {
   onRemove: () => void;
   onWatch: () => void;
   isWatched: boolean;
+  presenceUsers: { id: string; email?: string }[];
   onNotesChange: (notes: string) => void;
   onTagsChange: (tags: string[]) => void;
   onShareSlack: () => void;
   onMove: (stage: string) => void;
 }
 
-function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, onRemove, onWatch, isWatched, onNotesChange, onTagsChange, onShareSlack, onMove }: PipelineCardProps) {
+function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, onRemove, onWatch, isWatched, presenceUsers, onNotesChange, onTagsChange, onShareSlack, onMove }: PipelineCardProps) {
   const [showNotes, setShowNotes] = useState(false);
   const [notesValue, setNotesValue] = useState(c.notes || "");
   const [showTagInput, setShowTagInput] = useState(false);
@@ -591,6 +597,7 @@ function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, o
           <p className="text-[10px] text-muted-foreground font-display truncate">@{c.github_username}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          <PresenceAvatars users={presenceUsers} />
           {score > 0 && (
             <span className={`text-[10px] font-display font-bold px-1.5 py-0.5 rounded ${
               score >= 70 ? "bg-emerald-500/15 text-emerald-400" :
