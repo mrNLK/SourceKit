@@ -88,10 +88,17 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
   // FEAT-006: Saved searches (bookmarks)
   const { savedSearches, isSaved: checkIsSaved, saveSearch, deleteSearch } = useSavedSearches();
   const isSaved = checkIsSaved(query);
-  const handleSaveSearch = () => saveSearch(query, expandedQuery, {
-    seniority: seniorityFilter, skills: skillFilters, language: languageFilter,
-    minScore, showGemsOnly, showUngettable, resultLimit,
-  });
+  const handleSaveSearch = () => {
+    if (isSaved) {
+      const existing = savedSearches.find(s => s.query === query);
+      if (existing) deleteSearch(existing.id);
+    } else {
+      saveSearch(query, expandedQuery, {
+        seniority: seniorityFilter, skills: skillFilters, language: languageFilter,
+        minScore, showGemsOnly, showUngettable, resultLimit,
+      });
+    }
+  };
   const handleDeleteSaved = (id: string) => deleteSearch(id);
   const handleLoadSaved = (saved: SavedSearch) => {
     setQuery(saved.query);
