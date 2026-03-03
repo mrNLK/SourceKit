@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-page: #0a0a0f;
+    --bg-card: #1c1c22;
+    --border-card: #2a2a32;
+    --accent: #00E5A0;
+    --accent-start: #00E5C3;
+    --accent-end: #00BFA5;
+    --text-heading: #FFFFFF;
+    --text-body: #E0E0E0;
+    --text-secondary: #9E9E9E;
+    --text-muted: #6B7280;
+    --radius: 14px;
+  }
+  @page { size: letter; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg-page);
+    color: var(--text-body);
+    font-family: 'DM Sans', 'Inter', sans-serif;
+    font-size: 12px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    width: 8.5in;
+    height: 11in;
+    padding: 0.5in 0.6in;
+    position: relative;
+    overflow: hidden;
+    break-after: page;
+    page-break-after: always;
+  }
+  .page:last-child { break-after: auto; page-break-after: auto; }
+
+  /* Typography */
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .section-heading {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .section-heading-sm {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+  .section { margin-bottom: 20px; }
+  .section-tight { margin-bottom: 14px; }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .card-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 4px;
+  }
+  .card-body {
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text-body);
+  }
+  .card-row {
+    display: flex;
+    gap: 12px;
+  }
+  .card-row .card { flex: 1; }
+
+  /* Teal left-border cards */
+  .card-accent {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+  }
+
+  /* Badge */
+  .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 100px;
+    padding: 3px 10px;
+  }
+  .badge-new {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--bg-page);
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+    border-radius: 100px;
+    padding: 2px 8px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  /* Workflow steps */
+  .workflow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+  .workflow-step {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    padding: 10px 10px;
+    text-align: center;
+    position: relative;
+  }
+  .workflow-step:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+  .workflow-step:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+  .workflow-step-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 3px;
+  }
+  .workflow-step-desc {
+    font-size: 9px;
+    color: var(--text-secondary);
+    line-height: 1.35;
+  }
+  .workflow-arrow {
+    width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  /* Score bar */
+  .score-bar {
+    display: flex;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 28px;
+    margin: 8px 0;
+  }
+  .score-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: #000;
+  }
+
+  /* Pipeline stages */
+  .stages {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 8px 0 12px;
+  }
+  .stage-pill {
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+    color: var(--bg-page);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .stage-arrow {
+    color: var(--accent);
+    font-size: 14px;
+    margin: 0 4px;
+  }
+
+  /* Table */
+  .table-wrap {
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .table-wrap table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+  .table-wrap th {
+    background: var(--bg-card);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-card);
+  }
+  .table-wrap td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border-card);
+    color: var(--text-body);
+    font-size: 10px;
+    line-height: 1.4;
+    vertical-align: top;
+  }
+  .table-wrap tr:last-child td { border-bottom: none; }
+
+  /* Checklist */
+  .checklist-item {
+    margin-bottom: 5px;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+  .checklist-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--accent);
+    margin-right: 6px;
+    font-size: 11px;
+  }
+  .checklist-title {
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  /* Tips */
+  .tip { margin-bottom: 8px; }
+  .tip-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 2px;
+  }
+  .tip-body {
+    font-size: 11px;
+    color: var(--text-body);
+    line-height: 1.45;
+  }
+
+  /* Architecture diagram */
+  .arch-layer {
+    margin-bottom: 6px;
+  }
+  .arch-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .arch-boxes {
+    display: flex;
+    gap: 6px;
+  }
+  .arch-box {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 8px;
+    padding: 7px 8px;
+  }
+  .arch-box-name {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 2px;
+  }
+  .arch-box-desc {
+    font-size: 8.5px;
+    color: var(--text-secondary);
+    line-height: 1.35;
+  }
+  .arch-box-full {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 8px;
+    padding: 7px 10px;
+  }
+  .arch-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 12px;
+    margin: 2px 0;
+    opacity: 0.6;
+  }
+
+  /* Utility */
+  .text-secondary { color: var(--text-secondary); }
+  .text-muted { color: var(--text-muted); }
+  .text-accent { color: var(--accent); }
+  .text-white { color: var(--text-heading); }
+  .mb-4 { margin-bottom: 4px; }
+  .mb-6 { margin-bottom: 6px; }
+  .mb-8 { margin-bottom: 8px; }
+  .mb-10 { margin-bottom: 10px; }
+  .mb-12 { margin-bottom: 12px; }
+  .mb-16 { margin-bottom: 16px; }
+  .mt-6 { margin-top: 6px; }
+  .mt-8 { margin-top: 8px; }
+  .body-text { font-size: 12px; color: var(--text-body); line-height: 1.55; }
+  .body-text-sm { font-size: 11px; color: var(--text-body); line-height: 1.5; }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 16px 0 12px;
+  }
+  .hero-headline {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin: 10px 0 4px;
+    line-height: 1.2;
+  }
+  .hero-subhead {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  .hero-url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+  }
+
+  /* Feedback box */
+  .feedback-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== PAGE 1: HERO + OVERVIEW + WHY SOURCEKIT ==================== -->
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 180" width="280" height="74">
+      <defs>
+        <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1c1c22"/><stop offset="100%" stop-color="#151519"/></linearGradient>
+        <linearGradient id="ac1" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#00E5C3"/><stop offset="100%" stop-color="#00BFA5"/></linearGradient>
+      </defs>
+      <rect x="12" y="12" width="156" height="156" rx="34" fill="url(#bg1)"/>
+      <rect x="12" y="12" width="156" height="156" rx="34" fill="none" stroke="#2a2a32" stroke-width="1"/>
+      <g transform="translate(90,90)">
+        <path d="M-22,-30 L-48,0 L-22,30" fill="none" stroke="url(#ac1)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="-5" y1="25" x2="5" y2="-25" stroke="url(#ac1)" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+        <path d="M22,-30 L48,0 L22,30" fill="none" stroke="url(#ac1)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+      <text x="196" y="105" font-family="'JetBrains Mono','SF Mono',monospace" font-size="50" font-weight="600" letter-spacing="-1">
+        <tspan fill="#9E9E9E">Source</tspan><tspan fill="#00BFA5">Kit</tspan>
+      </text>
+    </svg>
+    <div class="mb-8"><span class="badge">BETA V2.0 / EARLY ACCESS</span></div>
+    <div class="hero-headline">Find engineers by what they build.</div>
+    <div class="hero-subhead">AI-powered technical sourcing, grounded in real GitHub data.</div>
+    <div class="hero-url">getsourcekit.vercel.app</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="section-tight">
+    <div class="section-label">OVERVIEW</div>
+    <div class="section-heading-sm">What is SourceKit?</div>
+    <p class="body-text-sm mb-10">SourceKit is a technical sourcing tool that finds software engineers based on their actual code contributions on GitHub, not self-reported LinkedIn keywords. You enter a role and company. SourceKit builds a sourcing strategy, searches real repositories, and returns a scored pipeline of candidates in minutes. v2.0 adds Parallel.ai for intelligent JD extraction and Exa Websets for persistent, auto-updating candidate collections.</p>
+    <div class="card-row">
+      <div class="card">
+        <div class="card-title">Signal Over Noise</div>
+        <div class="card-body">Candidates are scored on real GitHub activity: commits, pull requests, and repo contributions. Ground-truth engineering signal that resumes can't replicate.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">AI-Built Strategy</div>
+        <div class="card-body">Claude analyzes the role, generates target repos, identifies poach companies, and builds a skills matrix. Parallel.ai extracts JDs from any URL automatically.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Minutes, Not Days</div>
+        <div class="card-body">Job description to scored candidate pipeline in under two minutes. No boolean strings. No manual sourcing. No tool switching.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHY SOURCEKIT -->
+  <div class="section-tight">
+    <div class="section-label">WHY SOURCEKIT</div>
+    <div class="section-heading-sm">How is this different?</div>
+    <div class="card-row">
+      <div class="card">
+        <div class="card-title">Traditional Sourcing</div>
+        <div class="card-body">Search LinkedIn by keywords. Filter by title and company. Hope the resume matches reality. High noise, profile-optimized results, limited engineering signal.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">SourceKit Sourcing</div>
+        <div class="card-body">AI identifies key repos for a role, searches GitHub for top contributors, scores candidates on commit history, languages, and impact. Parallel.ai adds web context. Exa Websets build living candidate lists. Evidence-based, not keyword-based.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Best Use Cases</div>
+        <div class="card-body">Niche and senior technical roles. Passive candidates not actively job-seeking. Engineers at early-stage startups. Anyone with a meaningful open-source presence.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== PAGE 2: ARCHITECTURE + WORKFLOW + GETTING STARTED ==================== -->
+<div class="page">
+
+  <!-- UNDER THE HOOD -->
+  <div class="section">
+    <div class="section-label">UNDER THE HOOD</div>
+    <div class="section-heading">Architecture and Technology</div>
+    <p class="body-text-sm mb-8">SourceKit combines five core technologies: Claude AI for intelligence, Exa for neural search and Websets, Parallel.ai for web search and content extraction, the GitHub API for contributor data, and Supabase for data persistence.</p>
+
+    <!-- Architecture Diagram -->
+    <div class="arch-layer">
+      <div class="arch-label">Presentation Layer</div>
+      <div class="arch-box-full">
+        <div class="arch-box-name">React + TypeScript Web App</div>
+        <div class="arch-box-desc">Mobile-first UI / Google OAuth / Settings / Search / Pipeline / Websets</div>
+      </div>
+    </div>
+    <div class="arch-arrow">&#9660;</div>
+    <div class="arch-layer">
+      <div class="arch-label">AI Intelligence Layer</div>
+      <div class="arch-boxes">
+        <div class="arch-box">
+          <div class="arch-box-name">Claude AI (Anthropic)</div>
+          <div class="arch-box-desc">Strategy / Scoring / Outreach</div>
+        </div>
+        <div class="arch-box">
+          <div class="arch-box-name">Exa Search + Websets</div>
+          <div class="arch-box-desc">Neural search / Websets / Candidate collections</div>
+        </div>
+        <div class="arch-box">
+          <div class="arch-box-name">Parallel.ai</div>
+          <div class="arch-box-desc">Web search / JD extraction / Enrichment</div>
+        </div>
+        <div class="arch-box">
+          <div class="arch-box-name">GitHub REST + GraphQL</div>
+          <div class="arch-box-desc">Contributors / Commits / Graphs</div>
+        </div>
+      </div>
+    </div>
+    <div class="arch-arrow">&#9660;</div>
+    <div class="arch-layer">
+      <div class="arch-label">Data Layer</div>
+      <div class="arch-boxes">
+        <div class="arch-box" style="flex:2;">
+          <div class="arch-box-name">Supabase (PostgreSQL)</div>
+          <div class="arch-box-desc">Auth / Row-level Security / User Data / Pipeline State / Webset Mappings</div>
+        </div>
+        <div class="arch-box" style="flex:1;">
+          <div class="arch-box-name">Enrichment APIs</div>
+          <div class="arch-box-desc">LinkedIn matching / Email discovery / Profile enrichment</div>
+        </div>
+      </div>
+    </div>
+    <div class="arch-arrow">&#9660;</div>
+    <div class="arch-layer">
+      <div class="arch-label">Infrastructure</div>
+      <div class="arch-boxes">
+        <div class="arch-box" style="flex:2;">
+          <div class="arch-box-name">Vercel</div>
+          <div class="arch-box-desc">Hosting / Serverless Functions / Edge Network</div>
+        </div>
+        <div class="arch-box" style="flex:1;">
+          <div class="arch-box-name">Stripe</div>
+          <div class="arch-box-desc">Billing / Usage Tracking / Tier Management</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="section">
+    <div class="section-label">HOW IT WORKS</div>
+    <div class="section-heading-sm">Workflow: From Role to Pipeline</div>
+    <div class="workflow">
+      <div class="workflow-step">
+        <div class="workflow-step-title">You Input</div>
+        <div class="workflow-step-desc">Role + company, job description, or job URL</div>
+      </div>
+      <div class="workflow-arrow">&#9654;</div>
+      <div class="workflow-step">
+        <div class="workflow-step-title">AI Strategy</div>
+        <div class="workflow-step-desc">Claude builds target repos, poach list, skills matrix</div>
+      </div>
+      <div class="workflow-arrow">&#9654;</div>
+      <div class="workflow-step">
+        <div class="workflow-step-title">You Refine</div>
+        <div class="workflow-step-desc">Edit repos, add or remove targets, adjust criteria</div>
+      </div>
+      <div class="workflow-arrow">&#9654;</div>
+      <div class="workflow-step">
+        <div class="workflow-step-title">Multi-API Search</div>
+        <div class="workflow-step-desc">Exa + Parallel + GitHub APIs scan for top contributors</div>
+      </div>
+      <div class="workflow-arrow">&#9654;</div>
+      <div class="workflow-step">
+        <div class="workflow-step-title">Scored Pipeline</div>
+        <div class="workflow-step-desc">Candidates ranked by code signal, ready for outreach</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GETTING STARTED -->
+  <div class="section-tight">
+    <div class="section-label">GETTING STARTED</div>
+    <div class="section-heading-sm">Three Ways to Start a Search</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div class="card-accent">
+        <div class="card-title">1. Role + Company</div>
+        <div class="card-body">Type a job title and target company. Claude infers the technical stack, identifies relevant repos, and builds your strategy from scratch. Example: "Staff ML Engineer" at "Anthropic"</div>
+      </div>
+      <div class="card-accent">
+        <div class="card-title">2. Paste a Job Description</div>
+        <div class="card-body">Copy and paste the full JD text. The AI parses requirements, technologies, and seniority level to generate a targeted strategy.</div>
+      </div>
+      <div class="card-accent">
+        <div class="card-title">3. Paste a Job URL</div>
+        <div class="card-body">Drop in a link from Lever, Greenhouse, or Ashby. Parallel.ai extracts the JD content and builds the strategy automatically. Works with JS-rendered pages.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== PAGE 3: SCORING + PIPELINE + EXA WEBSETS ==================== -->
+<div class="page">
+
+  <!-- SCORING -->
+  <div class="section">
+    <div class="section-label">SCORING</div>
+    <div class="section-heading">How Candidates Are Scored</div>
+    <p class="body-text-sm mb-6">Every candidate receives a composite score from 0 to 100 based on actual GitHub activity, weighted by relevance to the target role. No self-reported data. Just code signal.</p>
+    <div class="score-bar">
+      <div class="score-segment" style="flex:2; background: linear-gradient(90deg, #22c55e, #4ade80);">Strong Match 80-100</div>
+      <div class="score-segment" style="flex:2; background: linear-gradient(90deg, #eab308, #facc15);">Worth Reviewing 60-79</div>
+      <div class="score-segment" style="flex:2; background: linear-gradient(90deg, #ef4444, #f87171);">Lower Signal 0-59</div>
+    </div>
+    <div class="card-row mt-6">
+      <div class="card">
+        <div class="card-title">Commit Volume and Recency</div>
+        <div class="card-body">How actively and recently the candidate has contributed to relevant repos. Recent activity is weighted more heavily because it indicates current working knowledge.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Language and Stack Match</div>
+        <div class="card-body">How well the candidate's primary languages align with what the role requires. Python for ML roles, Rust for systems work, and so on.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Repo Relevance and Impact</div>
+        <div class="card-body">Contributions to high-signal repos (well-starred, actively maintained) are weighted more heavily than activity in personal or low-visibility projects.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="section">
+    <div class="section-label">PIPELINE</div>
+    <div class="section-heading-sm">5-Stage Candidate Pipeline</div>
+    <div class="stages">
+      <span class="stage-pill">Sourced</span>
+      <span class="stage-arrow">&#9654;</span>
+      <span class="stage-pill">Contacted</span>
+      <span class="stage-arrow">&#9654;</span>
+      <span class="stage-pill">Responded</span>
+      <span class="stage-arrow">&#9654;</span>
+      <span class="stage-pill">Screen</span>
+      <span class="stage-arrow">&#9654;</span>
+      <span class="stage-pill">Offer</span>
+    </div>
+    <div class="card-row">
+      <div class="card">
+        <div class="card-title">Bulk Actions</div>
+        <div class="card-body">Select multiple candidates to compare side-by-side, generate a summary report, or batch-draft personalized outreach messages.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">CSV Export</div>
+        <div class="card-body">Export your results or pipeline at any time. Take your candidate data into your ATS, spreadsheets, or any other tool.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXA WEBSETS -->
+  <div class="section-tight">
+    <div class="section-label">EXA WEBSETS <span class="badge-new">NEW IN V2.0</span></div>
+    <div class="section-heading">Exa Websets: Persistent Candidate Collections</div>
+    <p class="body-text-sm mb-8">Websets are persistent, auto-updating candidate collections powered by Exa's neural search. Define your criteria once and get new matches continuously as new contributors emerge.</p>
+    <div class="card-row">
+      <div class="card">
+        <div class="card-title">Create and Search</div>
+        <div class="card-body">Build a Webset from any search or from scratch. Define entity type, search query, and filtering criteria. Exa finds matching candidates across the web.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Auto-Enrich</div>
+        <div class="card-body">Every item is automatically enriched with current company, role, LinkedIn URL, GitHub profile, and primary programming languages. No manual lookup.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Monitor</div>
+        <div class="card-body">Set a schedule and Websets auto-update with new matches. New candidates matching your criteria appear without re-running searches. Push matches to your pipeline.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== PAGE 4: BETA TESTING + PRO TIPS + LIMITATIONS ==================== -->
+<div class="page">
+
+  <!-- BETA TESTING -->
+  <div class="section">
+    <div class="section-label">BETA TESTING</div>
+    <div class="section-heading-sm">What to Test</div>
+    <div>
+      <div class="checklist-item"><span class="checklist-num">1.</span> <span class="checklist-title">Sign In</span> — Log in with Google at getsourcekit.vercel.app</div>
+      <div class="checklist-item"><span class="checklist-num">2.</span> <span class="checklist-title">Build a Strategy</span> — Try all three input paths: role + company, pasted JD, or job URL</div>
+      <div class="checklist-item"><span class="checklist-num">3.</span> <span class="checklist-title">Edit and Run the Search</span> — Review the AI-generated repo list. Add, remove, or rearrange, then run the search.</div>
+      <div class="checklist-item"><span class="checklist-num">4.</span> <span class="checklist-title">Filter Results</span> — Narrow by language, minimum commits, star count, and location</div>
+      <div class="checklist-item"><span class="checklist-num">5.</span> <span class="checklist-title">Review Candidates</span> — Check candidate cards and scores. Click into profiles. Try "Find LinkedIn" and "Enrich" on your top matches.</div>
+      <div class="checklist-item"><span class="checklist-num">6.</span> <span class="checklist-title">Test Exa Websets</span> — Create a Webset from search results. Add criteria. Check enrichment data. Set up monitoring.</div>
+      <div class="checklist-item"><span class="checklist-num">7.</span> <span class="checklist-title">Pipeline and Bulk Actions</span> — Add candidates to the pipeline. Drag between stages. Select multiple for compare, summarize, and outreach.</div>
+      <div class="checklist-item"><span class="checklist-num">8.</span> <span class="checklist-title">Export to CSV</span> — Export and verify that the data looks clean and complete</div>
+    </div>
+  </div>
+
+  <!-- PRO TIPS -->
+  <div class="section">
+    <div class="section-label">PRO TIPS</div>
+    <div class="section-heading-sm">Best Practices</div>
+    <div class="tip">
+      <div class="tip-title">1. Be Specific With Titles</div>
+      <div class="tip-body">Use "ML Infrastructure Engineer focused on training pipelines" instead of just "ML Engineer." Specificity dramatically improves repo targeting and result quality.</div>
+    </div>
+    <div class="tip">
+      <div class="tip-title">2. Always Edit the Repo List</div>
+      <div class="tip-body">The AI-generated suggestions are a starting point. Editing the repo list is the single biggest lever you have for improving result quality.</div>
+    </div>
+    <div class="tip">
+      <div class="tip-title">3. Target Hidden Gems</div>
+      <div class="tip-body">Candidates with high contributions but low follower counts tend to be under-recruited and more responsive to outreach. Prioritize them.</div>
+    </div>
+    <div class="tip">
+      <div class="tip-title">4. Run Multiple Searches</div>
+      <div class="tip-body">Search the same role across different companies to widen your net. Different target companies surface different repo ecosystems and candidate pools.</div>
+    </div>
+    <div class="tip">
+      <div class="tip-title">5. Use Websets for Ongoing Roles</div>
+      <div class="tip-body">For roles you hire repeatedly, set up a Webset with monitoring. New contributors matching your criteria surface automatically.</div>
+    </div>
+  </div>
+
+  <!-- GOOD TO KNOW -->
+  <div class="section-tight">
+    <div class="section-label">GOOD TO KNOW</div>
+    <div class="section-heading-sm">Known Limitations</div>
+    <div class="table-wrap mb-10">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:25%;">Limitation</th>
+            <th style="width:30%;">Impact</th>
+            <th style="width:45%;">Workaround</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-white" style="font-weight:600;">GitHub-only sourcing</td>
+            <td>Misses engineers not active on GitHub</td>
+            <td>Use alongside LinkedIn Recruiter for full coverage</td>
+          </tr>
+          <tr>
+            <td class="text-white" style="font-weight:600;">Strategy build time (15-20s)</td>
+            <td>Brief wait while AI generates the plan</td>
+            <td>Expected behavior. Full search takes 30-60s.</td>
+          </tr>
+          <tr>
+            <td class="text-white" style="font-weight:600;">JS-rendered job pages</td>
+            <td>Some job URLs may still fail to parse</td>
+            <td>Paste the JD text directly instead of the URL</td>
+          </tr>
+          <tr>
+            <td class="text-white" style="font-weight:600;">LinkedIn URL accuracy</td>
+            <td>Links are AI-matched, not guaranteed</td>
+            <td>Always verify the LinkedIn profile before outreach</td>
+          </tr>
+          <tr>
+            <td class="text-white" style="font-weight:600;">Websets sync latency</td>
+            <td>New monitored matches may take minutes</td>
+            <td>Check back periodically or set monitoring cadence</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="feedback-box">
+      <div class="card-title" style="margin-bottom:4px;">Feedback Welcome</div>
+      <div class="card-body">Bugs, bad searches, confusing UX, missing features, AI quality issues. All fair game. Screenshots help.</div>
+      <div class="card-body mt-6" style="color:var(--text-secondary);">Mike Rubino / michael.f.rubino@gmail.com</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
