@@ -20,6 +20,7 @@ import {
   type SeniorityFilter,
 } from "@/lib/search-helpers";
 
+import ErrorBoundary from "@/components/ErrorBoundary";
 import OnboardingCard from "@/components/search/OnboardingCard";
 import SuggestionChips from "@/components/search/SuggestionChips";
 import SearchFilters from "@/components/search/SearchFilters";
@@ -568,4 +569,12 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
   );
 };
 
-export default SearchTab;
+function SearchTabWithBoundary(props: SearchTabProps) {
+  return (
+    <ErrorBoundary fallbackLabel="SearchTab">
+      <SearchTab {...props} />
+    </ErrorBoundary>
+  );
+}
+
+export default SearchTabWithBoundary;

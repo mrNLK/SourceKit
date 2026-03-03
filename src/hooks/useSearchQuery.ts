@@ -97,7 +97,7 @@ export function useSearchQuery({
   // ---- Fresh search (streaming) ----
   const { data: freshData, isLoading: freshLoading, error: freshError } = useQuery({
     queryKey: ["github-search", activeQuery, activeStrategy?.targetRepos?.join(","), showUngettable],
-    queryFn: () => {
+    queryFn: ({ signal }) => {
       setStreamSteps([]);
       return searchDevelopersStreaming(
         activeQuery,
@@ -107,6 +107,7 @@ export function useSearchQuery({
           hideUngettable: !showUngettable,
         },
         (p: StreamProgress) => {
+          if (signal?.aborted) return;
           setStreamSteps((prev) => {
             const updated = prev.map((s) => ({ ...s, done: true }));
             const existing = updated.findIndex((s) => s.step === p.step);
@@ -117,8 +118,10 @@ export function useSearchQuery({
             }
             return updated;
           });
-        }
+        },
+        signal,
       ).catch((err) => {
+        if (signal?.aborted) throw err;
         if (err.message === "No response body") {
           return searchDevelopers(activeQuery, {
             targetRepos: activeStrategy?.targetRepos,

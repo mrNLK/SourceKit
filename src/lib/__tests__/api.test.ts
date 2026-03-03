@@ -335,17 +335,16 @@ describe("api module", () => {
   // ─── notifyStageChange ──────────────────────────────────────────
 
   describe("notifyStageChange", () => {
-    it("fires and does not throw on failure", async () => {
+    it("rejects on failure so caller can handle the error", async () => {
       mockSession();
       (global.fetch as Mock).mockRejectedValue(new Error("network error"));
 
-      // Should not throw — fire-and-forget
-      expect(() =>
+      await expect(
         notifyStageChange({
           github_username: "alice",
           to_stage: "contacted",
         }),
-      ).not.toThrow();
+      ).rejects.toThrow("network error");
     });
   });
 });

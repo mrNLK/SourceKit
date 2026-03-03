@@ -92,6 +92,18 @@ export function requireAuth(req: Request, corsHeaders: Record<string, string>): 
 }
 
 /**
+ * Extract user ID from auth header. Returns null if unauthenticated.
+ */
+export async function getUserIdFromAuth(req: Request): Promise<string | null> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) return null;
+  const token = authHeader.replace('Bearer ', '');
+  const supabase = getSupabase();
+  const { data: { user } } = await supabase.auth.getUser(token);
+  return user?.id || null;
+}
+
+/**
  * Increment the search count for a user after a successful search.
  * Uses a single atomic RPC call to avoid race conditions under concurrent requests.
  */

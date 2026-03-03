@@ -86,6 +86,7 @@ export async function searchDevelopersStreaming(
   query: string,
   options: SearchOptions | undefined,
   onProgress: (p: StreamProgress) => void,
+  signal?: AbortSignal,
 ): Promise<SearchResponse> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.access_token) {
@@ -106,6 +107,7 @@ export async function searchDevelopersStreaming(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    signal,
   });
 
   if (!res.ok) {
@@ -228,15 +230,14 @@ export async function generateOutreach(githubUsername: string, candidateName?: s
   return invokeFunction('generate-outreach', undefined, { github_username: githubUsername, candidate_name: candidateName, role_context: roleContext });
 }
 
-export function notifyStageChange(params: {
+export async function notifyStageChange(params: {
   pipeline_id?: string;
   github_username: string;
   candidate_name?: string;
   from_stage?: string;
   to_stage: string;
-}) {
-  // Fire-and-forget: don't await or block on webhook delivery
-  invokeFunction('notify-pipeline-change', undefined, params).catch(() => {});
+}): Promise<void> {
+  await invokeFunction('notify-pipeline-change', undefined, params);
 }
 
 // SPA-only settings cache, scoped to current session.

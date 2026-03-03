@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { anthropicCall, anthropicToolCall } from "../_shared/anthropic.ts";
 import { checkSearchGate, incrementSearchCount } from "../_shared/gate.ts";
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { checkRateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -21,6 +22,12 @@ serve(async (req) => {
         status: 402,
         headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
+    }
+
+    if (gate.userId) {
+      const rl = checkRateLimit(gate.userId, 'research-role', 3);
+      const rlRes = rateLimitResponse(rl, getCorsHeaders(req));
+      if (rlRes) return rlRes;
     }
 
     const { action, job_title, company_name, job_description } = await req.json();

@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { anthropicCall } from "../_shared/anthropic.ts";
 import { getCorsHeaders } from '../_shared/cors.ts';
-import { requireAuth } from '../_shared/gate.ts';
+import { requireAuth, getUserIdFromAuth } from '../_shared/gate.ts';
+import { checkRateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -13,6 +14,12 @@ serve(async (req) => {
   if (authErr) return authErr;
 
   try {
+    const userId = await getUserIdFromAuth(req);
+    if (userId) {
+      const rl = checkRateLimit(userId, 'generate-outreach', 5);
+      const rlRes = rateLimitResponse(rl, corsHeaders);
+      if (rlRes) return rlRes;
+    }
     const { candidate_name, github_username, role_context } = await req.json();
 
     if (!github_username) {

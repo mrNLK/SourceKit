@@ -10,6 +10,7 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 import { toast } from "@/hooks/use-toast";
 import { EEAFull } from "@/components/EEASignals";
 import { notifyStageChange } from "@/lib/api";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import type { Language } from "@/types/developer";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -664,4 +665,12 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
   );
 };
 
-export default CandidateProfile;
+function CandidateProfileWithBoundary(props: CandidateProfileProps) {
+  return (
+    <ErrorBoundary fallbackLabel="CandidateProfile">
+      <CandidateProfile {...props} />
+    </ErrorBoundary>
+  );
+}
+
+export default CandidateProfileWithBoundary;

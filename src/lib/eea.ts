@@ -118,7 +118,11 @@ export interface CandidateData {
 // ---------------------------------------------------------------------------
 
 function bioContains(bio: string, words: string[]): boolean {
-  return words.some(w => bio.includes(w));
+  const lower = bio.toLowerCase();
+  return words.some(w => {
+    const escaped = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b${escaped}\\b`, 'i').test(lower);
+  });
 }
 
 // ---------------------------------------------------------------------------
