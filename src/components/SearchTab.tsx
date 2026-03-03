@@ -29,7 +29,9 @@ import SearchProgress from "@/components/search/SearchProgress";
 import SkillPriorities from "@/components/search/SkillPriorities";
 import ScoreExplanation from "@/components/ScoreExplanation";
 import SimilarCandidates from "@/components/SimilarCandidates";
+import NLQueryPreview from "@/components/search/NLQueryPreview";
 import { useScoreExplanation } from "@/hooks/useScoreExplanation";
+import { useNLQueryParser } from "@/hooks/useNLQueryParser";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -90,6 +92,9 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
 
   // FEAT: Score explanation panel
   const { explanation: scoreExplanation, isOpen: scoreOpen, openExplanation: openScore, close: closeScore } = useScoreExplanation();
+
+  // FEAT: NL query parser
+  const { isParsing, parsed: nlParsed, parseQuery, clearParsed } = useNLQueryParser();
 
   // FEAT-006: Saved searches (bookmarks)
   const { savedSearches, isSaved: checkIsSaved, saveSearch, deleteSearch } = useSavedSearches();
@@ -217,13 +222,25 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
     return q;
   }, [query, expandedQuery, skillFilters]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) { toast({ title: "Enter a search query", description: "Type a skill, language, or domain to search for engineers." }); return; }
+    // F5: Try NL parsing first — if it's natural language, show preview instead of immediate search
+    const nlResult = await parseQuery(query.trim());
+    if (nlResult) return; // Show NL preview, user clicks "Search" to proceed
     // P22: Clear strategy when doing a manual search (prevents stale strategy data)
     if (!expandedQuery) setActiveStrategy(undefined);
     setActiveSearchId(undefined);
     setActiveQuery(buildSearchQuery());
+  };
+
+  // F5: When user confirms NL-parsed search
+  const handleNLSearch = (githubQuery: string) => {
+    clearParsed();
+    setExpandedQuery(githubQuery);
+    setActiveStrategy(undefined);
+    setActiveSearchId(undefined);
+    setActiveQuery(githubQuery);
   };
 
   const handleChipSubmit = (chip: SuggestionChip) => {
@@ -339,6 +356,19 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
               </div>
             </CollapsibleContent>
           </Collapsible>
+        )}
+
+        {/* F5: NL Query Preview */}
+        {nlParsed && (
+          <div className="mb-4">
+            <NLQueryPreview parsed={nlParsed} onSearch={handleNLSearch} onDismiss={clearParsed} />
+          </div>
+        )}
+        {isParsing && (
+          <div className="mb-4 glass rounded-lg p-3 flex items-center gap-2 border border-primary/20">
+            <Loader2 className="w-3 h-3 animate-spin text-primary" />
+            <span className="text-[11px] text-muted-foreground font-display">Interpreting your search...</span>
+          </div>
         )}
 
         {!activeQuery && !activeSearchId && !expandedQuery && (
