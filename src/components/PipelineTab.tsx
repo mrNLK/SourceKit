@@ -12,9 +12,6 @@ import { toast } from "@/hooks/use-toast";
 import { notifyStageChange } from "@/lib/api";
 import { useSettings } from "@/hooks/useSettings";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
 const STAGES = [
   { id: "sourced", label: "Sourced", color: "bg-primary/15 text-primary border-primary/30", tip: "Identified and saved. Ready for outreach." },
   { id: "contacted", label: "Contacted", color: "bg-amber-500/15 text-amber-400 border-amber-500/30", tip: "Message sent. Waiting for response." },
@@ -43,7 +40,8 @@ interface PipelineCandidate {
   avatar_url: string | null;
   stage: string;
   notes: string | null;
-  tags: string[];
+  tags: string[] | null;
+  eea_data?: { strength: string; enrichments: string[] } | null;
   created_at: string;
   updated_at: string;
 }
@@ -523,14 +521,21 @@ function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, o
   const [tagInput, setTagInput] = useState("");
   const [showMoveMenu, setShowMoveMenu] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  const tags: string[] = (c as any).tags || [];
+  const tags: string[] = c.tags || [];
   // Use stage change timestamp if available, otherwise fall back to created_at
   const stageTime = daysInStage(stageChangedAt || c.created_at);
   const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 
   useEffect(() => { setNotesValue(c.notes || ""); }, [c.notes]);
 
+  // Cleanup debounce on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
+
   const handleNotesBlur = () => {
+    // Clear pending debounce to prevent double-save
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     if (notesValue !== (c.notes || "")) {
       onNotesChange(notesValue);
     }
