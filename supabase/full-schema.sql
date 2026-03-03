@@ -27,6 +27,8 @@ CREATE TABLE public.candidates (
   twitter_username TEXT,
   email TEXT,
   github_url TEXT,
+  query_hash TEXT,
+  linkedin_fetched_at TIMESTAMPTZ,
   fetched_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
@@ -231,3 +233,109 @@ SELECT
   contributed_repos, twitter_username, github_url,
   fetched_at, created_at, updated_at
 FROM public.candidates;
+
+
+-- 10. Search results (links searches to candidate rows)
+CREATE TABLE IF NOT EXISTS public.search_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) DEFAULT auth.uid(),
+  search_id UUID NOT NULL,
+  candidate_id UUID NOT NULL REFERENCES public.candidates(id) ON DELETE CASCADE,
+  rank INTEGER NOT NULL DEFAULT 0,
+  score INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(search_id, candidate_id)
+);
+
+ALTER TABLE public.search_results ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users read own search_results" ON public.search_results FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own search_results" ON public.search_results FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Service role full search_results" ON public.search_results FOR ALL USING (auth.role() = 'service_role');
+
+
+-- 11. Pipeline events (audit trail for stage changes)
+CREATE TABLE IF NOT EXISTS public.pipeline_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) DEFAULT auth.uid(),
+  pipeline_id UUID REFERENCES public.pipeline(id) ON DELETE CASCADE,
+  github_username TEXT NOT NULL,
+  candidate_name TEXT,
+  from_stage TEXT,
+  to_stage TEXT NOT NULL,
+  event_type TEXT NOT NULL DEFAULT 'stage_change',
+  webhook_status TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.pipeline_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users read own pipeline_events" ON public.pipeline_events FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own pipeline_events" ON public.pipeline_events FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Service role full pipeline_events" ON public.pipeline_events FOR ALL USING (auth.role() = 'service_role');
+
+
+-- 12. Saved searches (bookmarked queries)
+CREATE TABLE IF NOT EXISTS public.saved_searches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) DEFAULT auth.uid(),
+  name TEXT NOT NULL,
+  query TEXT NOT NULL,
+  expanded_query TEXT,
+  filters JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.saved_searches ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users read own saved_searches" ON public.saved_searches FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own saved_searches" ON public.saved_searches FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users delete own saved_searches" ON public.saved_searches FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Service role full saved_searches" ON public.saved_searches FOR ALL USING (auth.role() = 'service_role');
+
+CREATE INDEX IF NOT EXISTS idx_saved_searches_user_id ON public.saved_searches(user_id);
+
+
+-- 13. EEA signal templates (user-created signal definitions)
+CREATE TABLE IF NOT EXISTS public.eea_signal_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  role_category TEXT NOT NULL,
+  signal_name TEXT NOT NULL,
+  webset_criterion TEXT NOT NULL,
+  enrichment_description TEXT NOT NULL,
+  enrichment_format TEXT NOT NULL DEFAULT 'text',
+  enrichment_options JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.eea_signal_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own templates" ON public.eea_signal_templates FOR ALL USING (auth.uid() = user_id);
+
+
+-- 14. Webset refs (Exa webset tracking)
+CREATE TABLE IF NOT EXISTS public.webset_refs (
+  id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  query TEXT NOT NULL,
+  count INTEGER NOT NULL DEFAULT 10,
+  status TEXT NOT NULL DEFAULT 'running',
+  eea_signals JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.webset_refs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own webset_refs" ON public.webset_refs FOR ALL USING (auth.uid() = user_id);
+
+
+-- 15. Webset mappings
+CREATE TABLE IF NOT EXISTS public.webset_mappings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  webset_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  query TEXT,
+  status TEXT DEFAULT 'running',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.webset_mappings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own webset_mappings" ON public.webset_mappings FOR ALL USING (auth.uid() = user_id);
