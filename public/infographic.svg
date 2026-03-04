@@ -1,335 +1,263 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 2400" width="1200" height="2400">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0A0A0F"/>
-      <stop offset="100%" stop-color="#111118"/>
+      <stop offset="0%" stop-color="#060609"/>
+      <stop offset="50%" stop-color="#0A0A12"/>
+      <stop offset="100%" stop-color="#08080E"/>
     </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#00E5A0"/>
-      <stop offset="100%" stop-color="#00C488"/>
+      <stop offset="100%" stop-color="#00B87D"/>
     </linearGradient>
     <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#16161D"/>
-      <stop offset="100%" stop-color="#12121A"/>
+      <stop offset="0%" stop-color="#131319"/>
+      <stop offset="100%" stop-color="#0F0F15"/>
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#00E5A0" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#00E5A0" stop-opacity="0"/>
     </linearGradient>
     <filter id="glow">
-      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feGaussianBlur stdDeviation="6" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <filter id="cardShadow">
-      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.4"/>
+    <filter id="bigGlow">
+      <feGaussianBlur stdDeviation="20" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+    <clipPath id="roundClip">
+      <rect width="1080" height="1920" rx="0"/>
+    </clipPath>
   </defs>
 
   <!-- Background -->
-  <rect width="1200" height="2400" fill="url(#bg)"/>
+  <rect width="1080" height="1920" fill="url(#bg)"/>
 
-  <!-- Subtle grid pattern -->
-  <g opacity="0.03" stroke="#00E5A0" stroke-width="0.5">
-    <line x1="0" y1="100" x2="1200" y2="100"/>
-    <line x1="0" y1="200" x2="1200" y2="200"/>
-    <line x1="0" y1="300" x2="1200" y2="300"/>
-    <line x1="0" y1="400" x2="1200" y2="400"/>
-    <line x1="200" y1="0" x2="200" y2="2400"/>
-    <line x1="400" y1="0" x2="400" y2="2400"/>
-    <line x1="600" y1="0" x2="600" y2="2400"/>
-    <line x1="800" y1="0" x2="800" y2="2400"/>
-    <line x1="1000" y1="0" x2="1000" y2="2400"/>
+  <!-- Ambient glow behind logo -->
+  <ellipse cx="540" cy="140" rx="300" ry="120" fill="url(#glowGrad)" opacity="0.5"/>
+
+  <!-- ═══════ HEADER ═══════ -->
+
+  <!-- Logo large -->
+  <g transform="translate(540,110) scale(1.0)" filter="url(#glow)">
+    <path d="M-40,-56 L-72,0 L-40,56" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M40,-56 L72,0 L40,56" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <line x1="0" y1="-42" x2="0" y2="-68" stroke="#00E5A0" stroke-width="12" stroke-linecap="round"/>
+    <line x1="0" y1="42" x2="0" y2="68" stroke="#00E5A0" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="0" cy="0" r="10" fill="#00E5A0"/>
   </g>
 
-  <!-- ═══════════════════ HEADER SECTION ═══════════════════ -->
+  <text x="540" y="235" text-anchor="middle" fill="#FFFFFF" font-family="'SF Pro Display', 'Inter', system-ui, sans-serif" font-size="52" font-weight="800" letter-spacing="10">SOURCEKIT</text>
+  <text x="540" y="272" text-anchor="middle" fill="#00E5A0" font-family="'SF Pro Display', 'Inter', system-ui, sans-serif" font-size="15" font-weight="600" letter-spacing="5">AI-POWERED GITHUB TALENT SOURCING</text>
 
-  <!-- Logo -->
-  <g transform="translate(600,120) scale(0.8)" filter="url(#glow)">
-    <path d="M-40,-56 L-72,0 L-40,56" stroke="#00E5A0" stroke-width="18" stroke-linecap="round" fill="none"/>
-    <path d="M40,-56 L72,0 L40,56" stroke="#00E5A0" stroke-width="18" stroke-linecap="round" fill="none"/>
-    <line x1="0" y1="-40" x2="0" y2="-64" stroke="#00E5A0" stroke-width="10" stroke-linecap="round"/>
-    <line x1="0" y1="40" x2="0" y2="64" stroke="#00E5A0" stroke-width="10" stroke-linecap="round"/>
-    <circle cx="0" cy="0" r="8" fill="#00E5A0"/>
-  </g>
+  <!-- Thin accent line -->
+  <rect x="440" y="295" width="200" height="2" rx="1" fill="#00E5A0" opacity="0.3"/>
 
-  <!-- Product Name -->
-  <text x="600" y="230" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="800" letter-spacing="12">SOURCEKIT</text>
+  <text x="540" y="330" text-anchor="middle" fill="#7A7A8E" font-family="'SF Pro Text', 'Inter', system-ui, sans-serif" font-size="16">Find engineers by what they've actually built —</text>
+  <text x="540" y="352" text-anchor="middle" fill="#7A7A8E" font-family="'SF Pro Text', 'Inter', system-ui, sans-serif" font-size="16">open-source contributions, repos &amp; shipped code.</text>
 
-  <!-- Tagline -->
-  <text x="600" y="275" text-anchor="middle" fill="#00E5A0" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" letter-spacing="3">AI-POWERED GITHUB TALENT SOURCING</text>
+  <!-- ═══════ 6-STEP WORKFLOW ═══════ -->
 
-  <!-- Divider -->
-  <line x1="400" y1="310" x2="800" y2="310" stroke="#00E5A0" stroke-width="1" opacity="0.4"/>
+  <!-- Section label -->
+  <rect x="60" y="395" width="8" height="32" rx="4" fill="#00E5A0"/>
+  <text x="82" y="420" fill="#FFFFFF" font-family="'SF Pro Display', 'Inter', system-ui, sans-serif" font-size="24" font-weight="700">How It Works</text>
 
-  <!-- Hero copy -->
-  <text x="600" y="355" text-anchor="middle" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="18" font-weight="400">Find engineers by what they've actually built —</text>
-  <text x="600" y="380" text-anchor="middle" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="18" font-weight="400">their open-source contributions, repos, and shipped code.</text>
+  <!-- Step 1 -->
+  <rect x="60" y="455" width="470" height="105" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <rect x="60" y="455" width="470" height="105" rx="14" fill="#00E5A0" opacity="0.03"/>
+  <circle cx="98" cy="486" r="16" fill="#00E5A0"/>
+  <text x="98" y="492" text-anchor="middle" fill="#060609" font-family="system-ui, sans-serif" font-size="15" font-weight="800">1</text>
+  <text x="126" y="491" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="18" font-weight="700">Research</text>
+  <text x="80" y="518" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">Paste a job description. AI generates a full sourcing</text>
+  <text x="80" y="536" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">strategy: target repos, companies, skills &amp; EEA signals.</text>
 
-  <!-- ═══════════════════ 6-STEP WORKFLOW ═══════════════════ -->
+  <!-- Step 2 -->
+  <rect x="550" y="455" width="470" height="105" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <rect x="550" y="455" width="470" height="105" rx="14" fill="#00E5A0" opacity="0.03"/>
+  <circle cx="588" cy="486" r="16" fill="#00E5A0"/>
+  <text x="588" y="492" text-anchor="middle" fill="#060609" font-family="system-ui, sans-serif" font-size="15" font-weight="800">2</text>
+  <text x="616" y="491" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="18" font-weight="700">Search</text>
+  <text x="570" y="518" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">Find real GitHub contributors. AI scores them 0-100</text>
+  <text x="570" y="536" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">and surfaces hidden gems others miss entirely.</text>
 
-  <text x="600" y="450" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="28" font-weight="700" letter-spacing="4">HOW IT WORKS</text>
-  <line x1="520" y1="465" x2="680" y2="465" stroke="#00E5A0" stroke-width="2"/>
+  <!-- Step 3 -->
+  <rect x="60" y="575" width="470" height="105" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <rect x="60" y="575" width="470" height="105" rx="14" fill="#00E5A0" opacity="0.03"/>
+  <circle cx="98" cy="606" r="16" fill="#00E5A0"/>
+  <text x="98" y="612" text-anchor="middle" fill="#060609" font-family="system-ui, sans-serif" font-size="15" font-weight="800">3</text>
+  <text x="126" y="611" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="18" font-weight="700">Enrich</text>
+  <text x="80" y="638" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">LinkedIn lookup via Exa semantic search.</text>
+  <text x="80" y="656" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">Discover contact info, emails &amp; social profiles.</text>
 
-  <!-- Step 1: Research -->
-  <g filter="url(#cardShadow)">
-    <rect x="80" y="500" width="500" height="130" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <circle cx="120" cy="535" r="18" fill="#00E5A0"/>
-  <text x="120" y="541" text-anchor="middle" fill="#0A0A0F" font-family="system-ui, sans-serif" font-size="18" font-weight="800">1</text>
-  <text x="150" y="540" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="700">RESEARCH</text>
-  <text x="100" y="570" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Paste a job description → AI builds a sourcing strategy</text>
-  <text x="100" y="590" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">with target repos, companies, skills &amp; EEA signals.</text>
-  <text x="100" y="618" fill="#00E5A0" font-family="monospace" font-size="12">8–15 repos · 8–12 companies · must-have vs nice-to-have</text>
+  <!-- Step 4 -->
+  <rect x="550" y="575" width="470" height="105" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <rect x="550" y="575" width="470" height="105" rx="14" fill="#00E5A0" opacity="0.03"/>
+  <circle cx="588" cy="606" r="16" fill="#00E5A0"/>
+  <text x="588" y="612" text-anchor="middle" fill="#060609" font-family="system-ui, sans-serif" font-size="15" font-weight="800">4</text>
+  <text x="616" y="611" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="18" font-weight="700">Pipeline</text>
+  <text x="570" y="638" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">5-stage Kanban board with drag &amp; drop.</text>
+  <text x="570" y="656" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">Sourced → Contacted → Responded → Screen → Offer</text>
 
-  <!-- Step 2: Search -->
-  <g filter="url(#cardShadow)">
-    <rect x="620" y="500" width="500" height="130" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <circle cx="660" cy="535" r="18" fill="#00E5A0"/>
-  <text x="660" y="541" text-anchor="middle" fill="#0A0A0F" font-family="system-ui, sans-serif" font-size="18" font-weight="800">2</text>
-  <text x="690" y="540" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="700">SEARCH</text>
-  <text x="640" y="570" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Finds real GitHub contributors matching criteria,</text>
-  <text x="640" y="590" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">scores them 0–100, surfaces hidden gems.</text>
-  <text x="640" y="618" fill="#00E5A0" font-family="monospace" font-size="12">natural language · location · language · seniority filters</text>
+  <!-- Step 5 -->
+  <rect x="60" y="695" width="470" height="105" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <rect x="60" y="695" width="470" height="105" rx="14" fill="#00E5A0" opacity="0.03"/>
+  <circle cx="98" cy="726" r="16" fill="#00E5A0"/>
+  <text x="98" y="732" text-anchor="middle" fill="#060609" font-family="system-ui, sans-serif" font-size="15" font-weight="800">5</text>
+  <text x="126" y="731" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="18" font-weight="700">Outreach</text>
+  <text x="80" y="758" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">AI writes personalized messages referencing the</text>
+  <text x="80" y="776" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">candidate's actual open-source work and commits.</text>
 
-  <!-- Step 3: Enrich -->
-  <g filter="url(#cardShadow)">
-    <rect x="80" y="660" width="500" height="130" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <circle cx="120" cy="695" r="18" fill="#00E5A0"/>
-  <text x="120" y="701" text-anchor="middle" fill="#0A0A0F" font-family="system-ui, sans-serif" font-size="18" font-weight="800">3</text>
-  <text x="150" y="700" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="700">ENRICH</text>
-  <text x="100" y="730" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">LinkedIn profile lookup via Exa semantic search.</text>
-  <text x="100" y="750" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Contact information discovery &amp; verification.</text>
-  <text x="100" y="778" fill="#00E5A0" font-family="monospace" font-size="12">Exa API · LinkedIn · email · social profiles</text>
+  <!-- Step 6 -->
+  <rect x="550" y="695" width="470" height="105" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <rect x="550" y="695" width="470" height="105" rx="14" fill="#00E5A0" opacity="0.03"/>
+  <circle cx="588" cy="726" r="16" fill="#00E5A0"/>
+  <text x="588" y="732" text-anchor="middle" fill="#060609" font-family="system-ui, sans-serif" font-size="15" font-weight="800">6</text>
+  <text x="616" y="731" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="18" font-weight="700">Bulk Actions</text>
+  <text x="570" y="758" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">Compare, rank &amp; draft outreach for multiple</text>
+  <text x="570" y="776" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">candidates with an AI-powered chat interface.</text>
 
-  <!-- Step 4: Pipeline -->
-  <g filter="url(#cardShadow)">
-    <rect x="620" y="660" width="500" height="130" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <circle cx="660" cy="695" r="18" fill="#00E5A0"/>
-  <text x="660" y="701" text-anchor="middle" fill="#0A0A0F" font-family="system-ui, sans-serif" font-size="18" font-weight="800">4</text>
-  <text x="690" y="700" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="700">PIPELINE</text>
-  <text x="640" y="730" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">5-stage Kanban board with drag &amp; drop.</text>
-  <text x="640" y="750" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Track candidates through your hiring funnel.</text>
-  <text x="640" y="778" fill="#00E5A0" font-family="monospace" font-size="12">Sourced → Contacted → Responded → Screen → Offer</text>
+  <!-- ═══════ KEY DIFFERENTIATORS ═══════ -->
 
-  <!-- Step 5: Outreach -->
-  <g filter="url(#cardShadow)">
-    <rect x="80" y="820" width="500" height="130" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <circle cx="120" cy="855" r="18" fill="#00E5A0"/>
-  <text x="120" y="861" text-anchor="middle" fill="#0A0A0F" font-family="system-ui, sans-serif" font-size="18" font-weight="800">5</text>
-  <text x="150" y="860" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="700">OUTREACH</text>
-  <text x="100" y="890" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">AI writes personalized messages referencing the</text>
-  <text x="100" y="910" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">candidate's actual open-source contributions.</text>
-  <text x="100" y="938" fill="#00E5A0" font-family="monospace" font-size="12">repo-specific · contribution-aware · tone-adjustable</text>
+  <rect x="60" y="840" width="8" height="32" rx="4" fill="#00E5A0"/>
+  <text x="82" y="865" fill="#FFFFFF" font-family="'SF Pro Display', 'Inter', system-ui, sans-serif" font-size="24" font-weight="700">Why SourceKit</text>
 
-  <!-- Step 6: Bulk Ops -->
-  <g filter="url(#cardShadow)">
-    <rect x="620" y="820" width="500" height="130" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <circle cx="660" cy="855" r="18" fill="#00E5A0"/>
-  <text x="660" y="861" text-anchor="middle" fill="#0A0A0F" font-family="system-ui, sans-serif" font-size="18" font-weight="800">6</text>
-  <text x="690" y="860" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="700">BULK ACTIONS</text>
-  <text x="640" y="890" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Compare, rank, and draft outreach for multiple</text>
-  <text x="640" y="910" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">candidates with an AI-powered chat interface.</text>
-  <text x="640" y="938" fill="#00E5A0" font-family="monospace" font-size="12">side-by-side compare · batch ranking · pooled insights</text>
+  <!-- Row 1 -->
+  <rect x="60" y="895" width="310" height="120" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <rect x="60" y="895" width="3" height="120" rx="1.5" fill="#00E5A0"/>
+  <text x="82" y="930" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="12" font-weight="700" letter-spacing="2">CODE-FIRST SIGNAL</text>
+  <text x="82" y="955" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">Judge by repos, commits &amp;</text>
+  <text x="82" y="973" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">contributions — not resumes.</text>
 
-  <!-- ═══════════════════ DIFFERENTIATORS ═══════════════════ -->
+  <rect x="385" y="895" width="310" height="120" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <rect x="385" y="895" width="3" height="120" rx="1.5" fill="#00E5A0"/>
+  <text x="407" y="930" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="12" font-weight="700" letter-spacing="2">HIDDEN GEM DETECTOR</text>
+  <text x="407" y="955" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">Surface high-quality, low-visibility</text>
+  <text x="407" y="973" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">engineers others overlook.</text>
 
-  <text x="600" y="1020" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="28" font-weight="700" letter-spacing="4">WHAT MAKES IT DIFFERENT</text>
-  <line x1="460" y1="1035" x2="740" y2="1035" stroke="#00E5A0" stroke-width="2"/>
+  <rect x="710" y="895" width="310" height="120" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <rect x="710" y="895" width="3" height="120" rx="1.5" fill="#00E5A0"/>
+  <text x="732" y="930" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="12" font-weight="700" letter-spacing="2">AI SCORING 0–100</text>
+  <text x="732" y="955" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">Evidence-based candidate</text>
+  <text x="732" y="973" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">ranking by Claude AI.</text>
 
-  <!-- Diff cards row 1 -->
-  <g filter="url(#cardShadow)">
-    <rect x="80" y="1060" width="330" height="110" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <rect x="80" y="1060" width="4" height="110" rx="2" fill="#00E5A0"/>
-  <text x="104" y="1092" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2">CODE-FIRST SIGNAL</text>
-  <text x="104" y="1118" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Judge engineers by their repos,</text>
-  <text x="104" y="1138" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">commits, and contributions — not resumes.</text>
+  <!-- Row 2 -->
+  <rect x="60" y="1030" width="310" height="120" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <rect x="60" y="1030" width="3" height="120" rx="1.5" fill="#00E5A0"/>
+  <text x="82" y="1065" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="12" font-weight="700" letter-spacing="2">EEA DETECTION</text>
+  <text x="82" y="1090" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">Auto-detect Evidence of</text>
+  <text x="82" y="1108" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">Exceptional Ability signals.</text>
 
-  <g filter="url(#cardShadow)">
-    <rect x="435" y="1060" width="330" height="110" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <rect x="435" y="1060" width="4" height="110" rx="2" fill="#00E5A0"/>
-  <text x="459" y="1092" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2">HIDDEN GEM DETECTOR</text>
-  <text x="459" y="1118" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Surface high-quality, low-visibility</text>
-  <text x="459" y="1138" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">engineers others miss entirely.</text>
+  <rect x="385" y="1030" width="310" height="120" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <rect x="385" y="1030" width="3" height="120" rx="1.5" fill="#00E5A0"/>
+  <text x="407" y="1065" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="12" font-weight="700" letter-spacing="2">NATURAL LANGUAGE</text>
+  <text x="407" y="1090" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">"Senior Rust engineer in</text>
+  <text x="407" y="1108" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">Berlin with WASM experience"</text>
 
-  <g filter="url(#cardShadow)">
-    <rect x="790" y="1060" width="330" height="110" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <rect x="790" y="1060" width="4" height="110" rx="2" fill="#00E5A0"/>
-  <text x="814" y="1092" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2">AI SCORING (0–100)</text>
-  <text x="814" y="1118" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Evidence-based candidate ranking</text>
-  <text x="814" y="1138" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">powered by Anthropic Claude.</text>
+  <rect x="710" y="1030" width="310" height="120" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <rect x="710" y="1030" width="3" height="120" rx="1.5" fill="#00E5A0"/>
+  <text x="732" y="1065" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="12" font-weight="700" letter-spacing="2">SMART OUTREACH</text>
+  <text x="732" y="1090" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">AI messages that reference</text>
+  <text x="732" y="1108" fill="#8888A0" font-family="system-ui, sans-serif" font-size="13">their actual code work.</text>
 
-  <!-- Diff cards row 2 -->
-  <g filter="url(#cardShadow)">
-    <rect x="80" y="1190" width="330" height="110" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <rect x="80" y="1190" width="4" height="110" rx="2" fill="#00E5A0"/>
-  <text x="104" y="1222" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2">EEA DETECTION</text>
-  <text x="104" y="1248" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Identify Evidence of Exceptional</text>
-  <text x="104" y="1268" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Ability signals automatically.</text>
+  <!-- ═══════ TECH STACK ═══════ -->
 
-  <g filter="url(#cardShadow)">
-    <rect x="435" y="1190" width="330" height="110" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <rect x="435" y="1190" width="4" height="110" rx="2" fill="#00E5A0"/>
-  <text x="459" y="1222" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2">NATURAL LANGUAGE</text>
-  <text x="459" y="1248" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Search like you think: "Senior Rust</text>
-  <text x="459" y="1268" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">engineer in Berlin with WASM exp"</text>
+  <rect x="60" y="1195" width="8" height="32" rx="4" fill="#00E5A0"/>
+  <text x="82" y="1220" fill="#FFFFFF" font-family="'SF Pro Display', 'Inter', system-ui, sans-serif" font-size="24" font-weight="700">Tech Stack</text>
 
-  <g filter="url(#cardShadow)">
-    <rect x="790" y="1190" width="330" height="110" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <rect x="790" y="1190" width="4" height="110" rx="2" fill="#00E5A0"/>
-  <text x="814" y="1222" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2">SMART OUTREACH</text>
-  <text x="814" y="1248" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Messages that reference the candidate's</text>
-  <text x="814" y="1268" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">actual code and contributions.</text>
+  <!-- Frontend -->
+  <rect x="60" y="1255" width="310" height="240" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <text x="215" y="1290" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="3">FRONTEND</text>
+  <line x1="100" y1="1304" x2="330" y2="1304" stroke="#1A1A24" stroke-width="1"/>
+  <text x="215" y="1332" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">React 18 + TypeScript</text>
+  <text x="215" y="1358" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">Vite + Tailwind CSS</text>
+  <text x="215" y="1384" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">shadcn/ui + Radix UI</text>
+  <text x="215" y="1410" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">TanStack Query</text>
+  <text x="215" y="1436" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">React Router</text>
+  <text x="215" y="1462" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">Vercel Analytics</text>
 
-  <!-- ═══════════════════ TECH STACK ═══════════════════ -->
+  <!-- Backend -->
+  <rect x="385" y="1255" width="310" height="240" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <text x="540" y="1290" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="3">BACKEND</text>
+  <line x1="425" y1="1304" x2="655" y2="1304" stroke="#1A1A24" stroke-width="1"/>
+  <text x="540" y="1332" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">Supabase + PostgreSQL</text>
+  <text x="540" y="1358" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">Edge Functions</text>
+  <text x="540" y="1384" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">Google SSO Auth</text>
+  <text x="540" y="1410" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">Webhooks</text>
+  <text x="540" y="1436" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">Rate Limiting</text>
+  <text x="540" y="1462" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">User Isolation</text>
 
-  <text x="600" y="1370" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="28" font-weight="700" letter-spacing="4">TECH STACK</text>
-  <line x1="520" y1="1385" x2="680" y2="1385" stroke="#00E5A0" stroke-width="2"/>
+  <!-- AI -->
+  <rect x="710" y="1255" width="310" height="240" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <text x="865" y="1290" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="3">AI &amp; APIS</text>
+  <line x1="750" y1="1304" x2="980" y2="1304" stroke="#1A1A24" stroke-width="1"/>
+  <text x="865" y="1332" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">Anthropic Claude</text>
+  <text x="865" y="1358" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">GitHub REST API</text>
+  <text x="865" y="1384" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">Exa Semantic Search</text>
+  <text x="865" y="1410" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">Stripe Payments</text>
+  <text x="865" y="1436" text-anchor="middle" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="15">Vercel Hosting</text>
 
-  <!-- Frontend column -->
-  <g filter="url(#cardShadow)">
-    <rect x="80" y="1410" width="330" height="260" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <text x="245" y="1448" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" font-weight="700" letter-spacing="3">FRONTEND</text>
-  <line x1="140" y1="1462" x2="350" y2="1462" stroke="#1F1F28" stroke-width="1"/>
-  <text x="245" y="1492" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">React 18</text>
-  <text x="245" y="1518" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">TypeScript</text>
-  <text x="245" y="1544" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">Vite</text>
-  <text x="245" y="1570" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">Tailwind CSS</text>
-  <text x="245" y="1596" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">shadcn/ui + Radix</text>
-  <text x="245" y="1622" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">TanStack Query</text>
-  <text x="245" y="1648" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">React Router</text>
+  <!-- ═══════ METRICS ═══════ -->
 
-  <!-- Backend column -->
-  <g filter="url(#cardShadow)">
-    <rect x="435" y="1410" width="330" height="260" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <text x="600" y="1448" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" font-weight="700" letter-spacing="3">BACKEND</text>
-  <line x1="495" y1="1462" x2="705" y2="1462" stroke="#1F1F28" stroke-width="1"/>
-  <text x="600" y="1492" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">Supabase</text>
-  <text x="600" y="1518" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">PostgreSQL</text>
-  <text x="600" y="1544" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">Edge Functions</text>
-  <text x="600" y="1570" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">Google SSO Auth</text>
-  <text x="600" y="1596" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">Webhooks</text>
-  <text x="600" y="1622" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">Rate Limiting</text>
-  <text x="600" y="1648" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">User Isolation</text>
+  <rect x="60" y="1540" width="8" height="32" rx="4" fill="#00E5A0"/>
+  <text x="82" y="1565" fill="#FFFFFF" font-family="'SF Pro Display', 'Inter', system-ui, sans-serif" font-size="24" font-weight="700">By the Numbers</text>
 
-  <!-- AI / APIs column -->
-  <g filter="url(#cardShadow)">
-    <rect x="790" y="1410" width="330" height="260" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <text x="955" y="1448" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" font-weight="700" letter-spacing="3">AI &amp; APIs</text>
-  <line x1="850" y1="1462" x2="1060" y2="1462" stroke="#1F1F28" stroke-width="1"/>
-  <text x="955" y="1492" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">Anthropic Claude</text>
-  <text x="955" y="1518" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">GitHub REST API</text>
-  <text x="955" y="1544" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">Exa Semantic Search</text>
-  <text x="955" y="1570" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">Stripe Payments</text>
-  <text x="955" y="1596" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">Vercel Hosting</text>
-  <text x="955" y="1622" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="16" font-weight="600">Web Analytics</text>
+  <!-- Metric cards -->
+  <rect x="60" y="1600" width="230" height="140" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <text x="175" y="1660" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="44" font-weight="800">124</text>
+  <text x="175" y="1688" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="12" font-weight="600" letter-spacing="2">TESTS PASSING</text>
+  <text x="175" y="1720" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="12" opacity="0.7">124 / 124</text>
 
-  <!-- ═══════════════════ PIPELINE VISUAL ═══════════════════ -->
+  <rect x="310" y="1600" width="230" height="140" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <text x="425" y="1660" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="44" font-weight="800">0</text>
+  <text x="425" y="1688" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="12" font-weight="600" letter-spacing="2">TS ERRORS</text>
+  <text x="425" y="1720" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="12" opacity="0.7">Clean build</text>
 
-  <text x="600" y="1740" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="28" font-weight="700" letter-spacing="4">PIPELINE FLOW</text>
-  <line x1="500" y1="1755" x2="700" y2="1755" stroke="#00E5A0" stroke-width="2"/>
+  <rect x="560" y="1600" width="230" height="140" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <text x="675" y="1660" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="44" font-weight="800">&lt;11s</text>
+  <text x="675" y="1688" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="12" font-weight="600" letter-spacing="2">BUILD TIME</text>
+  <text x="675" y="1720" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="12" opacity="0.7">Vite + React</text>
 
-  <!-- Pipeline stages -->
-  <g filter="url(#cardShadow)">
-    <rect x="80" y="1785" width="190" height="60" rx="8" fill="#00E5A0"/>
-  </g>
-  <text x="175" y="1822" text-anchor="middle" fill="#0A0A0F" font-family="system-ui, sans-serif" font-size="16" font-weight="800">SOURCED</text>
+  <rect x="810" y="1600" width="230" height="140" rx="14" fill="url(#card)" stroke="#1A1A24" stroke-width="1"/>
+  <text x="925" y="1660" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="44" font-weight="800">0-100</text>
+  <text x="925" y="1688" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="12" font-weight="600" letter-spacing="2">AI SCORE</text>
+  <text x="925" y="1720" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="12" opacity="0.7">Claude-powered</text>
 
-  <!-- Arrow 1 -->
-  <polygon points="285,1815 300,1808 300,1822" fill="#00E5A0" opacity="0.6"/>
+  <!-- ═══════ PIPELINE ═══════ -->
 
-  <g filter="url(#cardShadow)">
-    <rect x="310" y="1785" width="190" height="60" rx="8" fill="url(#card)" stroke="#00E5A0" stroke-width="1.5"/>
-  </g>
-  <text x="405" y="1822" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" font-weight="700">CONTACTED</text>
+  <rect x="60" y="1780" width="8" height="32" rx="4" fill="#00E5A0"/>
+  <text x="82" y="1805" fill="#FFFFFF" font-family="'SF Pro Display', 'Inter', system-ui, sans-serif" font-size="24" font-weight="700">Pipeline</text>
 
-  <!-- Arrow 2 -->
-  <polygon points="515,1815 530,1808 530,1822" fill="#00E5A0" opacity="0.6"/>
+  <!-- Pipeline flow -->
+  <rect x="60" y="1835" width="170" height="42" rx="21" fill="#00E5A0"/>
+  <text x="145" y="1862" text-anchor="middle" fill="#060609" font-family="system-ui, sans-serif" font-size="13" font-weight="700">Sourced</text>
 
-  <g filter="url(#cardShadow)">
-    <rect x="540" y="1785" width="190" height="60" rx="8" fill="url(#card)" stroke="#00E5A0" stroke-width="1.5"/>
-  </g>
-  <text x="635" y="1822" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" font-weight="700">RESPONDED</text>
+  <text x="244" y="1860" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" opacity="0.5">&#x276F;</text>
 
-  <!-- Arrow 3 -->
-  <polygon points="745,1815 760,1808 760,1822" fill="#00E5A0" opacity="0.6"/>
+  <rect x="260" y="1835" width="170" height="42" rx="21" fill="none" stroke="#00E5A0" stroke-width="1.5"/>
+  <text x="345" y="1862" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="600">Contacted</text>
 
-  <g filter="url(#cardShadow)">
-    <rect x="770" y="1785" width="170" height="60" rx="8" fill="url(#card)" stroke="#00E5A0" stroke-width="1.5"/>
-  </g>
-  <text x="855" y="1822" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" font-weight="700">SCREEN</text>
+  <text x="444" y="1860" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" opacity="0.5">&#x276F;</text>
 
-  <!-- Arrow 4 -->
-  <polygon points="955,1815 970,1808 970,1822" fill="#00E5A0" opacity="0.6"/>
+  <rect x="460" y="1835" width="170" height="42" rx="21" fill="none" stroke="#00E5A0" stroke-width="1.5"/>
+  <text x="545" y="1862" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="600">Responded</text>
 
-  <g filter="url(#cardShadow)">
-    <rect x="980" y="1785" width="140" height="60" rx="8" fill="#00E5A0"/>
-  </g>
-  <text x="1050" y="1822" text-anchor="middle" fill="#0A0A0F" font-family="system-ui, sans-serif" font-size="16" font-weight="800">OFFER</text>
+  <text x="644" y="1860" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" opacity="0.5">&#x276F;</text>
 
-  <text x="600" y="1880" text-anchor="middle" fill="#606070" font-family="system-ui, sans-serif" font-size="14">Drag &amp; drop · Time tracking per stage · Bulk operations · Webhook notifications</text>
+  <rect x="660" y="1835" width="150" height="42" rx="21" fill="none" stroke="#00E5A0" stroke-width="1.5"/>
+  <text x="735" y="1862" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="600">Screen</text>
 
-  <!-- ═══════════════════ METRICS ═══════════════════ -->
+  <text x="824" y="1860" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" opacity="0.5">&#x276F;</text>
 
-  <text x="600" y="1950" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="28" font-weight="700" letter-spacing="4">BY THE NUMBERS</text>
-  <line x1="500" y1="1965" x2="700" y2="1965" stroke="#00E5A0" stroke-width="2"/>
+  <rect x="840" y="1835" width="170" height="42" rx="21" fill="#00E5A0"/>
+  <text x="925" y="1862" text-anchor="middle" fill="#060609" font-family="system-ui, sans-serif" font-size="13" font-weight="700">Offer</text>
 
-  <!-- Metric 1 -->
-  <g filter="url(#cardShadow)">
-    <rect x="80" y="1990" width="240" height="140" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <text x="200" y="2048" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="48" font-weight="800">124</text>
-  <text x="200" y="2075" text-anchor="middle" fill="#606070" font-family="system-ui, sans-serif" font-size="13" font-weight="600" letter-spacing="2">TESTS PASSING</text>
-  <text x="200" y="2110" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="14">124 / 124 ✓</text>
+  <!-- ═══════ FOOTER ═══════ -->
 
-  <!-- Metric 2 -->
-  <g filter="url(#cardShadow)">
-    <rect x="350" y="1990" width="240" height="140" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <text x="470" y="2048" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="48" font-weight="800">0</text>
-  <text x="470" y="2075" text-anchor="middle" fill="#606070" font-family="system-ui, sans-serif" font-size="13" font-weight="600" letter-spacing="2">TS ERRORS</text>
-  <text x="470" y="2110" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="14">Clean build ✓</text>
+  <line x1="200" y1="1895" x2="880" y2="1895" stroke="#1A1A24" stroke-width="1"/>
 
-  <!-- Metric 3 -->
-  <g filter="url(#cardShadow)">
-    <rect x="620" y="1990" width="240" height="140" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <text x="740" y="2048" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="48" font-weight="800">&lt;11s</text>
-  <text x="740" y="2075" text-anchor="middle" fill="#606070" font-family="system-ui, sans-serif" font-size="13" font-weight="600" letter-spacing="2">BUILD TIME</text>
-  <text x="740" y="2110" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="14">Vite + React ⚡</text>
-
-  <!-- Metric 4 -->
-  <g filter="url(#cardShadow)">
-    <rect x="890" y="1990" width="240" height="140" rx="12" fill="url(#card)" stroke="#1F1F28" stroke-width="1"/>
-  </g>
-  <text x="1010" y="2048" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="48" font-weight="800">0–100</text>
-  <text x="1010" y="2075" text-anchor="middle" fill="#606070" font-family="system-ui, sans-serif" font-size="13" font-weight="600" letter-spacing="2">AI SCORE</text>
-  <text x="1010" y="2110" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="14">Claude-powered 🎯</text>
-
-  <!-- ═══════════════════ FOOTER ═══════════════════ -->
-
-  <line x1="200" y1="2200" x2="1000" y2="2200" stroke="#1F1F28" stroke-width="1"/>
-
-  <!-- Logo small -->
-  <g transform="translate(600,2260) scale(0.4)" filter="url(#glow)">
-    <path d="M-40,-56 L-72,0 L-40,56" stroke="#00E5A0" stroke-width="18" stroke-linecap="round" fill="none"/>
-    <path d="M40,-56 L72,0 L40,56" stroke="#00E5A0" stroke-width="18" stroke-linecap="round" fill="none"/>
-    <line x1="0" y1="-40" x2="0" y2="-64" stroke="#00E5A0" stroke-width="10" stroke-linecap="round"/>
-    <line x1="0" y1="40" x2="0" y2="64" stroke="#00E5A0" stroke-width="10" stroke-linecap="round"/>
-    <circle cx="0" cy="0" r="8" fill="#00E5A0"/>
-  </g>
-
-  <text x="600" y="2310" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="20" font-weight="700" letter-spacing="4">SOURCEKIT</text>
-  <text x="600" y="2340" text-anchor="middle" fill="#A0A0B0" font-family="system-ui, sans-serif" font-size="14">Hire engineers by what they've shipped, not what they've said.</text>
-  <text x="600" y="2370" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="14" font-weight="600">getsourcekit.vercel.app  ·  @SourceKit</text>
+  <text x="540" y="1916" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="13">getsourcekit.vercel.app</text>
 
 </svg>
