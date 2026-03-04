@@ -63,12 +63,9 @@ export function buildWebsetPayload(config: EEAWebsetConfig): WebsetCreatePayload
   }));
 
   const signalEnrichments = enabledSignals.map(s => {
-    // Exa API only accepts: text | number | options
-    const exaFormat = (s.enrichment_format === 'email' || s.enrichment_format === 'url')
-      ? 'text' : s.enrichment_format;
     const enrichment: { description: string; format: string; options?: { label: string }[] } = {
       description: s.enrichment_description,
-      format: exaFormat,
+      format: s.enrichment_format,
     };
     if (s.enrichment_format === 'options' && s.enrichment_options) {
       enrichment.options = s.enrichment_options.map(o => ({ label: o }));
@@ -78,7 +75,7 @@ export function buildWebsetPayload(config: EEAWebsetConfig): WebsetCreatePayload
 
   // Default enrichments: email + EEA strength rating
   const defaultEnrichments = [
-    { description: 'Contact email address for this person', format: 'text' },
+    { description: 'Contact email', format: 'email' },
     {
       description: `EEA strength: how many of the following criteria does this person clearly meet? ${enabledSignals.map(s => s.signal).join('; ')}. Rate as Strong (3+), Moderate (2), or Weak (0-1)`,
       format: 'options',

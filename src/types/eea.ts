@@ -15,7 +15,7 @@ export interface WebsetEEASignal {
   verification_method: string;
   webset_criterion: string;
   enrichment_description: string;
-  enrichment_format: 'text' | 'number' | 'options' | 'email' | 'url'; // email/url mapped to 'text' for Exa API
+  enrichment_format: 'text' | 'number' | 'options' | 'email' | 'url';
   enrichment_options?: string[]; // for "options" format
   enabled: boolean;
 }

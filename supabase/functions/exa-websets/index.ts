@@ -65,7 +65,7 @@ serve(async (req) => {
 
     switch (action) {
       case 'create': {
-        const { query, count, entity_type, criteria, enrichments } = params
+        const { query, count, criteria, enrichments } = params
         response = await fetch(`${WEBSETS_BASE}/websets`, {
           method: 'POST',
           headers,
@@ -73,7 +73,6 @@ serve(async (req) => {
             search: {
               query,
               count: count || 10,
-              entity: { type: entity_type || 'person' },
               ...(criteria ? { criteria } : {}),
             },
             ...(enrichments && enrichments.length > 0 ? { enrichments } : {}),
