@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { SourceKitLogo } from "./SourceKitLogo";
 
 interface PosterModalProps {
   onClose: () => void;
@@ -41,15 +40,60 @@ export function PosterModal({ onClose }: PosterModalProps) {
         </button>
 
         <div className="panel-card p-8 md:p-10">
-          {/* Poster SVG */}
           <svg
             viewBox="0 0 500 700"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             className="w-full"
           >
+            <defs>
+              <pattern
+                id="poster-grid"
+                width="20"
+                height="20"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M 20 0 L 0 0 0 20"
+                  fill="none"
+                  stroke="#1e1e28"
+                  strokeWidth="0.3"
+                />
+              </pattern>
+              <radialGradient
+                id="poster-logo-glow"
+                cx="250"
+                cy="56"
+                r="100"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0" stopColor="#00E5A0" stopOpacity="0.08" />
+                <stop offset="1" stopColor="#00E5A0" stopOpacity="0" />
+              </radialGradient>
+              <filter
+                id="poster-glow"
+                x="-50%"
+                y="-50%"
+                width="200%"
+                height="200%"
+              >
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
             {/* Background */}
             <rect width="500" height="700" rx="8" fill="#0A0A0F" />
+            <rect
+              width="500"
+              height="700"
+              rx="8"
+              fill="url(#poster-grid)"
+              opacity="0.4"
+            />
             <rect
               x="1"
               y="1"
@@ -58,52 +102,112 @@ export function PosterModal({ onClose }: PosterModalProps) {
               rx="7"
               stroke="#1e1e28"
               strokeWidth="1"
+              fill="none"
             />
 
-            {/* Header */}
-            <g>
-              <rect x="24" y="24" width="452" height="80" rx="6" fill="#111116" />
-              <foreignObject x="36" y="36" width="40" height="40">
-                <div>
-                  <SourceKitLogo size={40} glow />
-                </div>
-              </foreignObject>
-              <text
-                x="88"
-                y="55"
-                fill="#F0F0F5"
-                fontSize="18"
-                fontFamily="JetBrains Mono, monospace"
-                fontWeight="600"
-              >
-                SourceKit
-              </text>
-              <text
-                x="88"
-                y="78"
-                fill="#9E9E9E"
-                fontSize="10"
-                fontFamily="DM Sans, sans-serif"
-              >
-                Technical sourcing on GitHub signal
-              </text>
-              <text
-                x="420"
-                y="55"
-                fill="#00E5A0"
-                fontSize="9"
-                fontFamily="JetBrains Mono, monospace"
-                textAnchor="end"
-                opacity="0.6"
-              >
-                v1.0
-              </text>
+            {/* Logo ambient glow */}
+            <circle cx="250" cy="56" r="100" fill="url(#poster-logo-glow)" />
+
+            {/* Native SourceKit logo — centered at (250, 56), ~56px */}
+            <g
+              transform="translate(222, 28) scale(1.167)"
+              filter="url(#poster-glow)"
+            >
+              <line
+                x1="17"
+                y1="8"
+                x2="6"
+                y2="20"
+                stroke="#00E5A0"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="6"
+                y1="28"
+                x2="17"
+                y2="40"
+                stroke="#00E5A0"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="31"
+                y1="8"
+                x2="42"
+                y2="20"
+                stroke="#00E5A0"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="42"
+                y1="28"
+                x2="31"
+                y2="40"
+                stroke="#00E5A0"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="24"
+                y1="9"
+                x2="24"
+                y2="17"
+                stroke="#00E5A0"
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
+              <circle cx="24" cy="24" r="3.5" fill="#00E5A0" />
+              <line
+                x1="24"
+                y1="31"
+                x2="24"
+                y2="39"
+                stroke="#00E5A0"
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
             </g>
 
-            {/* Workflow section */}
+            {/* Wordmark */}
             <text
-              x="36"
-              y="136"
+              x="250"
+              y="105"
+              fill="#F0F0F5"
+              fontSize="22"
+              fontFamily="JetBrains Mono, monospace"
+              fontWeight="700"
+              textAnchor="middle"
+              letterSpacing="1"
+            >
+              SourceKit
+            </text>
+            <text
+              x="250"
+              y="126"
+              fill="#9E9E9E"
+              fontSize="11"
+              fontFamily="DM Sans, sans-serif"
+              textAnchor="middle"
+            >
+              Technical sourcing on GitHub signal
+            </text>
+
+            {/* Divider */}
+            <line
+              x1="150"
+              y1="148"
+              x2="350"
+              y2="148"
+              stroke="#1e1e28"
+              strokeWidth="0.5"
+            />
+
+            {/* === WORKFLOW === */}
+            <text
+              x="46"
+              y="176"
               fill="#00E5A0"
               fontSize="8"
               fontFamily="JetBrains Mono, monospace"
@@ -111,95 +215,112 @@ export function PosterModal({ onClose }: PosterModalProps) {
             >
               WORKFLOW
             </text>
-            {["Define criteria", "Search repos", "Extract candidates", "Evaluate", "Engage"].map(
-              (step, i) => (
-                <g key={step}>
-                  <rect
-                    x={36 + i * 90}
-                    y="148"
-                    width="80"
-                    height="36"
-                    rx="4"
-                    fill="#111116"
-                    stroke="#1e1e28"
-                  />
-                  <text
-                    x={76 + i * 90}
-                    y="170"
-                    fill="#F0F0F5"
-                    fontSize="8"
-                    fontFamily="DM Sans, sans-serif"
-                    textAnchor="middle"
-                  >
-                    {step}
-                  </text>
-                  {i < 4 && (
+            {["Criteria", "Search", "Extract"].map((step, i) => (
+              <g key={step}>
+                <rect
+                  x={46 + i * 148}
+                  y="188"
+                  width="136"
+                  height="40"
+                  rx="4"
+                  fill="#111116"
+                  stroke="#1e1e28"
+                />
+                <text
+                  x={114 + i * 148}
+                  y="213"
+                  fill="#F0F0F5"
+                  fontSize="10"
+                  fontFamily="JetBrains Mono, monospace"
+                  fontWeight="600"
+                  textAnchor="middle"
+                >
+                  {step}
+                </text>
+                {i < 2 && (
+                  <>
                     <line
-                      x1={116 + i * 90}
-                      y1="166"
-                      x2={126 + i * 90}
-                      y2="166"
+                      x1={184 + i * 148}
+                      y1="208"
+                      x2={192 + i * 148}
+                      y2="208"
                       stroke="#00E5A0"
                       strokeWidth="1"
-                      opacity="0.4"
+                      opacity="0.5"
                     />
-                  )}
-                </g>
-              )
-            )}
+                    <path
+                      d={`M${190 + i * 148},205 L${194 + i * 148},208 L${190 + i * 148},211`}
+                      stroke="#00E5A0"
+                      strokeWidth="1"
+                      fill="none"
+                      opacity="0.5"
+                    />
+                  </>
+                )}
+              </g>
+            ))}
 
-            {/* Features section */}
+            {/* === CAPABILITIES === */}
             <text
-              x="36"
-              y="220"
+              x="46"
+              y="262"
               fill="#00E5A0"
               fontSize="8"
               fontFamily="JetBrains Mono, monospace"
               letterSpacing="2"
             >
-              FEATURES
+              CAPABILITIES
             </text>
             {[
-              { title: "Repo Discovery", desc: "Exa Search across GitHub" },
-              { title: "Persistent Pools", desc: "Exa Websets monitoring" },
-              { title: "Strategy + Eval", desc: "Claude parallel analysis" },
-            ].map((feature, i) => (
-              <g key={feature.title}>
+              { title: "Repo Discovery", provider: "Exa Search" },
+              { title: "Persistent Pools", provider: "Exa Websets" },
+              { title: "Parallel Eval", provider: "Claude" },
+            ].map((feat, i) => (
+              <g key={feat.title}>
                 <rect
-                  x={36 + i * 152}
-                  y="232"
-                  width="140"
+                  x={46 + i * 148}
+                  y="274"
+                  width="136"
                   height="64"
                   rx="4"
                   fill="#111116"
                   stroke="#1e1e28"
                 />
                 <text
-                  x={50 + i * 152}
-                  y="254"
+                  x={58 + i * 148}
+                  y="298"
                   fill="#F0F0F5"
                   fontSize="10"
                   fontFamily="DM Sans, sans-serif"
                   fontWeight="600"
                 >
-                  {feature.title}
+                  {feat.title}
                 </text>
                 <text
-                  x={50 + i * 152}
-                  y="272"
+                  x={58 + i * 148}
+                  y="316"
                   fill="#9E9E9E"
                   fontSize="8"
                   fontFamily="DM Sans, sans-serif"
                 >
-                  {feature.desc}
+                  {feat.provider}
                 </text>
+                <rect
+                  x={58 + i * 148}
+                  y="326"
+                  width="36"
+                  height="2"
+                  rx="1"
+                  fill="#00E5A0"
+                  opacity="0.3"
+                />
               </g>
             ))}
 
-            {/* EEA section */}
+            {/* === EEA SIGNALS === */}
             <text
-              x="36"
-              y="332"
+              x="46"
+              y="372"
               fill="#00E5A0"
               fontSize="8"
               fontFamily="JetBrains Mono, monospace"
@@ -211,33 +332,33 @@ export function PosterModal({ onClose }: PosterModalProps) {
               {
                 title: "Experience",
                 bars: [
-                  { l: "Commits", v: 92 },
-                  { l: "Reviews", v: 78 },
-                  { l: "Issues", v: 65 },
+                  { l: "Streaks", v: 92 },
+                  { l: "Collab", v: 78 },
+                  { l: "Maintained", v: 65 },
                 ],
               },
               {
                 title: "Expertise",
                 bars: [
                   { l: "Code", v: 88 },
-                  { l: "Docs", v: 71 },
                   { l: "Tests", v: 83 },
+                  { l: "Docs", v: 71 },
                 ],
               },
             ].map((card, ci) => (
               <g key={card.title}>
                 <rect
-                  x={36 + ci * 228}
-                  y="344"
-                  width="216"
+                  x={46 + ci * 220}
+                  y="384"
+                  width="208"
                   height="120"
                   rx="4"
                   fill="#111116"
                   stroke="#1e1e28"
                 />
                 <text
-                  x={50 + ci * 228}
-                  y="366"
+                  x={60 + ci * 220}
+                  y="408"
                   fill="#F0F0F5"
                   fontSize="10"
                   fontFamily="DM Sans, sans-serif"
@@ -248,8 +369,8 @@ export function PosterModal({ onClose }: PosterModalProps) {
                 {card.bars.map((bar, bi) => (
                   <g key={bar.l}>
                     <text
-                      x={50 + ci * 228}
-                      y={390 + bi * 22}
+                      x={60 + ci * 220}
+                      y={434 + bi * 24}
                       fill="#9E9E9E"
                       fontSize="7"
                       fontFamily="JetBrains Mono, monospace"
@@ -257,25 +378,25 @@ export function PosterModal({ onClose }: PosterModalProps) {
                       {bar.l}
                     </text>
                     <rect
-                      x={100 + ci * 228}
-                      y={384 + bi * 22}
-                      width="120"
+                      x={118 + ci * 220}
+                      y={428 + bi * 24}
+                      width="108"
                       height="4"
                       rx="2"
                       fill="#1e1e28"
                     />
                     <rect
-                      x={100 + ci * 228}
-                      y={384 + bi * 22}
-                      width={(120 * bar.v) / 100}
+                      x={118 + ci * 220}
+                      y={428 + bi * 24}
+                      width={(108 * bar.v) / 100}
                       height="4"
                       rx="2"
                       fill="#00E5A0"
                       opacity="0.7"
                     />
                     <text
-                      x={228 + ci * 228}
-                      y={390 + bi * 22}
+                      x={234 + ci * 220}
+                      y={434 + bi * 24}
                       fill="#00E5A0"
                       fontSize="7"
                       fontFamily="JetBrains Mono, monospace"
@@ -288,10 +409,10 @@ export function PosterModal({ onClose }: PosterModalProps) {
               </g>
             ))}
 
-            {/* Stack section */}
+            {/* === STACK === */}
             <text
-              x="36"
-              y="500"
+              x="46"
+              y="538"
               fill="#00E5A0"
               fontSize="8"
               fontFamily="JetBrains Mono, monospace"
@@ -300,103 +421,92 @@ export function PosterModal({ onClose }: PosterModalProps) {
               STACK
             </text>
             {[
-              "React",
-              "TypeScript",
-              "Tailwind",
-              "Vite",
-              "Claude",
-              "Exa",
-              "Supabase",
-              "Vercel",
-            ].map((tech, i) => (
-              <g key={tech}>
-                <rect
-                  x={36 + (i % 4) * 114}
-                  y={512 + Math.floor(i / 4) * 32}
-                  width="104"
-                  height="24"
-                  rx="12"
-                  fill="#111116"
-                  stroke="#1e1e28"
-                />
-                <text
-                  x={88 + (i % 4) * 114}
-                  y={528 + Math.floor(i / 4) * 32}
-                  fill="#9E9E9E"
-                  fontSize="8"
-                  fontFamily="JetBrains Mono, monospace"
-                  textAnchor="middle"
-                >
-                  {tech}
-                </text>
-              </g>
-            ))}
+              ["React", "TypeScript", "Tailwind", "Claude"],
+              ["Exa", "Supabase", "Node.js", "Vercel"],
+            ].map((row, ri) =>
+              row.map((tech, ti) => (
+                <g key={tech}>
+                  <rect
+                    x={46 + ti * 110}
+                    y={550 + ri * 32}
+                    width="100"
+                    height="24"
+                    rx="12"
+                    fill="#111116"
+                    stroke="#1e1e28"
+                  />
+                  <text
+                    x={96 + ti * 110}
+                    y={566 + ri * 32}
+                    fill="#9E9E9E"
+                    fontSize="8"
+                    fontFamily="JetBrains Mono, monospace"
+                    textAnchor="middle"
+                  >
+                    {tech}
+                  </text>
+                </g>
+              ))
+            )}
 
-            {/* Footer */}
+            {/* === FOOTER === */}
             <line
-              x1="36"
-              y1="600"
-              x2="464"
-              y2="600"
+              x1="46"
+              y1="628"
+              x2="454"
+              y2="628"
               stroke="#1e1e28"
               strokeWidth="0.5"
             />
             <text
-              x="36"
-              y="624"
+              x="46"
+              y="652"
               fill="#9E9E9E"
-              fontSize="8"
+              fontSize="9"
               fontFamily="DM Sans, sans-serif"
             >
               sourcekit.dev
             </text>
             <text
-              x="464"
-              y="624"
+              x="454"
+              y="652"
               fill="#9E9E9E"
               fontSize="7"
               fontFamily="JetBrains Mono, monospace"
               textAnchor="end"
               opacity="0.5"
             >
-              Technical sourcing on GitHub signal
+              Built with signal
             </text>
 
-            {/* Decorative corner accents */}
+            {/* Corner accents */}
             <path
               d="M12,24 L12,12 L24,12"
               stroke="#00E5A0"
               strokeWidth="1"
               fill="none"
-              opacity="0.2"
+              opacity="0.15"
             />
             <path
-              d="M488,12 L488,24"
+              d="M476,12 L488,12 L488,24"
               stroke="#00E5A0"
               strokeWidth="1"
               fill="none"
-              opacity="0.2"
-            />
-            <path
-              d="M476,12 L488,12"
-              stroke="#00E5A0"
-              strokeWidth="1"
-              fill="none"
-              opacity="0.2"
+              opacity="0.15"
             />
             <path
               d="M12,676 L12,688 L24,688"
               stroke="#00E5A0"
               strokeWidth="1"
               fill="none"
-              opacity="0.2"
+              opacity="0.15"
             />
             <path
               d="M476,688 L488,688 L488,676"
               stroke="#00E5A0"
               strokeWidth="1"
               fill="none"
-              opacity="0.2"
+              opacity="0.15"
             />
           </svg>
         </div>
