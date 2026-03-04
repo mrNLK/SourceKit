@@ -37,36 +37,36 @@ function FeatureCard({ title, tag, description, details, delay }: FeatureCardPro
 
 const FEATURES: Omit<FeatureCardProps, "delay">[] = [
   {
-    title: "Repo Discovery",
+    title: "Repo discovery",
     tag: "Exa Search",
     description:
-      "Search across GitHub's entire public corpus using natural language queries and structured filters. Find repositories by language, stars, recency, and contributor patterns.",
+      "Query GitHub's public index by language, stars, recency, and contributor activity. Plain text or structured filters.",
     details: [
-      "Natural language and structured queries",
-      "Filter by language, stars, activity",
-      "Real-time index of public repos",
+      "Natural language + structured queries",
+      "Language, stars, activity filters",
+      "Real-time public repo index",
     ],
   },
   {
-    title: "Persistent Pools",
+    title: "Persistent pools",
     tag: "Exa Websets",
     description:
-      "Set up persistent searches that continuously monitor GitHub for new matching repositories and contributors. Pools auto-refresh and grow over time.",
+      "Searches keep running in the background. New repos and contributors land in your pool automatically, deduped and ranked.",
     details: [
-      "Continuous background monitoring",
+      "Background monitoring",
       "Auto-dedup and ranking",
       "Webhook and API export",
     ],
   },
   {
-    title: "Strategy + Eval",
-    tag: "Claude + Parallel",
+    title: "Parallel eval",
+    tag: "Claude",
     description:
-      "Claude analyzes candidate profiles in parallel, scoring code quality, contribution consistency, and technical breadth to surface the strongest engineering signals.",
+      "Claude scores candidates in parallel — code quality, commit consistency, technical range — and returns a ranked shortlist.",
     details: [
-      "Parallel profile evaluation",
-      "Code quality scoring",
-      "Contribution consistency analysis",
+      "Batch profile evaluation",
+      "Code quality + consistency scoring",
+      "Ranked output with evidence",
     ],
   },
 ];
@@ -81,7 +81,7 @@ export function Features() {
               Features
             </span>
             <h2 className="text-3xl md:text-4xl font-semibold text-white mt-3 tracking-tight">
-              Three layers of intelligence
+              Search, collect, evaluate
             </h2>
           </div>
         </AnimateOnScroll>

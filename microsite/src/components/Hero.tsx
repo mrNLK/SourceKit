@@ -29,9 +29,9 @@ export function Hero({ onOpenPoster }: HeroProps) {
               </h1>
 
               <p className="text-sk-muted text-base max-w-md leading-relaxed">
-                Discover, evaluate, and engage top engineering talent by
-                analyzing real repository activity, contribution patterns, and
-                code quality signals.
+                Find engineers through what they actually build. SourceKit
+                reads GitHub activity — commits, reviews, code quality — and
+                turns it into a ranked shortlist.
               </p>
 
               <div className="flex items-center gap-4 pt-2">

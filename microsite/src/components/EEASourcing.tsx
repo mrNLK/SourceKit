@@ -71,19 +71,19 @@ export function EEASourcing() {
               EEA-driven Sourcing
             </span>
             <h2 className="text-3xl md:text-4xl font-semibold text-white mt-3 tracking-tight">
-              Evidence over assumptions
+              Scored on commits, not keywords
             </h2>
             <p className="text-sk-muted text-sm mt-2 max-w-lg">
-              Every candidate recommendation is backed by measurable
-              engineering activity, not keyword matching.
+              Candidates are ranked by what they've shipped — commit depth,
+              review activity, code quality — not resume keywords.
             </p>
           </div>
         </AnimateOnScroll>
 
         <div className="grid md:grid-cols-2 gap-5">
           <EEACard
-            title="Experience signals"
-            subtitle="Depth of contribution"
+            title="Experience"
+            subtitle="Contribution depth"
             delay={100}
             signals={[
               { label: "Commits", value: 92 },
@@ -91,15 +91,15 @@ export function EEASourcing() {
               { label: "Issues", value: 65 },
             ]}
             bullets={[
-              "Multi-year contribution streaks in target stack",
-              "Cross-repo collaboration patterns indicate team fit",
-              "Open source maintenance signals ownership and reliability",
+              "Multi-year streaks in target stack",
+              "Cross-repo collaboration and review patterns",
+              "Maintained projects — not just drive-by commits",
             ]}
           />
 
           <EEACard
-            title="Expertise signals"
-            subtitle="Quality of output"
+            title="Expertise"
+            subtitle="Output quality"
             delay={220}
             signals={[
               { label: "Code", value: 88 },
@@ -107,9 +107,9 @@ export function EEASourcing() {
               { label: "Tests", value: 83 },
             ]}
             bullets={[
-              "Language-level proficiency scored from recent commits",
-              "Test coverage and CI discipline indicate rigor",
-              "Documentation contributions signal communication skill",
+              "Per-language proficiency from recent commits",
+              "Test coverage and CI habits",
+              "Docs contributions as a communication proxy",
             ]}
           />
         </div>

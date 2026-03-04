@@ -25,7 +25,7 @@ export function Stack() {
               Stack
             </span>
             <h2 className="text-3xl md:text-4xl font-semibold text-white mt-3 tracking-tight">
-              What powers it
+              Under the hood
             </h2>
           </div>
         </AnimateOnScroll>

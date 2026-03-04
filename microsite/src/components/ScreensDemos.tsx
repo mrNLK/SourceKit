@@ -12,38 +12,38 @@ interface ScreenItem {
 const SCREENS: ScreenItem[] = [
   {
     id: "search",
-    title: "Search Interface",
-    description: "Natural language repo search with structured filters",
+    title: "Search",
+    description: "Query repos by language, stars, activity",
     color: "#00E5A0",
   },
   {
     id: "pool",
-    title: "Candidate Pool",
-    description: "Ranked candidates with contribution evidence",
+    title: "Pool",
+    description: "Ranked candidates with commit evidence",
     color: "#00B87A",
   },
   {
     id: "profile",
-    title: "Profile Analysis",
-    description: "Deep-dive into a candidate's GitHub activity",
+    title: "Profile",
+    description: "Full GitHub activity breakdown",
     color: "#009966",
   },
   {
     id: "eval",
-    title: "Evaluation Report",
-    description: "Claude-generated technical assessment",
+    title: "Eval report",
+    description: "Technical assessment per candidate",
     color: "#00CC88",
   },
   {
     id: "webset",
-    title: "Webset Config",
-    description: "Configure persistent discovery pipelines",
+    title: "Webset config",
+    description: "Set up persistent search pipelines",
     color: "#00D699",
   },
   {
     id: "export",
-    title: "Export & Integrations",
-    description: "Push results to your ATS or spreadsheet",
+    title: "Export",
+    description: "Push to ATS or spreadsheet",
     color: "#00E5A0",
   },
 ];
@@ -146,11 +146,11 @@ export function ScreensDemos() {
               Screens
             </span>
             <h2 className="text-3xl md:text-4xl font-semibold text-white mt-3 tracking-tight">
-              Built for density
+              Dense by default
             </h2>
             <p className="text-sk-muted text-sm mt-2 max-w-lg">
-              Every surface is designed to surface signal quickly without
-              sacrificing depth.
+              High signal per pixel. Every screen shows what matters
+              without burying it.
             </p>
           </div>
         </AnimateOnScroll>

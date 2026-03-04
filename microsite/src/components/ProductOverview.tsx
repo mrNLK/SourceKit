@@ -3,22 +3,17 @@ import { AnimateOnScroll } from "./AnimateOnScroll";
 interface FlowStepProps {
   label: string;
   description: string;
-  index: number;
 }
 
-function FlowStep({ label, description, index }: FlowStepProps) {
+function FlowStep({ label, description }: FlowStepProps) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="flex-shrink-0 w-8 h-8 rounded-md accent-gradient flex items-center justify-center text-sk-bg font-mono text-xs font-bold">
-        {index}
-      </div>
+    <div className="flex items-start gap-2.5">
+      <span className="w-1 h-1 mt-2 rounded-full bg-sk-accent flex-shrink-0" />
       <div>
-        <div className="font-mono text-sm font-semibold text-white">
+        <span className="font-mono text-sm font-medium text-white">
           {label}
-        </div>
-        <div className="text-xs text-sk-muted mt-0.5 leading-relaxed">
-          {description}
-        </div>
+        </span>
+        <span className="text-xs text-sk-muted ml-1.5">{description}</span>
       </div>
     </div>
   );
@@ -37,13 +32,12 @@ function InfoRow({ title, items, delay = 0 }: InfoRowProps) {
         <h3 className="font-mono text-xs font-semibold text-sk-accent uppercase tracking-widest mb-4">
           {title}
         </h3>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((item, i) => (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {items.map((item) => (
             <FlowStep
               key={item.label}
               label={item.label}
               description={item.description}
-              index={i + 1}
             />
           ))}
         </div>
@@ -59,14 +53,14 @@ export function ProductOverview() {
         <AnimateOnScroll>
           <div className="mb-12">
             <span className="font-mono text-xs text-sk-accent tracking-widest uppercase">
-              Product Overview
+              How it works
             </span>
             <h2 className="text-3xl md:text-4xl font-semibold text-white mt-3 tracking-tight">
-              From signal to hire
+              Signal to shortlist
             </h2>
             <p className="text-sk-muted text-sm mt-2 max-w-lg">
-              A complete pipeline for finding, qualifying, and engaging
-              engineering candidates through GitHub activity analysis.
+              Set your technical criteria. Exa finds matching repos and
+              contributors. Claude scores them. You get a ranked pool.
             </p>
           </div>
         </AnimateOnScroll>
@@ -77,63 +71,63 @@ export function ProductOverview() {
             delay={100}
             items={[
               {
-                label: "Define criteria",
+                label: "Criteria",
                 description:
-                  "Set language, framework, contribution frequency, and quality thresholds.",
+                  "Language, framework, commit frequency, quality bar.",
               },
               {
-                label: "Search repos",
+                label: "Search",
                 description:
-                  "Exa scans GitHub for repositories matching your technical requirements.",
+                  "Exa indexes GitHub and returns repos that match.",
               },
               {
-                label: "Extract candidates",
+                label: "Extract",
                 description:
-                  "Identify active contributors with matching skill profiles.",
+                  "Pull active contributors from matched repos.",
               },
             ]}
           />
 
           <InfoRow
-            title="Quick Start"
+            title="Quick start"
             delay={200}
             items={[
               {
-                label: "Connect GitHub",
+                label: "Connect",
                 description:
-                  "Authorize read access to public repository metadata.",
+                  "Read-only GitHub auth for public repo metadata.",
               },
               {
-                label: "Create a pool",
+                label: "Pool",
                 description:
-                  "Define your ideal candidate profile with technical filters.",
+                  "Set your filters and build a candidate pool.",
               },
               {
-                label: "Review results",
+                label: "Review",
                 description:
-                  "Browse ranked candidates with contribution evidence.",
+                  "Ranked results with commit-level evidence.",
               },
             ]}
           />
 
           <InfoRow
-            title="Websets Pipeline"
+            title="Websets"
             delay={300}
             items={[
               {
-                label: "Persistent search",
+                label: "Persistent",
                 description:
-                  "Websets continuously discover new matching repositories.",
+                  "Searches keep running and pick up new repos.",
               },
               {
                 label: "Auto-refresh",
                 description:
-                  "Candidate pools update as new contributions appear.",
+                  "Pools update as contributors push new work.",
               },
               {
-                label: "Alert & export",
+                label: "Export",
                 description:
-                  "Get notified of high-signal matches, export to ATS.",
+                  "Alerts on high-signal matches. ATS export.",
               },
             ]}
           />
