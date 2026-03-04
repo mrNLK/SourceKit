@@ -12,8 +12,6 @@ const FORMAT_LABELS: Record<string, string> = {
   text: 'Text',
   number: 'Number',
   options: 'Options',
-  email: 'Email',
-  url: 'URL',
 };
 
 const EEASignalCard = ({ signal, onChange, onRemove }: EEASignalCardProps) => {

@@ -63,9 +63,20 @@ serve(async (req) => {
     const supabase = getSupabase()
     let response: Response
 
+    // Sanitise enrichment formats – Exa only accepts text | number | options
+    const VALID_FORMATS = new Set(['text', 'number', 'options'])
+    function sanitiseEnrichments(arr: any[] | undefined) {
+      if (!arr || arr.length === 0) return undefined
+      return arr.map((e: any) => ({
+        ...e,
+        format: VALID_FORMATS.has(e.format) ? e.format : 'text',
+      }))
+    }
+
     switch (action) {
       case 'create': {
         const { query, count, criteria, enrichments } = params
+        const safeEnrichments = sanitiseEnrichments(enrichments)
         response = await fetch(`${WEBSETS_BASE}/websets`, {
           method: 'POST',
           headers,
@@ -75,7 +86,7 @@ serve(async (req) => {
               count: count || 10,
               ...(criteria ? { criteria } : {}),
             },
-            ...(enrichments && enrichments.length > 0 ? { enrichments } : {}),
+            ...(safeEnrichments ? { enrichments: safeEnrichments } : {}),
           }),
         })
 
@@ -174,10 +185,11 @@ serve(async (req) => {
             { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
           )
         }
+        const safeFormat = VALID_FORMATS.has(format) ? format : 'text'
         response = await fetch(`${WEBSETS_BASE}/websets/${webset_id}/enrichments`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ description, format }),
+          body: JSON.stringify({ description, format: safeFormat }),
         })
         break
       }

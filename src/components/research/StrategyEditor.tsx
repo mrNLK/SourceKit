@@ -24,7 +24,7 @@ export interface WebsetEEASignalStrategy {
   verification_method?: string;
   webset_criterion?: string;
   enrichment_description?: string;
-  enrichment_format?: "text" | "number" | "options" | "email" | "url";
+  enrichment_format?: "text" | "number" | "options";
   enrichment_options?: string[];
 }
 

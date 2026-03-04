@@ -75,7 +75,7 @@ export function buildWebsetPayload(config: EEAWebsetConfig): WebsetCreatePayload
 
   // Default enrichments: email + EEA strength rating
   const defaultEnrichments = [
-    { description: 'Contact email', format: 'email' },
+    { description: 'Contact email', format: 'text' },
     {
       description: `EEA strength: how many of the following criteria does this person clearly meet? ${enabledSignals.map(s => s.signal).join('; ')}. Rate as Strong (3+), Moderate (2), or Weak (0-1)`,
       format: 'options',
