@@ -1,0 +1,15 @@
+:root {
+  --sk-bg: #0A0A0F;
+  --sk-panel: #111116;
+  --sk-panel-hover: #1a1a22;
+  --sk-accent: #00E5A0;
+  --sk-accent-dim: #00E5A033;
+  --sk-muted: #9E9E9E;
+  --sk-border: #1e1e28;
+  --sk-text: #F0F0F5;
+  --sk-text-dim: #A0A0AA;
+  --sk-glow: 0 0 40px rgba(0, 229, 160, 0.15);
+  --sk-glow-strong: 0 0 60px rgba(0, 229, 160, 0.25);
+  --sk-radius: 8px;
+  --sk-max-width: 1100px;
+}
