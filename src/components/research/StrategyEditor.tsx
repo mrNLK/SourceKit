@@ -1,12 +1,15 @@
 import { useState, useMemo } from "react";
 import {
   Search, GitBranch, Target, Sparkles, Briefcase,
-  ExternalLink, X, Plus, Pencil, Check, ChevronDown, ChevronUp, Copy, ArrowRight
+  ExternalLink, X, Plus, Pencil, Check, ChevronDown, ChevronUp, Copy, ArrowRight, Users, Loader2
 } from "lucide-react";
 import type { WebsetEEASignal } from "@/types/eea";
 import { generateSignalId } from "@/lib/eea-webset";
 import EEASignalEditor from "@/components/strategy/EEASignalEditor";
 import CreateWebsetButton from "@/components/strategy/CreateWebsetButton";
+import { mapCompanyTalent } from "@/lib/api";
+import type { EngineerProfile } from "@/lib/api";
+import { toast } from "@/hooks/use-toast";
 
 // ---------------------------------------------------------------------------
 // Types (mirrors ResearchTab)
@@ -91,6 +94,10 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps -- only on mount
 
   const [websetSignals, setWebsetSignals] = useState<WebsetEEASignal[]>(initialWebsetSignals);
+
+  // Prompt 5: Map Engineers state
+  const [mappingCompany, setMappingCompany] = useState<string | null>(null);
+  const [mappedEngineers, setMappedEngineers] = useState<Record<string, EngineerProfile[]>>({});
 
   const toggleSection = (id: string) => setExpandedSections(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
 
@@ -218,8 +225,44 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
                     </div>
                     <input type="text" value={company.reason} onChange={(e) => updateCompany(idx, "reason", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground font-body outline-none mt-0.5" placeholder="Why this company" />
                   </div>
+                  <button
+                    onClick={async () => {
+                      if (mappingCompany === company.name || !company.name.trim()) return;
+                      setMappingCompany(company.name);
+                      try {
+                        const data = await mapCompanyTalent(company.name, jobTitle || s.search_query);
+                        setMappedEngineers(prev => ({ ...prev, [company.name]: data.engineers || [] }));
+                      } catch (err) {
+                        console.error("Map engineers failed:", err);
+                        toast({ title: "Failed to map engineers", variant: "destructive" });
+                      } finally {
+                        setMappingCompany(null);
+                      }
+                    }}
+                    disabled={mappingCompany === company.name}
+                    className="p-1 rounded text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    title="Map engineers at this company"
+                  >
+                    {mappingCompany === company.name ? <Loader2 className="w-3 h-3 animate-spin" /> : <Users className="w-3 h-3" />}
+                  </button>
                   <button onClick={() => removeCompany(idx)} className="p-1 rounded text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"><X className="w-3 h-3" /></button>
                 </div>
+                {mappedEngineers[company.name] && mappedEngineers[company.name].length > 0 && (
+                  <div className="mt-2 space-y-1 border-t border-border/50 pt-2">
+                    <p className="text-[10px] font-display text-muted-foreground uppercase tracking-wider">Engineers found ({mappedEngineers[company.name].length})</p>
+                    {mappedEngineers[company.name].slice(0, 5).map((eng, eIdx) => (
+                      <div key={eIdx} className="flex items-center gap-2 text-xs text-secondary-foreground">
+                        <span className="font-display font-medium">{eng.name}</span>
+                        <span className="text-muted-foreground">{eng.title}</span>
+                        {eng.linkedin_url && <a href={eng.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline"><ExternalLink className="w-2.5 h-2.5" /></a>}
+                        {eng.github_url && <a href={eng.github_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground"><ExternalLink className="w-2.5 h-2.5" /></a>}
+                      </div>
+                    ))}
+                    {mappedEngineers[company.name].length > 5 && (
+                      <p className="text-[10px] text-muted-foreground">+{mappedEngineers[company.name].length - 5} more</p>
+                    )}
+                  </div>
+                )}
               );
             })}
             <button onClick={addCompany} className="w-full flex items-center justify-center gap-1.5 text-xs font-display px-3 py-2 rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"><Plus className="w-3 h-3" /> Add Company</button>

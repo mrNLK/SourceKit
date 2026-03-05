@@ -29,3 +29,18 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.company-intel]
+verify_jwt = false
+
+[functions.find-similar-candidates]
+verify_jwt = false
+
+[functions.map-company-talent]
+verify_jwt = false
+
+[functions.import-candidates]
+verify_jwt = false
+
+[functions.webset-webhook]
+verify_jwt = false

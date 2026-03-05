@@ -8,7 +8,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { EEAFull } from "@/components/EEASignals";
-import { notifyStageChange } from "@/lib/api";
+import { notifyStageChange, findSimilarCandidates } from "@/lib/api";
+import type { SimilarCandidate } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import OutreachTemplateEditor from "@/components/OutreachTemplateEditor";
 import type { Developer, Language } from "@/types/developer";
@@ -64,6 +65,9 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
   const [notesSaving, setNotesSaving] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  // Prompt 4: Find similar candidates
+  const [similarLoading, setSimilarLoading] = useState(false);
+  const [similarResults, setSimilarResults] = useState<SimilarCandidate[]>([]);
 
   const dev = developer;
 
@@ -701,6 +705,54 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
               </div>
             </div>
           )}
+
+          {/* Prompt 4: Find Similar Candidates */}
+          <div className="glass rounded-xl p-4">
+            <button
+              onClick={async () => {
+                if (similarLoading) return;
+                setSimilarLoading(true);
+                try {
+                  const githubUrl = dev.githubUrl || `https://github.com/${dev.username}`;
+                  const data = await findSimilarCandidates(githubUrl);
+                  setSimilarResults(data.results || []);
+                } catch (err) {
+                  console.error("Find similar failed:", err);
+                  toast({ title: "Failed to find similar candidates", variant: "destructive" });
+                } finally {
+                  setSimilarLoading(false);
+                }
+              }}
+              disabled={similarLoading}
+              className="flex items-center gap-2 text-xs font-display px-3 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors disabled:opacity-50 w-full justify-center"
+            >
+              {similarLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+              Find Similar Candidates
+            </button>
+            {similarResults.length > 0 && (
+              <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
+                {similarResults.map((r, i) => (
+                  <a
+                    key={i}
+                    href={r.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block p-2 rounded-lg bg-secondary/30 border border-border hover:border-primary/30 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-display text-foreground truncate">{r.title || r.url}</span>
+                      {r.github_username && (
+                        <span className="text-[10px] text-primary font-display">@{r.github_username}</span>
+                      )}
+                    </div>
+                    {r.highlights.length > 0 && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{r.highlights[0]}</p>
+                    )}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Stats footer */}
           <div className="glass rounded-xl p-4">

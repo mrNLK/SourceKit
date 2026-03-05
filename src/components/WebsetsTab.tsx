@@ -1,6 +1,7 @@
-import { useState, useCallback, useMemo } from 'react'
-import { Layers, Plus, RefreshCw, Trash2, ArrowLeft, ChevronDown, ChevronUp, Loader2, UserPlus, Check } from 'lucide-react'
+import { useState, useCallback, useMemo, useRef } from 'react'
+import { Layers, Plus, RefreshCw, Trash2, ArrowLeft, ChevronDown, ChevronUp, Loader2, UserPlus, Check, Upload } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { importCandidates } from '@/lib/api'
 import { useWebsets } from '@/hooks/useWebsets'
 import { createWebset, deleteWebset } from '@/services/websets'
 import { supabase } from '@/integrations/supabase/client'
@@ -30,6 +31,9 @@ const WebsetsTab = () => {
   const [addedItems, setAddedItems] = useState<Set<string>>(new Set())
   const [addingItem, setAddingItem] = useState<string | null>(null)
   const [isBatchImporting, setIsBatchImporting] = useState(false)
+  // Prompt 6: CSV import
+  const [isCsvImporting, setIsCsvImporting] = useState(false)
+  const csvInputRef = useRef<HTMLInputElement>(null)
 
   const handleAddToPipeline = useCallback(async (item: { id: string; title: string; url: string }) => {
     if (addingItem || addedItems.has(item.id)) return
@@ -134,6 +138,54 @@ const WebsetsTab = () => {
       toast({ title: 'Failed to delete webset', variant: 'destructive' })
     }
   }, [removeWebsetRef, viewingWebsetId])
+
+  const handleCsvImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIsCsvImporting(true)
+    try {
+      const text = await file.text()
+      const lines = text.split('\n').filter(l => l.trim())
+      if (lines.length < 2) {
+        toast({ title: 'CSV must have a header row and at least one data row', variant: 'destructive' })
+        return
+      }
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
+      const nameIdx = headers.findIndex(h => h === 'name')
+      const urlIdx = headers.findIndex(h => h === 'url' || h === 'profile_url' || h === 'github_url' || h === 'linkedin_url')
+      if (nameIdx === -1 || urlIdx === -1) {
+        toast({ title: 'CSV must have "name" and "url" columns', variant: 'destructive' })
+        return
+      }
+      const candidates = lines.slice(1).map(line => {
+        const cols = line.split(',').map(c => c.trim())
+        return { name: cols[nameIdx] || '', url: cols[urlIdx] || '' }
+      }).filter(c => c.name && c.url)
+
+      if (candidates.length === 0) {
+        toast({ title: 'No valid candidates found in CSV', variant: 'destructive' })
+        return
+      }
+
+      const result = await importCandidates(candidates)
+      toast({ title: `Imported ${result.items_submitted} candidates`, description: `Webset: ${result.webset_id}` })
+
+      // Add the new webset to the local list
+      addWebsetRef({
+        id: result.webset_id,
+        query: `CSV import (${candidates.length} candidates)`,
+        count: candidates.length,
+        status: 'running',
+        createdAt: new Date().toISOString(),
+      })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to import CSV'
+      toast({ title: msg, variant: 'destructive' })
+    } finally {
+      setIsCsvImporting(false)
+      if (csvInputRef.current) csvInputRef.current.value = ''
+    }
+  }, [addWebsetRef])
 
   const handleViewWebset = useCallback(async (id: string) => {
     setViewingWebsetId(id)
@@ -426,6 +478,30 @@ const WebsetsTab = () => {
           )}
           {isCreating ? 'Creating...' : 'Create Webset'}
         </button>
+
+        {/* Prompt 6: CSV Import */}
+        <div className="flex items-center gap-2 pt-2 border-t border-border">
+          <input
+            ref={csvInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleCsvImport}
+            className="hidden"
+          />
+          <button
+            onClick={() => csvInputRef.current?.click()}
+            disabled={isCsvImporting}
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 disabled:opacity-50 transition-colors"
+          >
+            {isCsvImporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Upload className="w-4 h-4" />
+            )}
+            {isCsvImporting ? 'Importing...' : 'Import CSV'}
+          </button>
+          <span className="text-xs text-muted-foreground">CSV with "name" and "url" columns</span>
+        </div>
       </div>
 
       {/* Browse Section */}

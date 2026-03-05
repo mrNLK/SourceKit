@@ -36,8 +36,6 @@ async function invokeFunction(name: string, params?: Record<string, string>, bod
   return res.json();
 }
 
-import type { Developer } from '@/types/developer';
-
 export interface SearchResponse {
   results: Developer[];
   searchId?: string;
@@ -284,4 +282,54 @@ export interface ExaCandidateResult {
 
 export async function searchCandidates(query: string, role?: string, company?: string): Promise<{ candidates: ExaCandidateResult[]; sources: Record<string, number> }> {
   return invokeFunction('search-candidates', undefined, { query, role, company });
+}
+
+// Prompt 2: Company intelligence via Parallel Task API
+export interface CompanyIntel {
+  company: string;
+  estimated_eng_headcount: number | null;
+  tech_stack_signals: string[];
+  recent_hiring_signal: string;
+  attrition_signal: string;
+  why_source_from: string;
+  linkedin_search_url: string;
+}
+
+export async function getCompanyIntel(companies: string[], role: string): Promise<{ results: CompanyIntel[] }> {
+  return invokeFunction('company-intel', undefined, { companies, role });
+}
+
+// Prompt 4: Find similar candidates via Exa findSimilar
+export interface SimilarCandidate {
+  title: string;
+  url: string;
+  score: number;
+  highlights: string[];
+  github_username: string | null;
+}
+
+export async function findSimilarCandidates(githubUrl: string, numResults?: number): Promise<{ results: SimilarCandidate[] }> {
+  return invokeFunction('find-similar-candidates', undefined, { github_url: githubUrl, num_results: numResults });
+}
+
+// Prompt 5: Map company talent via Parallel FindAll
+export interface EngineerProfile {
+  name: string;
+  title: string;
+  linkedin_url: string | null;
+  github_url: string | null;
+  notable_work: string;
+  company: string;
+}
+
+export async function mapCompanyTalent(company: string, role: string, maxResults?: number): Promise<{ engineers: EngineerProfile[] }> {
+  return invokeFunction('map-company-talent', undefined, { company, role, max_results: maxResults });
+}
+
+// Prompt 6: Import candidates via Exa Websets Import
+export async function importCandidates(
+  candidates: { name: string; url: string; metadata?: Record<string, string> }[],
+  websetId?: string
+): Promise<{ webset_id: string; import_id: string; items_submitted: number }> {
+  return invokeFunction('import-candidates', undefined, { candidates, webset_id: websetId });
 }

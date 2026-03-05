@@ -30,4 +30,6 @@ export interface Developer {
   ungettable?: boolean;
   ungettableReason?: string;
   recruitable?: boolean;
+  groundedSummary?: string | null;
+  groundedCitations?: { url: string; title: string }[];
 }

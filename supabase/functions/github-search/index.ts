@@ -530,6 +530,41 @@ function flagUngettable(candidates: any[]): any[] {
   });
 }
 
+// Step 6: Exa Answer enrichment for top candidates (Prompt 3)
+async function enrichWithExaAnswer(candidates: any[], query: string): Promise<any[]> {
+  const exaKey = Deno.env.get('EXA_API_KEY');
+  if (!exaKey) return candidates;
+
+  const top10 = candidates.slice(0, 10);
+  const enriched = await Promise.allSettled(
+    top10.map(async (c: any) => {
+      try {
+        const res = await fetch('https://api.exa.ai/answer', {
+          method: 'POST',
+          headers: { 'x-api-key': exaKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `What is ${c.name || c.github_username} known for as a software engineer? What are their most notable open source contributions and technical expertise?`,
+            text: true,
+          }),
+        });
+        if (!res.ok) return c;
+        const data = await res.json();
+        c.grounded_summary = data.answer || null;
+        c.grounded_citations = (data.citations || data.sources || []).map((s: any) => ({
+          url: s.url || s,
+          title: s.title || '',
+        })).slice(0, 5);
+      } catch (e) {
+        console.error(`Exa Answer enrichment failed for ${c.github_username}:`, e);
+      }
+      return c;
+    })
+  );
+
+  const enrichedTop = enriched.map((r, i) => r.status === 'fulfilled' ? r.value : top10[i]);
+  return [...enrichedTop, ...candidates.slice(10)];
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: getCorsHeaders(req) });
@@ -558,6 +593,7 @@ serve(async (req) => {
     let bodySkills: string[] = [];
     let hideUngettable = true; // P21: default to hiding ungettable candidates
     let streamMode = false; // FEAT-008: SSE streaming
+    let enrichSummaries = false; // Prompt 3: Exa Answer enrichment
     if (req.method === 'POST' || (req.headers.get('content-type') || '').includes('json')) {
       try {
         const body = await req.json();
@@ -576,6 +612,7 @@ serve(async (req) => {
         if (body.skills && Array.isArray(body.skills)) bodySkills = body.skills;
         if (body.hideUngettable === false) hideUngettable = false;
         if (body.stream === true) streamMode = true;
+        if (body.enrich_summaries === true) enrichSummaries = true;
       } catch (e) {
         console.error('Failed to parse request body:', e);
         // For POST requests, body parsing failure is an error — don't silently fall through
@@ -728,8 +765,16 @@ serve(async (req) => {
     console.log(`[${Date.now() - t0}ms] Scored ${scored.length} candidates`);
     emitProgress('scored', `Scored ${scored.length} candidates`);
 
+    // Step 5a: Exa Answer enrichment (Prompt 3, feature-flagged)
+    let enrichedScored = scored;
+    if (enrichSummaries) {
+      emitProgress('enriching_summaries', 'Enriching top candidates with web-grounded summaries...');
+      enrichedScored = await enrichWithExaAnswer(scored, query);
+      console.log(`[${Date.now() - t0}ms] Exa Answer enrichment complete`);
+    }
+
     // Step 5: Flag ungettable candidates (P10)
-    const flagged = flagUngettable(scored);
+    const flagged = flagUngettable(enrichedScored);
 
     // P21: Filter out ungettable candidates by default, or sort to bottom if showing all
     let finalCandidates = flagged;
@@ -806,6 +851,8 @@ serve(async (req) => {
       twitterUsername: c.twitter_username,
       email: c.email,
       githubUrl: c.github_url,
+      groundedSummary: c.grounded_summary || null,
+      groundedCitations: c.grounded_citations || [],
     }));
 
     // P20: Credit Guard — only increment when search returned results
