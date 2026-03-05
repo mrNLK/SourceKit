@@ -212,7 +212,8 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
             {s.poach_companies.map((company, idx) => {
               const style = CATEGORY_STYLES[company.category] || CATEGORY_STYLES.adjacent;
               return (
-                <div key={idx} className="flex items-start gap-2 p-2.5 rounded-lg bg-secondary/30 border border-border group">
+                <div key={idx}>
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-secondary/30 border border-border group">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <input type="text" value={company.name} onChange={(e) => updateCompany(idx, "name", e.target.value)} className="bg-transparent text-sm text-foreground font-display font-medium outline-none flex-1" placeholder="Company name" />
@@ -263,6 +264,7 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
                     )}
                   </div>
                 )}
+                </div>
               );
             })}
             <button onClick={addCompany} className="w-full flex items-center justify-center gap-1.5 text-xs font-display px-3 py-2 rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"><Plus className="w-3 h-3" /> Add Company</button>
