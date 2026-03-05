@@ -574,8 +574,8 @@
   <!-- NEW IN V2.1 -->
   <div class="section">
     <div class="section-label">NEW IN V2.1 <span class="badge-new">NEW</span></div>
-    <div class="section-heading">What's New: Deep Research and Intelligence APIs</div>
-    <p class="body-text-sm mb-8">v2.1 integrates six new API capabilities that transform SourceKit from a search tool into a full-stack sourcing intelligence platform.</p>
+    <div class="section-heading">Deep Research and Intelligence APIs</div>
+    <p class="body-text-sm mb-8">v2.1 adds six API integrations: Exa Research, Exa Answer, Exa findSimilar, Parallel Company Intel, Parallel Talent Mapping, and Webset CSV import with webhooks.</p>
     <div class="card-row mb-12">
       <div class="card">
         <div class="card-title">Exa Research API</div>
@@ -587,7 +587,7 @@
       </div>
       <div class="card">
         <div class="card-title">Exa findSimilar</div>
-        <div class="card-body">Found a great candidate? Click "Find Similar" on any profile to discover engineers with similar GitHub activity and web presence. Expands your pipeline from a single strong match.</div>
+        <div class="card-body">Click "Find Similar" on any profile to discover engineers with similar GitHub activity and web presence. Expands your pipeline from a single strong match.</div>
       </div>
     </div>
     <div class="card-row">
@@ -726,15 +726,15 @@
     <div class="section-label">BETA TESTING</div>
     <div class="section-heading-sm">What to Test</div>
     <div>
-      <div class="checklist-item"><span class="checklist-num">1.</span> <span class="checklist-title">Sign In</span> — Log in with Google at getsourcekit.vercel.app</div>
-      <div class="checklist-item"><span class="checklist-num">2.</span> <span class="checklist-title">Build a Strategy</span> — Try all three input paths: role + company, pasted JD, or job URL. Note the "research_source" field showing Exa or Claude.</div>
-      <div class="checklist-item"><span class="checklist-num">3.</span> <span class="checklist-title">Edit and Run the Search</span> — Review the AI-generated repo list. Add, remove, or rearrange, then run the search.</div>
-      <div class="checklist-item"><span class="checklist-num">4.</span> <span class="checklist-title">Check Grounded Summaries</span> — Top 10 candidates should display an italic grounded summary with citation links below their bio.</div>
-      <div class="checklist-item"><span class="checklist-num">5.</span> <span class="checklist-title">Find Similar Candidates</span> — Open a candidate's detail view, click "Find Similar Candidates" and review the results panel.</div>
-      <div class="checklist-item"><span class="checklist-num">6.</span> <span class="checklist-title">Map Engineers</span> — In the strategy editor, hover a poach company and click the people icon to map engineers at that company.</div>
-      <div class="checklist-item"><span class="checklist-num">7.</span> <span class="checklist-title">Test Exa Websets</span> — Create a Webset, add criteria, check enrichment, try CSV import, set up monitoring.</div>
-      <div class="checklist-item"><span class="checklist-num">8.</span> <span class="checklist-title">Pipeline and Bulk Actions</span> — Add candidates to the pipeline. Drag between stages. Select multiple for compare, summarize, and outreach.</div>
-      <div class="checklist-item"><span class="checklist-num">9.</span> <span class="checklist-title">Export to CSV</span> — Export and verify that the data looks clean and complete</div>
+      <div class="checklist-item"><span class="checklist-num">1.</span> <span class="checklist-title">Sign In</span> with Google at getsourcekit.vercel.app</div>
+      <div class="checklist-item"><span class="checklist-num">2.</span> <span class="checklist-title">Build a Strategy</span> using all three input paths: role + company, pasted JD, job URL. Note the research_source field (Exa or Claude).</div>
+      <div class="checklist-item"><span class="checklist-num">3.</span> <span class="checklist-title">Edit and Run the Search.</span> Review the repo list. Add, remove, rearrange, then run.</div>
+      <div class="checklist-item"><span class="checklist-num">4.</span> <span class="checklist-title">Check Grounded Summaries.</span> Top 10 candidates should show italic summaries with citation links below their bio.</div>
+      <div class="checklist-item"><span class="checklist-num">5.</span> <span class="checklist-title">Find Similar Candidates.</span> Open a detail view, click "Find Similar Candidates," review the results panel.</div>
+      <div class="checklist-item"><span class="checklist-num">6.</span> <span class="checklist-title">Map Engineers.</span> In the strategy editor, hover a poach company and click the people icon.</div>
+      <div class="checklist-item"><span class="checklist-num">7.</span> <span class="checklist-title">Test Exa Websets.</span> Create a Webset, add criteria, check enrichment, try CSV import, set monitoring.</div>
+      <div class="checklist-item"><span class="checklist-num">8.</span> <span class="checklist-title">Pipeline and Bulk Actions.</span> Add candidates, drag between stages, select multiple for compare/outreach.</div>
+      <div class="checklist-item"><span class="checklist-num">9.</span> <span class="checklist-title">Export to CSV.</span> Verify the data is clean and complete.</div>
     </div>
   </div>
 
@@ -743,28 +743,28 @@
     <div class="section-label">PRO TIPS</div>
     <div class="section-heading-sm">Best Practices</div>
     <div class="tip">
-      <div class="tip-title">1. Be Specific With Titles</div>
-      <div class="tip-body">Use "ML Infrastructure Engineer focused on training pipelines" instead of just "ML Engineer." Specificity dramatically improves repo targeting and result quality.</div>
+      <div class="tip-title">Be Specific With Titles</div>
+      <div class="tip-body">"ML Infrastructure Engineer focused on training pipelines" produces far better results than "ML Engineer." Specificity drives repo targeting.</div>
     </div>
     <div class="tip">
-      <div class="tip-title">2. Always Edit the Repo List</div>
-      <div class="tip-body">The AI-generated suggestions are a starting point. Editing the repo list is the single biggest lever you have for improving result quality.</div>
+      <div class="tip-title">Always Edit the Repo List</div>
+      <div class="tip-body">AI suggestions are a starting point. Your edits to the repo list are the single biggest lever for result quality.</div>
     </div>
     <div class="tip">
-      <div class="tip-title">3. Use Find Similar to Expand</div>
-      <div class="tip-body">When you find one strong match, use "Find Similar" to discover a cluster of engineers with similar profiles. This is often the fastest way to build a shortlist.</div>
+      <div class="tip-title">Use Find Similar to Expand</div>
+      <div class="tip-body">One strong match + Find Similar = a cluster of similar engineers. Often the fastest way to build a shortlist.</div>
     </div>
     <div class="tip">
-      <div class="tip-title">4. Map Engineers Before Searching</div>
-      <div class="tip-body">Click "Map Engineers" on poach companies in the strategy editor to discover specific names. This gives you targeted leads before the broader search runs.</div>
+      <div class="tip-title">Map Engineers Before Searching</div>
+      <div class="tip-body">Click "Map Engineers" on poach companies to discover specific names. Targeted leads before the broader search runs.</div>
     </div>
     <div class="tip">
-      <div class="tip-title">5. Use Websets for Ongoing Roles</div>
-      <div class="tip-body">For roles you hire repeatedly, set up a Webset with monitoring. Import your existing candidate lists via CSV and let Exa enrich and discover new matches automatically.</div>
+      <div class="tip-title">Websets for Ongoing Roles</div>
+      <div class="tip-body">Roles you hire repeatedly: set up a Webset with monitoring. Import existing candidate lists via CSV. Exa enriches and discovers new matches automatically.</div>
     </div>
     <div class="tip">
-      <div class="tip-title">6. Check Grounded Summaries</div>
-      <div class="tip-body">The italic summaries with citations on top candidates are web-verified. Use the citation links to quickly validate a candidate's claims before outreach.</div>
+      <div class="tip-title">Check Grounded Summaries</div>
+      <div class="tip-body">Italic summaries with citations on top candidates are web-verified. Click citation links to validate claims before outreach.</div>
     </div>
   </div>
 
