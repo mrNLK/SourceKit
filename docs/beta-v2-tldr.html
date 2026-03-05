@@ -310,16 +310,16 @@
         <tspan fill="#9E9E9E">Source</tspan><tspan fill="#00BFA5">Kit</tspan>
       </text>
     </svg>
-    <div style="margin:4px 0;"><span class="badge">BETA V2.0 / EARLY ACCESS</span></div>
+    <div style="margin:4px 0;"><span class="badge">BETA V2.1 / EARLY ACCESS</span></div>
     <div class="hero-headline">Find engineers by what they build.</div>
-    <div class="hero-subhead">AI-powered technical sourcing, grounded in real GitHub data.</div>
+    <div class="hero-subhead">Evidence-based technical sourcing. Higher signal, better predictor of impact.</div>
     <div class="hero-url">getsourcekit.vercel.app</div>
   </div>
 
   <!-- THE PITCH -->
   <div class="section">
     <div class="section-label">THE PITCH</div>
-    <div class="pitch-box">SourceKit finds software engineers by analyzing their actual GitHub code contributions, not LinkedIn keywords. Enter a role, get a scored pipeline in minutes. Now with Exa Websets for persistent candidate collections and Parallel.ai for intelligent JD extraction.</div>
+    <div class="pitch-box">SourceKit finds software engineers by analyzing their actual code contributions, not LinkedIn keywords. Enter a role, get a scored pipeline in minutes. Exa Research builds the strategy, Exa Answer grounds candidate summaries in web evidence, Parallel.ai deep-researches target companies, and Websets build persistent candidate collections that auto-update.</div>
   </div>
 
   <!-- HOW IT WORKS -->
@@ -332,23 +332,23 @@
       </div>
       <div class="workflow-arrow">&#9654;</div>
       <div class="workflow-step">
-        <div class="workflow-step-title">AI Strategy</div>
-        <div class="workflow-step-desc">Claude builds plan</div>
+        <div class="workflow-step-title">Exa Research</div>
+        <div class="workflow-step-desc">Builds strategy</div>
       </div>
       <div class="workflow-arrow">&#9654;</div>
       <div class="workflow-step">
         <div class="workflow-step-title">You Refine</div>
-        <div class="workflow-step-desc">Edit repo list</div>
+        <div class="workflow-step-desc">Edit + map engineers</div>
       </div>
       <div class="workflow-arrow">&#9654;</div>
       <div class="workflow-step">
         <div class="workflow-step-title">Multi-API Search</div>
-        <div class="workflow-step-desc">Exa + Parallel + GitHub</div>
+        <div class="workflow-step-desc">GitHub + Exa Answer</div>
       </div>
       <div class="workflow-arrow">&#9654;</div>
       <div class="workflow-step">
         <div class="workflow-step-title">Pipeline</div>
-        <div class="workflow-step-desc">Scored candidates</div>
+        <div class="workflow-step-desc">Scored + grounded</div>
       </div>
     </div>
   </div>
@@ -358,31 +358,49 @@
     <div class="section-label">WHAT MAKES IT DIFFERENT</div>
     <div class="card-row">
       <div class="card">
-        <div class="card-title">Code Signal</div>
-        <div class="card-body">Scored on commits and PRs, not keywords</div>
+        <div class="card-title">Evidence-Based</div>
+        <div class="card-body">Scored on commits, PRs, and EEA criteria verified against web content via Exa vector search</div>
       </div>
       <div class="card">
         <div class="card-title">AI Strategy</div>
-        <div class="card-body">Claude builds repos, skills, poach list</div>
+        <div class="card-body">Exa Research builds repos, skills, poach list. Claude fallback.</div>
       </div>
       <div class="card">
         <div class="card-title">Persistent Pipeline</div>
-        <div class="card-body">Exa Websets auto-update with new matches</div>
+        <div class="card-body">Exa Websets auto-update with new matches. CSV import + webhooks.</div>
       </div>
     </div>
   </div>
 
-  <!-- NEW IN V2.0 -->
+  <!-- NEW IN V2.1 -->
   <div class="section">
-    <div class="section-label">NEW IN V2.0 <span class="badge-new">NEW</span></div>
-    <div class="card-row">
+    <div class="section-label">NEW IN V2.1 <span class="badge-new">NEW</span></div>
+    <div class="card-row" style="margin-bottom:7px;">
       <div class="card">
-        <div class="card-title">Exa Websets</div>
-        <div class="card-body">Persistent candidate collections with criteria-based filtering and auto-monitoring</div>
+        <div class="card-title">Exa Research</div>
+        <div class="card-body">Strategy generation via async research API with structured output. Claude as fallback.</div>
       </div>
       <div class="card">
-        <div class="card-title">Parallel.ai</div>
-        <div class="card-body">Intelligent JD extraction from any URL. Web search enrichment for deeper candidate context.</div>
+        <div class="card-title">Exa Answer</div>
+        <div class="card-body">Grounded summaries with web citations for top 10 candidates. Evidence, not guesses.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Exa findSimilar</div>
+        <div class="card-body">Find engineers with similar profiles from any candidate. Expand pipeline from one match.</div>
+      </div>
+    </div>
+    <div class="card-row">
+      <div class="card">
+        <div class="card-title">Company Intel</div>
+        <div class="card-body">Parallel deep research: headcount, tech stack, hiring/attrition signals per company.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Map Engineers</div>
+        <div class="card-body">Parallel FindAll discovers specific engineers at target companies with profiles.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">CSV Import + Webhooks</div>
+        <div class="card-body">Import candidates into Websets via CSV. Register webhooks for real-time updates.</div>
       </div>
     </div>
   </div>
@@ -391,10 +409,12 @@
   <div class="section">
     <div class="section-label">TECH STACK</div>
     <div class="pill-row">
-      <span class="pill">Claude AI</span>
-      <span class="pill">Exa Search</span>
+      <span class="pill">Exa Research</span>
+      <span class="pill">Exa Answer</span>
+      <span class="pill">Exa findSimilar</span>
       <span class="pill">Exa Websets</span>
       <span class="pill">Parallel.ai</span>
+      <span class="pill">Claude AI</span>
       <span class="pill">GitHub API</span>
       <span class="pill">React + TypeScript</span>
       <span class="pill">Supabase</span>
@@ -419,10 +439,11 @@
       <div class="step-item"><span class="step-num">1.</span> <span class="step-title">Sign in</span> with Google at getsourcekit.vercel.app</div>
       <div class="step-item"><span class="step-num">2.</span> <span class="step-title">Enter a role</span> by typing role+company, pasting a JD, or dropping a job URL</div>
       <div class="step-item"><span class="step-num">3.</span> <span class="step-title">Edit the repo list</span><span class="step-sep">/</span>this is the biggest lever for result quality</div>
-      <div class="step-item"><span class="step-num">4.</span> <span class="step-title">Run the search</span> and filter by language, commits, location</div>
-      <div class="step-item"><span class="step-num">5.</span> <span class="step-title">Review candidates</span><span class="step-sep">/</span>try "Find LinkedIn" and "Enrich" on top matches</div>
-      <div class="step-item"><span class="step-num">6.</span> <span class="step-title">Create a Webset</span><span class="step-sep">/</span>set criteria and monitoring for persistent candidate tracking</div>
-      <div class="step-item"><span class="step-num">7.</span> <span class="step-title">Pipeline</span><span class="step-sep">/</span>add candidates, drag between stages, try bulk actions, export to CSV</div>
+      <div class="step-item"><span class="step-num">4.</span> <span class="step-title">Map engineers</span><span class="step-sep">/</span>hover poach companies and click the people icon to discover engineers</div>
+      <div class="step-item"><span class="step-num">5.</span> <span class="step-title">Run the search</span> and check grounded summaries on top candidates</div>
+      <div class="step-item"><span class="step-num">6.</span> <span class="step-title">Find Similar</span><span class="step-sep">/</span>open a strong match, click "Find Similar Candidates" to expand</div>
+      <div class="step-item"><span class="step-num">7.</span> <span class="step-title">Create a Webset</span><span class="step-sep">/</span>set criteria, try CSV import, enable monitoring</div>
+      <div class="step-item"><span class="step-num">8.</span> <span class="step-title">Pipeline</span><span class="step-sep">/</span>add candidates, drag between stages, try bulk actions, export to CSV</div>
     </div>
   </div>
 
@@ -439,12 +460,12 @@
         <div class="tip-text">The AI list is a starting point. Your edits are the #1 quality lever.</div>
       </div>
       <div class="tip-card">
-        <div class="tip-label">Hidden gems</div>
-        <div class="tip-text">High commits + low followers = under-recruited and responsive</div>
+        <div class="tip-label">Find Similar</div>
+        <div class="tip-text">One strong match + Find Similar = a whole shortlist in seconds</div>
       </div>
       <div class="tip-card">
         <div class="tip-label">Use Websets</div>
-        <div class="tip-text">For recurring roles, set up monitoring to catch new contributors automatically</div>
+        <div class="tip-text">CSV import your list, set monitoring, let Exa discover new matches</div>
       </div>
     </div>
   </div>
@@ -452,7 +473,7 @@
   <!-- KNOWN LIMITATIONS -->
   <div class="section" style="margin-bottom:4px;">
     <div class="section-label">KNOWN LIMITATIONS</div>
-    <div class="limit-text">GitHub-only<span class="limit-sep">/</span>use alongside LinkedIn for full coverage. Strategy takes 15-20s<span class="limit-sep">/</span>expected, search is 30-60s. Some job URLs fail<span class="limit-sep">/</span>paste JD text directly. LinkedIn links are AI-matched<span class="limit-sep">/</span>always verify. Websets sync may take minutes<span class="limit-sep">/</span>check back periodically.</div>
+    <div class="limit-text">GitHub-only<span class="limit-sep">/</span>use alongside LinkedIn for full coverage. Strategy takes 15-20s<span class="limit-sep">/</span>Exa Research polls async. Company Intel may take 30-60s<span class="limit-sep">/</span>results stream in. LinkedIn links are AI-matched<span class="limit-sep">/</span>always verify. Websets sync may take minutes<span class="limit-sep">/</span>check back periodically.</div>
   </div>
 
   <!-- FOOTER -->

@@ -396,9 +396,9 @@
         <tspan fill="#9E9E9E">Source</tspan><tspan fill="#00BFA5">Kit</tspan>
       </text>
     </svg>
-    <div class="mb-8"><span class="badge">BETA V2.0 / EARLY ACCESS</span></div>
+    <div class="mb-8"><span class="badge">BETA V2.1 / EARLY ACCESS</span></div>
     <div class="hero-headline">Find engineers by what they build.</div>
-    <div class="hero-subhead">AI-powered technical sourcing, grounded in real GitHub data.</div>
+    <div class="hero-subhead">Evidence-based technical sourcing. Higher signal, better predictor of impact.</div>
     <div class="hero-url">getsourcekit.vercel.app</div>
   </div>
 
@@ -406,15 +406,15 @@
   <div class="section-tight">
     <div class="section-label">OVERVIEW</div>
     <div class="section-heading-sm">What is SourceKit?</div>
-    <p class="body-text-sm mb-10">SourceKit is a technical sourcing tool that finds software engineers based on their actual code contributions on GitHub, not self-reported LinkedIn keywords. You enter a role and company. SourceKit builds a sourcing strategy, searches real repositories, and returns a scored pipeline of candidates in minutes. v2.0 adds Parallel.ai for intelligent JD extraction and Exa Websets for persistent, auto-updating candidate collections.</p>
+    <p class="body-text-sm mb-10">SourceKit is a technical sourcing tool that finds software engineers based on their actual code contributions, not self-reported keywords or pedigree. It breaks down the role and your team's DNA, then builds a sourcing strategy with specific repos to mine, target companies, and EEA criteria (Evidence of Exceptional Ability: verifiable proof someone is top 5-10%). Candidates are scored 0-100 and hidden gems are surfaced. v2.1 adds Exa Research for AI-powered strategy generation, Exa Answer for grounded candidate summaries, Parallel deep research for company intelligence, and findSimilar/findAll for expanding your pipeline from a single strong match.</p>
     <div class="card-row">
       <div class="card">
-        <div class="card-title">Signal Over Noise</div>
-        <div class="card-body">Candidates are scored on real GitHub activity: commits, pull requests, and repo contributions. Ground-truth engineering signal that resumes can't replicate.</div>
+        <div class="card-title">Evidence Over Keywords</div>
+        <div class="card-body">Candidates are scored on real GitHub activity and verified against natural-language EEA criteria using Exa's vector search. Criteria like "shipped a product in the robotics space" match against actual web content, not keywords.</div>
       </div>
       <div class="card">
         <div class="card-title">AI-Built Strategy</div>
-        <div class="card-body">Claude analyzes the role, generates target repos, identifies poach companies, and builds a skills matrix. Parallel.ai extracts JDs from any URL automatically.</div>
+        <div class="card-body">Exa Research generates the sourcing strategy from the role spec. Claude and Parallel.ai provide fallback intelligence. The strategy includes repos, companies, skills, and EEA signals.</div>
       </div>
       <div class="card">
         <div class="card-title">Minutes, Not Days</div>
@@ -434,7 +434,7 @@
       </div>
       <div class="card">
         <div class="card-title">SourceKit Sourcing</div>
-        <div class="card-body">AI identifies key repos for a role, searches GitHub for top contributors, scores candidates on commit history, languages, and impact. Parallel.ai adds web context. Exa Websets build living candidate lists. Evidence-based, not keyword-based.</div>
+        <div class="card-body">AI identifies key repos for a role, searches GitHub for top contributors, scores on commit history and impact. Exa grounds summaries in web evidence. Websets build living candidate lists. Parallel deep-researches target companies. Evidence-based, not keyword-based.</div>
       </div>
       <div class="card">
         <div class="card-title">Best Use Cases</div>
@@ -452,14 +452,14 @@
   <div class="section">
     <div class="section-label">UNDER THE HOOD</div>
     <div class="section-heading">Architecture and Technology</div>
-    <p class="body-text-sm mb-8">SourceKit combines five core technologies: Claude AI for intelligence, Exa for neural search and Websets, Parallel.ai for web search and content extraction, the GitHub API for contributor data, and Supabase for data persistence.</p>
+    <p class="body-text-sm mb-8">SourceKit combines seven core technologies: Exa for research, answer, findSimilar, and Websets; Parallel.ai for company intelligence and talent mapping; Claude AI for scoring and outreach; the GitHub API for contributor data; and Supabase for data persistence.</p>
 
     <!-- Architecture Diagram -->
     <div class="arch-layer">
       <div class="arch-label">Presentation Layer</div>
       <div class="arch-box-full">
         <div class="arch-box-name">React + TypeScript Web App</div>
-        <div class="arch-box-desc">Mobile-first UI / Google OAuth / Settings / Search / Pipeline / Websets</div>
+        <div class="arch-box-desc">Mobile-first UI / Google OAuth / Search / Pipeline / Websets / Company Intel / Similar Candidates</div>
       </div>
     </div>
     <div class="arch-arrow">&#9660;</div>
@@ -467,16 +467,16 @@
       <div class="arch-label">AI Intelligence Layer</div>
       <div class="arch-boxes">
         <div class="arch-box">
-          <div class="arch-box-name">Claude AI (Anthropic)</div>
-          <div class="arch-box-desc">Strategy / Scoring / Outreach</div>
-        </div>
-        <div class="arch-box">
-          <div class="arch-box-name">Exa Search + Websets</div>
-          <div class="arch-box-desc">Neural search / Websets / Candidate collections</div>
+          <div class="arch-box-name">Exa APIs</div>
+          <div class="arch-box-desc">Research / Answer / findSimilar / Websets / Imports / Webhooks</div>
         </div>
         <div class="arch-box">
           <div class="arch-box-name">Parallel.ai</div>
-          <div class="arch-box-desc">Web search / JD extraction / Enrichment</div>
+          <div class="arch-box-desc">Company Intel / Talent Mapping / JD Extraction</div>
+        </div>
+        <div class="arch-box">
+          <div class="arch-box-name">Claude AI (Anthropic)</div>
+          <div class="arch-box-desc">Scoring / Outreach / Fallback Strategy</div>
         </div>
         <div class="arch-box">
           <div class="arch-box-name">GitHub REST + GraphQL</div>
@@ -525,23 +525,23 @@
       </div>
       <div class="workflow-arrow">&#9654;</div>
       <div class="workflow-step">
-        <div class="workflow-step-title">AI Strategy</div>
-        <div class="workflow-step-desc">Claude builds target repos, poach list, skills matrix</div>
+        <div class="workflow-step-title">Exa Research</div>
+        <div class="workflow-step-desc">Builds strategy with repos, companies, EEA criteria</div>
       </div>
       <div class="workflow-arrow">&#9654;</div>
       <div class="workflow-step">
         <div class="workflow-step-title">You Refine</div>
-        <div class="workflow-step-desc">Edit repos, add or remove targets, adjust criteria</div>
+        <div class="workflow-step-desc">Edit repos, companies, map engineers, get intel</div>
       </div>
       <div class="workflow-arrow">&#9654;</div>
       <div class="workflow-step">
         <div class="workflow-step-title">Multi-API Search</div>
-        <div class="workflow-step-desc">Exa + Parallel + GitHub APIs scan for top contributors</div>
+        <div class="workflow-step-desc">GitHub + Exa Answer enrich top 10 with citations</div>
       </div>
       <div class="workflow-arrow">&#9654;</div>
       <div class="workflow-step">
         <div class="workflow-step-title">Scored Pipeline</div>
-        <div class="workflow-step-desc">Candidates ranked by code signal, ready for outreach</div>
+        <div class="workflow-step-desc">Candidates ranked, grounded summaries, similar lookup</div>
       </div>
     </div>
   </div>
@@ -553,7 +553,7 @@
     <div style="display:flex; flex-direction:column; gap:8px;">
       <div class="card-accent">
         <div class="card-title">1. Role + Company</div>
-        <div class="card-body">Type a job title and target company. Claude infers the technical stack, identifies relevant repos, and builds your strategy from scratch. Example: "Staff ML Engineer" at "Anthropic"</div>
+        <div class="card-body">Type a job title and target company. Exa Research builds the sourcing strategy: target repos, poach companies, skills matrix, and EEA criteria. Example: "Staff ML Engineer" at "Anthropic"</div>
       </div>
       <div class="card-accent">
         <div class="card-title">2. Paste a Job Description</div>
@@ -568,14 +568,49 @@
 
 </div>
 
-<!-- ==================== PAGE 3: SCORING + PIPELINE + EXA WEBSETS ==================== -->
+<!-- ==================== PAGE 3: NEW IN V2.1 + SCORING ==================== -->
 <div class="page">
+
+  <!-- NEW IN V2.1 -->
+  <div class="section">
+    <div class="section-label">NEW IN V2.1 <span class="badge-new">NEW</span></div>
+    <div class="section-heading">What's New: Deep Research and Intelligence APIs</div>
+    <p class="body-text-sm mb-8">v2.1 integrates six new API capabilities that transform SourceKit from a search tool into a full-stack sourcing intelligence platform.</p>
+    <div class="card-row mb-12">
+      <div class="card">
+        <div class="card-title">Exa Research API</div>
+        <div class="card-body">Strategy generation is now powered by Exa's async research endpoint. Produces structured sourcing strategies with repos, companies, skills, and EEA criteria grounded in web evidence. Claude serves as automatic fallback.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Exa Answer API</div>
+        <div class="card-body">Top 10 search results are enriched with grounded summaries and citations. Each candidate gets a web-verified summary with links to the actual pages that confirm their work, not AI-generated guesses.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Exa findSimilar</div>
+        <div class="card-body">Found a great candidate? Click "Find Similar" on any profile to discover engineers with similar GitHub activity and web presence. Expands your pipeline from a single strong match.</div>
+      </div>
+    </div>
+    <div class="card-row">
+      <div class="card">
+        <div class="card-title">Parallel Company Intel</div>
+        <div class="card-body">Deep research on target companies: estimated engineering headcount, tech stack signals, hiring and attrition patterns, and a rationale for why to source from each company. Runs in parallel across all poach targets.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Parallel Talent Mapping</div>
+        <div class="card-body">"Map Engineers" on any poach company to discover specific engineers with name, title, LinkedIn, GitHub, and notable work. Uses Parallel's FindAll API for systematic web-wide discovery.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Webset CSV Import + Webhooks</div>
+        <div class="card-body">Import candidate lists via CSV directly into Exa Websets for enrichment. Register webhooks to receive real-time notifications when new candidates match your Webset criteria.</div>
+      </div>
+    </div>
+  </div>
 
   <!-- SCORING -->
   <div class="section">
     <div class="section-label">SCORING</div>
     <div class="section-heading">How Candidates Are Scored</div>
-    <p class="body-text-sm mb-6">Every candidate receives a composite score from 0 to 100 based on actual GitHub activity, weighted by relevance to the target role. No self-reported data. Just code signal.</p>
+    <p class="body-text-sm mb-6">Every candidate receives a composite score from 0 to 100 based on actual GitHub activity, weighted by relevance to the target role. Top 10 candidates also receive grounded summaries with web citations from the Exa Answer API.</p>
     <div class="score-bar">
       <div class="score-segment" style="flex:2; background: linear-gradient(90deg, #22c55e, #4ade80);">Strong Match 80-100</div>
       <div class="score-segment" style="flex:2; background: linear-gradient(90deg, #eab308, #facc15);">Worth Reviewing 60-79</div>
@@ -584,18 +619,23 @@
     <div class="card-row mt-6">
       <div class="card">
         <div class="card-title">Commit Volume and Recency</div>
-        <div class="card-body">How actively and recently the candidate has contributed to relevant repos. Recent activity is weighted more heavily because it indicates current working knowledge.</div>
+        <div class="card-body">How actively and recently the candidate has contributed to relevant repos. Recent activity is weighted more heavily.</div>
       </div>
       <div class="card">
         <div class="card-title">Language and Stack Match</div>
-        <div class="card-body">How well the candidate's primary languages align with what the role requires. Python for ML roles, Rust for systems work, and so on.</div>
+        <div class="card-body">How well the candidate's primary languages align with what the role requires.</div>
       </div>
       <div class="card">
-        <div class="card-title">Repo Relevance and Impact</div>
-        <div class="card-body">Contributions to high-signal repos (well-starred, actively maintained) are weighted more heavily than activity in personal or low-visibility projects.</div>
+        <div class="card-title">Grounded Summary</div>
+        <div class="card-body">Top candidates get a web-verified summary with citations from Exa Answer. Shows actual evidence of their work, not just self-reported claims.</div>
       </div>
     </div>
   </div>
+
+</div>
+
+<!-- ==================== PAGE 4: PIPELINE + WEBSETS ==================== -->
+<div class="page">
 
   <!-- PIPELINE -->
   <div class="section">
@@ -618,6 +658,10 @@
         <div class="card-body">Select multiple candidates to compare side-by-side, generate a summary report, or batch-draft personalized outreach messages.</div>
       </div>
       <div class="card">
+        <div class="card-title">Find Similar</div>
+        <div class="card-body">Open any candidate's detail view and click "Find Similar Candidates" to discover engineers with similar profiles via Exa findSimilar.</div>
+      </div>
+      <div class="card">
         <div class="card-title">CSV Export</div>
         <div class="card-body">Export your results or pipeline at any time. Take your candidate data into your ATS, spreadsheets, or any other tool.</div>
       </div>
@@ -625,29 +669,56 @@
   </div>
 
   <!-- EXA WEBSETS -->
-  <div class="section-tight">
-    <div class="section-label">EXA WEBSETS <span class="badge-new">NEW IN V2.0</span></div>
-    <div class="section-heading">Exa Websets: Persistent Candidate Collections</div>
-    <p class="body-text-sm mb-8">Websets are persistent, auto-updating candidate collections powered by Exa's neural search. Define your criteria once and get new matches continuously as new contributors emerge.</p>
-    <div class="card-row">
+  <div class="section">
+    <div class="section-label">EXA WEBSETS</div>
+    <div class="section-heading">Persistent Candidate Collections</div>
+    <p class="body-text-sm mb-8">Websets are persistent, auto-updating candidate collections powered by Exa's neural search. Define your criteria once and get new matches continuously. v2.1 adds CSV import and webhook support.</p>
+    <div class="card-row mb-12">
       <div class="card">
         <div class="card-title">Create and Search</div>
         <div class="card-body">Build a Webset from any search or from scratch. Define entity type, search query, and filtering criteria. Exa finds matching candidates across the web.</div>
       </div>
       <div class="card">
         <div class="card-title">Auto-Enrich</div>
-        <div class="card-body">Every item is automatically enriched with current company, role, LinkedIn URL, GitHub profile, and primary programming languages. No manual lookup.</div>
+        <div class="card-body">Every item is automatically enriched with current company, role, LinkedIn URL, GitHub profile, and primary programming languages.</div>
       </div>
       <div class="card">
         <div class="card-title">Monitor</div>
-        <div class="card-body">Set a schedule and Websets auto-update with new matches. New candidates matching your criteria appear without re-running searches. Push matches to your pipeline.</div>
+        <div class="card-body">Set a schedule and Websets auto-update with new matches. New candidates matching your criteria appear without re-running searches.</div>
+      </div>
+    </div>
+    <div class="card-row">
+      <div class="card">
+        <div class="card-title">CSV Import <span class="badge-new">NEW</span></div>
+        <div class="card-body">Upload a CSV of candidates directly into a Webset for Exa enrichment. Bulk-import your existing candidate lists and let Exa verify and enrich each one.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Webhooks <span class="badge-new">NEW</span></div>
+        <div class="card-body">Register webhook endpoints to receive real-time notifications when new candidates are discovered or existing items are updated by Exa.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPANY INTEL -->
+  <div class="section-tight">
+    <div class="section-label">COMPANY INTELLIGENCE <span class="badge-new">NEW</span></div>
+    <div class="section-heading-sm">Deep Research on Target Companies</div>
+    <p class="body-text-sm mb-8">Every company in your poach list can be deeply researched via the Parallel Task API. Get engineering headcount estimates, tech stack signals, hiring and attrition patterns, and a rationale for sourcing.</p>
+    <div class="card-row">
+      <div class="card">
+        <div class="card-title">Company Intel</div>
+        <div class="card-body">Parallel.ai runs multi-hop web research to estimate headcount, detect tech stack from job posts and repos, and identify hiring surges or layoff signals.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Map Engineers</div>
+        <div class="card-body">Click "Map Engineers" on any poach company to discover specific engineers with LinkedIn/GitHub profiles, titles, and notable work via Parallel FindAll.</div>
       </div>
     </div>
   </div>
 
 </div>
 
-<!-- ==================== PAGE 4: BETA TESTING + PRO TIPS + LIMITATIONS ==================== -->
+<!-- ==================== PAGE 5: BETA TESTING + PRO TIPS + LIMITATIONS ==================== -->
 <div class="page">
 
   <!-- BETA TESTING -->
@@ -656,13 +727,14 @@
     <div class="section-heading-sm">What to Test</div>
     <div>
       <div class="checklist-item"><span class="checklist-num">1.</span> <span class="checklist-title">Sign In</span> — Log in with Google at getsourcekit.vercel.app</div>
-      <div class="checklist-item"><span class="checklist-num">2.</span> <span class="checklist-title">Build a Strategy</span> — Try all three input paths: role + company, pasted JD, or job URL</div>
+      <div class="checklist-item"><span class="checklist-num">2.</span> <span class="checklist-title">Build a Strategy</span> — Try all three input paths: role + company, pasted JD, or job URL. Note the "research_source" field showing Exa or Claude.</div>
       <div class="checklist-item"><span class="checklist-num">3.</span> <span class="checklist-title">Edit and Run the Search</span> — Review the AI-generated repo list. Add, remove, or rearrange, then run the search.</div>
-      <div class="checklist-item"><span class="checklist-num">4.</span> <span class="checklist-title">Filter Results</span> — Narrow by language, minimum commits, star count, and location</div>
-      <div class="checklist-item"><span class="checklist-num">5.</span> <span class="checklist-title">Review Candidates</span> — Check candidate cards and scores. Click into profiles. Try "Find LinkedIn" and "Enrich" on your top matches.</div>
-      <div class="checklist-item"><span class="checklist-num">6.</span> <span class="checklist-title">Test Exa Websets</span> — Create a Webset from search results. Add criteria. Check enrichment data. Set up monitoring.</div>
-      <div class="checklist-item"><span class="checklist-num">7.</span> <span class="checklist-title">Pipeline and Bulk Actions</span> — Add candidates to the pipeline. Drag between stages. Select multiple for compare, summarize, and outreach.</div>
-      <div class="checklist-item"><span class="checklist-num">8.</span> <span class="checklist-title">Export to CSV</span> — Export and verify that the data looks clean and complete</div>
+      <div class="checklist-item"><span class="checklist-num">4.</span> <span class="checklist-title">Check Grounded Summaries</span> — Top 10 candidates should display an italic grounded summary with citation links below their bio.</div>
+      <div class="checklist-item"><span class="checklist-num">5.</span> <span class="checklist-title">Find Similar Candidates</span> — Open a candidate's detail view, click "Find Similar Candidates" and review the results panel.</div>
+      <div class="checklist-item"><span class="checklist-num">6.</span> <span class="checklist-title">Map Engineers</span> — In the strategy editor, hover a poach company and click the people icon to map engineers at that company.</div>
+      <div class="checklist-item"><span class="checklist-num">7.</span> <span class="checklist-title">Test Exa Websets</span> — Create a Webset, add criteria, check enrichment, try CSV import, set up monitoring.</div>
+      <div class="checklist-item"><span class="checklist-num">8.</span> <span class="checklist-title">Pipeline and Bulk Actions</span> — Add candidates to the pipeline. Drag between stages. Select multiple for compare, summarize, and outreach.</div>
+      <div class="checklist-item"><span class="checklist-num">9.</span> <span class="checklist-title">Export to CSV</span> — Export and verify that the data looks clean and complete</div>
     </div>
   </div>
 
@@ -679,16 +751,20 @@
       <div class="tip-body">The AI-generated suggestions are a starting point. Editing the repo list is the single biggest lever you have for improving result quality.</div>
     </div>
     <div class="tip">
-      <div class="tip-title">3. Target Hidden Gems</div>
-      <div class="tip-body">Candidates with high contributions but low follower counts tend to be under-recruited and more responsive to outreach. Prioritize them.</div>
+      <div class="tip-title">3. Use Find Similar to Expand</div>
+      <div class="tip-body">When you find one strong match, use "Find Similar" to discover a cluster of engineers with similar profiles. This is often the fastest way to build a shortlist.</div>
     </div>
     <div class="tip">
-      <div class="tip-title">4. Run Multiple Searches</div>
-      <div class="tip-body">Search the same role across different companies to widen your net. Different target companies surface different repo ecosystems and candidate pools.</div>
+      <div class="tip-title">4. Map Engineers Before Searching</div>
+      <div class="tip-body">Click "Map Engineers" on poach companies in the strategy editor to discover specific names. This gives you targeted leads before the broader search runs.</div>
     </div>
     <div class="tip">
       <div class="tip-title">5. Use Websets for Ongoing Roles</div>
-      <div class="tip-body">For roles you hire repeatedly, set up a Webset with monitoring. New contributors matching your criteria surface automatically.</div>
+      <div class="tip-body">For roles you hire repeatedly, set up a Webset with monitoring. Import your existing candidate lists via CSV and let Exa enrich and discover new matches automatically.</div>
+    </div>
+    <div class="tip">
+      <div class="tip-title">6. Check Grounded Summaries</div>
+      <div class="tip-body">The italic summaries with citations on top candidates are web-verified. Use the citation links to quickly validate a candidate's claims before outreach.</div>
     </div>
   </div>
 
@@ -713,13 +789,13 @@
           </tr>
           <tr>
             <td class="text-white" style="font-weight:600;">Strategy build time (15-20s)</td>
-            <td>Brief wait while AI generates the plan</td>
+            <td>Brief wait while Exa Research generates the plan</td>
             <td>Expected behavior. Full search takes 30-60s.</td>
           </tr>
           <tr>
-            <td class="text-white" style="font-weight:600;">JS-rendered job pages</td>
-            <td>Some job URLs may still fail to parse</td>
-            <td>Paste the JD text directly instead of the URL</td>
+            <td class="text-white" style="font-weight:600;">Company Intel polling</td>
+            <td>Parallel tasks may take 30-60s per company</td>
+            <td>Results stream in as each company completes</td>
           </tr>
           <tr>
             <td class="text-white" style="font-weight:600;">LinkedIn URL accuracy</td>

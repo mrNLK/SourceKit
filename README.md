@@ -1,15 +1,18 @@
 # SourceKit Talent Finder
 
-AI-powered GitHub talent sourcing for technical recruiting. Find engineers by what they've actually built — their open-source contributions, repositories, and shipped code — not just their LinkedIn headlines.
+Evidence-based technical sourcing. Find engineers by what they've actually built — their open-source contributions, repositories, and shipped code — not keywords or pedigree. Higher signal, better predictor of impact.
 
 ## What It Does
 
 SourceKit turns GitHub's open-source graph into a recruiting pipeline:
 
-- **Research** — Paste a job description or describe a role, and AI builds a sourcing strategy: target repos to mine, companies to source from, skills to weight, and EEA (Evidence of Exceptional Ability) signals to detect.
-- **Search** — Finds real GitHub contributors matching your criteria, scores them 0–100, and surfaces hidden gems (high-quality, low-visibility engineers).
+- **Research** — Paste a job description or describe a role, and Exa Research builds a sourcing strategy: target repos to mine, companies to source from, skills to weight, and EEA (Evidence of Exceptional Ability) signals to detect. Claude serves as automatic fallback.
+- **Search** — Finds real GitHub contributors matching your criteria, scores them 0-100, enriches the top 10 with grounded web summaries and citations via Exa Answer, and surfaces hidden gems (high-quality, low-visibility engineers).
+- **Find Similar** — Found a great candidate? Exa findSimilar discovers engineers with similar profiles and web presence from a single match.
+- **Company Intel** — Parallel.ai deep-researches target companies: engineering headcount, tech stack signals, hiring/attrition patterns. Map Engineers discovers specific engineers at each company via Parallel FindAll.
 - **Enrich** — Looks up LinkedIn profiles via Exa semantic search and finds contact information.
 - **Pipeline** — Kanban board to track candidates through Sourced → Contacted → Responded → Screen → Offer.
+- **Websets** — Persistent, auto-updating candidate collections powered by Exa. Define criteria once, get new matches continuously. CSV import and webhook support.
 - **Outreach** — AI writes personalized messages referencing the candidate's actual open-source work.
 - **Bulk Actions** — Compare, rank, and draft outreach for multiple candidates with an AI chat interface.
 
@@ -17,8 +20,15 @@ SourceKit turns GitHub's open-source graph into a recruiting pipeline:
 
 - **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Radix UI
 - **Backend:** Supabase (PostgreSQL, Edge Functions, Auth)
-- **AI:** Anthropic Claude (query parsing, candidate scoring, research, outreach generation)
-- **Search:** GitHub REST API (contributor mining, profile enrichment), Exa (LinkedIn lookup)
+- **AI / Research:**
+  - Exa Research API (strategy generation)
+  - Exa Answer API (grounded candidate summaries with citations)
+  - Exa findSimilar (similar candidate discovery)
+  - Exa Websets (persistent collections, imports, monitors, webhooks)
+  - Parallel.ai Task API (company intelligence)
+  - Parallel.ai FindAll API (talent mapping)
+  - Anthropic Claude (scoring, outreach, strategy fallback)
+- **Data:** GitHub REST API (contributor mining, profile enrichment), Exa (LinkedIn lookup)
 - **Payments:** Stripe
 - **Hosting:** Vercel
 - **Analytics:** Vercel Web Analytics
@@ -29,7 +39,7 @@ SourceKit turns GitHub's open-source graph into a recruiting pipeline:
 
 - Node.js 18+ (install via [nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
 - A Supabase project
-- API keys for: GitHub, Anthropic, and Exa
+- API keys for: GitHub, Anthropic, Exa, and Parallel.ai
 
 ### Setup
 
@@ -61,7 +71,8 @@ Copy `.env.example` to `.env` and fill in your values:
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (Edge Functions only) |
 | `GITHUB_TOKEN` | GitHub personal access token |
 | `ANTHROPIC_API_KEY` | Anthropic API key |
-| `EXA_API_KEY` | Exa API key |
+| `EXA_API_KEY` | Exa API key (Research, Answer, findSimilar, Websets) |
+| `PARALLEL_API_KEY` | Parallel.ai API key (Company Intel, FindAll) |
 | `STRIPE_SECRET_KEY` | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook secret |
 | `STRIPE_PRICE_ID` | Stripe price ID |
@@ -97,13 +108,24 @@ src/
 ├── types/           # TypeScript type definitions
 └── data/            # Static data and constants
 supabase/
-└── functions/       # Supabase Edge Functions (search, enrich, research, etc.)
+└── functions/       # Supabase Edge Functions
+    ├── research-role/           # Exa Research + Claude fallback strategy generation
+    ├── github-search/           # GitHub contributor search + Exa Answer enrichment
+    ├── company-intel/           # Parallel Task API company intelligence
+    ├── find-similar-candidates/ # Exa findSimilar candidate discovery
+    ├── map-company-talent/      # Parallel FindAll talent mapping
+    ├── import-candidates/       # Exa Websets CSV import
+    ├── exa-websets/             # Webset CRUD + webhook registration
+    ├── webset-webhook/          # Webhook receiver for Webset events
+    └── _shared/                 # Shared utilities (CORS, etc.)
 ```
 
 ## Documentation
 
 - **[Tester Guide](./TESTER_GUIDE.md)** — Full walkthrough of every feature, search tips, and workflow diagrams.
 - **[Security Policy](./SECURITY.md)** — How secrets and API keys are handled.
+- **[Beta Guide (PDF)](./docs/SourceKit_Beta_v2_1_Guide.pdf)** — Printable 5-page guide.
+- **[Beta TL;DR (PDF)](./docs/SourceKit_Beta_v2_1___TL_DR.pdf)** — One-page summary.
 
 ## License
 

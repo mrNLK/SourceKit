@@ -17,12 +17,12 @@ async function generatePDFs() {
   });
   await new Promise(r => setTimeout(r, 3000)); // Wait for fonts
   await guidePage.pdf({
-    path: join(__dirname, 'SourceKit_Beta_v2_0_Guide.pdf'),
+    path: join(__dirname, 'SourceKit_Beta_v2_1_Guide.pdf'),
     format: 'letter',
     printBackground: true,
     margin: { top: 0, right: 0, bottom: 0, left: 0 },
   });
-  console.log('  -> SourceKit_Beta_v2_0_Guide.pdf');
+  console.log('  -> SourceKit_Beta_v2_1_Guide.pdf');
 
   // TL;DR (1 page)
   console.log('Generating TL;DR...');
@@ -33,12 +33,12 @@ async function generatePDFs() {
   });
   await new Promise(r => setTimeout(r, 3000));
   await tldrPage.pdf({
-    path: join(__dirname, 'SourceKit_Beta_v2_0___TL_DR.pdf'),
+    path: join(__dirname, 'SourceKit_Beta_v2_1___TL_DR.pdf'),
     format: 'letter',
     printBackground: true,
     margin: { top: 0, right: 0, bottom: 0, left: 0 },
   });
-  console.log('  -> SourceKit_Beta_v2_0___TL_DR.pdf');
+  console.log('  -> SourceKit_Beta_v2_1___TL_DR.pdf');
 
   await browser.close();
   console.log('Done! PDFs generated in docs/');
