@@ -61,7 +61,7 @@ CREATE TABLE public.pipeline (
   github_username TEXT NOT NULL UNIQUE,
   name TEXT,
   avatar_url TEXT,
-  stage TEXT NOT NULL DEFAULT 'sourced' CHECK (stage IN ('sourced', 'contacted', 'responded', 'screen', 'offer')),
+  stage TEXT NOT NULL DEFAULT 'sourced' CHECK (stage IN ('sourced', 'contacted', 'responded', 'screen', 'in_process')),
   notes TEXT,
   tags TEXT[] DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),

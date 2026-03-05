@@ -20,7 +20,7 @@ const STAGES = [
   { id: 'contacted', label: 'Contacted', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
   { id: 'responded', label: 'Responded', color: 'bg-info/15 text-info border-info/30' },
   { id: 'screen', label: 'Screen', color: 'bg-purple-500/15 text-purple-400 border-purple-500/30' },
-  { id: 'offer', label: 'Offer', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+  { id: 'in_process', label: 'In Process', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
 ] as const;
 
 function getScoreColor(score: number) {

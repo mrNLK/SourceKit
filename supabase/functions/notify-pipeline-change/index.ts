@@ -54,7 +54,7 @@ serve(async (req) => {
       contacted: 'Contacted',
       responded: 'Responded',
       screen: 'Screen',
-      offer: 'Offer',
+      in_process: 'In Process',
     };
 
     const fromLabel = from_stage ? (stageLabels[from_stage] || from_stage) : 'New';

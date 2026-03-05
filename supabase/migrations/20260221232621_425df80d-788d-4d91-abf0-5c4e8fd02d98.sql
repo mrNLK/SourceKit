@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS public.pipeline (
   github_username TEXT NOT NULL,
   name TEXT,
   avatar_url TEXT,
-  stage TEXT NOT NULL DEFAULT 'sourced' CHECK (stage IN ('sourced', 'contacted', 'responded', 'screen', 'offer')),
+  stage TEXT NOT NULL DEFAULT 'sourced' CHECK (stage IN ('sourced', 'contacted', 'responded', 'screen', 'in_process')),
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
