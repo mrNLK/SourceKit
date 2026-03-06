@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { requireAuth, authErrorResponse } from '../_shared/auth.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -7,6 +8,8 @@ serve(async (req) => {
   }
 
   try {
+    await requireAuth(req);
+
     const { query, role, company } = await req.json()
 
     const exaApiKey = Deno.env.get('EXA_API_KEY')
@@ -117,6 +120,8 @@ serve(async (req) => {
       { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    const authResp = authErrorResponse(error, getCorsHeaders(req));
+    if (authResp) return authResp;
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }

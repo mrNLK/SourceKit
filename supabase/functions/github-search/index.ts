@@ -536,16 +536,15 @@ serve(async (req) => {
   }
 
   try {
-    // Subscription gate check
+    // Subscription gate check (requires authenticated user)
     const gate = await checkSearchGate(req.headers.get('Authorization'));
     if (!gate.allowed) {
+      const isAuthError = gate.error === 'authentication_required' || gate.error === 'invalid_token';
       return new Response(JSON.stringify({
         error: gate.error,
-        upgrade: true,
-        searches_used: gate.searchesUsed,
-        search_limit: gate.searchLimit,
+        ...(isAuthError ? {} : { upgrade: true, searches_used: gate.searchesUsed, search_limit: gate.searchLimit }),
       }), {
-        status: 402,
+        status: isAuthError ? 401 : 402,
         headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }

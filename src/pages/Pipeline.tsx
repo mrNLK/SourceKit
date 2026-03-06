@@ -39,11 +39,9 @@ const OutreachSection = ({ pipelineId, candidateName, githubUsername }: { pipeli
     setGenerating(true);
     setGeneratedMsg(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Please sign in to generate outreach');
       const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-outreach`, {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ candidate_name: candidateName, github_username: githubUsername }),
       });
       const data = await res.json();

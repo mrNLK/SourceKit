@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { requireAuth, authErrorResponse } from '../_shared/auth.ts';
 
 /**
  * Extract text from a JD URL using Parallel.ai (JS-rendered pages) with
@@ -73,6 +74,8 @@ serve(async (req) => {
   }
 
   try {
+    await requireAuth(req);
+
     const { url, parallel_api_key } = await req.json();
 
     if (!url || typeof url !== 'string') {
@@ -148,6 +151,8 @@ serve(async (req) => {
       headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   } catch (e) {
+    const authResp = authErrorResponse(e, getCorsHeaders(req));
+    if (authResp) return authResp;
     console.error('parse-jd error:', e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Failed to parse job description' }), {
       status: 500,

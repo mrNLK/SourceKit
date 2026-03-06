@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { anthropicCall } from "../_shared/anthropic.ts";
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { requireAuth, authErrorResponse } from '../_shared/auth.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -9,26 +9,7 @@ serve(async (req) => {
   }
 
   try {
-    // Authenticate user via session token
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || authHeader === `Bearer ${Deno.env.get('SUPABASE_ANON_KEY') || ''}`) {
-      return new Response(JSON.stringify({ error: 'Authentication required' }), {
-        status: 401,
-        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
-      });
-    }
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!
-    );
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid or expired session' }), {
-        status: 401,
-        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
-      });
-    }
+    await requireAuth(req);
 
     const { candidate_name, github_username, role_context } = await req.json();
 
@@ -52,6 +33,8 @@ serve(async (req) => {
       headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   } catch (e) {
+    const authResp = authErrorResponse(e, getCorsHeaders(req));
+    if (authResp) return authResp;
     console.error('generate-outreach error:', e);
     if ((e as Error).message === 'RATE_LIMITED') {
       return new Response(JSON.stringify({ error: 'Rate limited. Try again shortly.' }), {

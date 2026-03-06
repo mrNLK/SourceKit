@@ -63,20 +63,9 @@ serve(async (req) => {
     const supabase = getSupabase()
     let response: Response
 
-    // Sanitise enrichment formats – Exa only accepts text | number | options
-    const VALID_FORMATS = new Set(['text', 'number', 'options'])
-    function sanitiseEnrichments(arr: any[] | undefined) {
-      if (!arr || arr.length === 0) return undefined
-      return arr.map((e: any) => ({
-        ...e,
-        format: VALID_FORMATS.has(e.format) ? e.format : 'text',
-      }))
-    }
-
     switch (action) {
       case 'create': {
-        const { query, count, criteria, enrichments } = params
-        const safeEnrichments = sanitiseEnrichments(enrichments)
+        const { query, count, entity_type, criteria, enrichments } = params
         response = await fetch(`${WEBSETS_BASE}/websets`, {
           method: 'POST',
           headers,
@@ -84,9 +73,10 @@ serve(async (req) => {
             search: {
               query,
               count: count || 10,
+              entity: { type: entity_type || 'person' },
               ...(criteria ? { criteria } : {}),
             },
-            ...(safeEnrichments ? { enrichments: safeEnrichments } : {}),
+            ...(enrichments && enrichments.length > 0 ? { enrichments } : {}),
           }),
         })
 
@@ -141,12 +131,11 @@ serve(async (req) => {
           )
         }
 
-        // Fallback: no auth, list all (legacy behavior)
-        const { limit, cursor } = params
-        const qs = new URLSearchParams()
-        if (limit) qs.set('limit', String(limit))
-        if (cursor) qs.set('cursor', cursor)
-        response = await fetch(`${WEBSETS_BASE}/websets?${qs.toString()}`, { headers })
+        // No auth = reject (no anonymous webset listing)
+        return new Response(
+          JSON.stringify({ error: 'Authentication required' }),
+          { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+        )
         break
       }
 
@@ -185,11 +174,10 @@ serve(async (req) => {
             { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
           )
         }
-        const safeFormat = VALID_FORMATS.has(format) ? format : 'text'
         response = await fetch(`${WEBSETS_BASE}/websets/${webset_id}/enrichments`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ description, format: safeFormat }),
+          body: JSON.stringify({ description, format }),
         })
         break
       }
@@ -203,25 +191,31 @@ serve(async (req) => {
           )
         }
 
-        // Verify ownership before deleting
-        if (userId) {
-          const { data: mapping } = await supabase
-            .from('webset_mappings')
-            .select('id')
-            .eq('webset_id', webset_id)
-            .eq('user_id', userId)
-            .maybeSingle()
-
-          if (!mapping) {
-            return new Response(
-              JSON.stringify({ error: 'Webset not found or not owned by you' }),
-              { status: 403, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
-            )
-          }
-
-          // Clean up mapping
-          await supabase.from('webset_mappings').delete().eq('webset_id', webset_id).eq('user_id', userId)
+        // Require auth for delete operations
+        if (!userId) {
+          return new Response(
+            JSON.stringify({ error: 'Authentication required' }),
+            { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+          )
         }
+
+        // Verify ownership before deleting
+        const { data: mapping } = await supabase
+          .from('webset_mappings')
+          .select('id')
+          .eq('webset_id', webset_id)
+          .eq('user_id', userId)
+          .maybeSingle()
+
+        if (!mapping) {
+          return new Response(
+            JSON.stringify({ error: 'Webset not found or not owned by you' }),
+            { status: 403, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // Clean up mapping
+        await supabase.from('webset_mappings').delete().eq('webset_id', webset_id).eq('user_id', userId)
 
         response = await fetch(`${WEBSETS_BASE}/websets/${webset_id}`, {
           method: 'DELETE',
@@ -360,15 +354,6 @@ serve(async (req) => {
     }
 
     const data = await response.json()
-
-    // Surface detailed Exa API error messages to the client
-    if (!response.ok && !data.error) {
-      const detail = data.message || data.detail || JSON.stringify(data)
-      return new Response(
-        JSON.stringify({ error: detail }),
-        { status: response.status, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
-      )
-    }
 
     return new Response(
       JSON.stringify(data),

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { anthropicCall } from "../_shared/anthropic.ts";
+import { requireAuth, authErrorResponse } from "../_shared/auth.ts";
 
 const GITHUB_API = "https://api.github.com";
 
@@ -15,15 +16,6 @@ async function githubFetch(url: string) {
   }
   const res = await fetch(url, { headers });
   if (!res.ok) {
-    if (res.status === 403 || res.status === 429) {
-      const remaining = res.headers.get("x-ratelimit-remaining");
-      if (remaining === "0") {
-        const resetAt = res.headers.get("x-ratelimit-reset");
-        const resetTime = resetAt ? new Date(Number(resetAt) * 1000).toISOString() : "unknown";
-        console.error(`GitHub API rate limited. Resets at ${resetTime}`);
-        throw new Error(`GITHUB_RATE_LIMITED`);
-      }
-    }
     console.error(`GitHub API error: ${res.status} for ${url}`);
     return null;
   }
@@ -239,11 +231,9 @@ async function getRepoSignals(owner: string, repo: string, repoData: any): Promi
     (f: string) =>
       f === "test" || f === "tests" || f === "__tests__" ||
       f === "spec" || f === "specs" ||
-      f.startsWith("test.") || f.startsWith("test_") ||
-      f.endsWith(".test.js") || f.endsWith(".test.ts") || f.endsWith(".test.tsx") ||
-      f.endsWith(".spec.js") || f.endsWith(".spec.ts") || f.endsWith(".spec.tsx") ||
+      f.includes("test") || f.includes("spec") ||
       f === "vitest.config.ts" || f === "jest.config.js" || f === "jest.config.ts" ||
-      f === "pytest.ini" || f === ".pytest.ini" ||
+      f === "pytest.ini" || f === ".pytest.ini" || f === "setup.cfg" ||
       f === "karma.conf.js" || f === "cypress.json" || f === "cypress.config.ts"
   );
 
@@ -416,6 +406,8 @@ serve(async (req) => {
   }
 
   try {
+    await requireAuth(req);
+
     const url = new URL(req.url);
     const username = url.searchParams.get("username");
 
@@ -463,7 +455,7 @@ serve(async (req) => {
     // Also check for Claude Code in package dependency files of top repos
     const depCheckPromises = reposToAnalyze.slice(0, 3).map(async (r: any) => {
       const pkg = await githubFetch(`${GITHUB_API}/repos/${username}/${r.name}/contents/package.json`);
-      if (pkg && pkg.content && pkg.encoding === "base64") {
+      if (pkg && pkg.content) {
         try {
           const decoded = atob(pkg.content.replace(/\n/g, ""));
           const lower = decoded.toLowerCase();
@@ -476,7 +468,7 @@ serve(async (req) => {
           if (lower.includes("chromadb") || lower.includes("@chromadb")) frameworks.push("ChromaDB");
           if (lower.includes("ai-sdk") || lower.includes("@ai-sdk")) frameworks.push("Vercel AI SDK");
           return frameworks;
-        } catch { return []; }
+        } catch (e) { console.error(`Failed to parse package.json for ${r.name}:`, e); return []; }
       }
       return [];
     });
@@ -486,7 +478,7 @@ serve(async (req) => {
     // Also check Python requirements
     const pyCheckPromises = reposToAnalyze.slice(0, 3).map(async (r: any) => {
       const req = await githubFetch(`${GITHUB_API}/repos/${username}/${r.name}/contents/requirements.txt`);
-      if (req && req.content && req.encoding === "base64") {
+      if (req && req.content) {
         try {
           const decoded = atob(req.content.replace(/\n/g, ""));
           const lower = decoded.toLowerCase();
@@ -505,7 +497,7 @@ serve(async (req) => {
           if (lower.includes("instructor")) frameworks.push("Instructor");
           if (lower.includes("pydantic-ai") || lower.includes("pydantic_ai")) frameworks.push("Pydantic AI");
           return frameworks;
-        } catch { return []; }
+        } catch (e) { console.error(`Failed to parse requirements.txt for ${r.name}:`, e); return []; }
       }
       return [];
     });
@@ -635,6 +627,9 @@ serve(async (req) => {
       }),
     };
 
+    // Sanitize username to prevent prompt injection in AI summary
+    const safeUsername = username.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 39);
+
     // Build context for Claude AI summary
     const repoSummary = repoBreakdown
       .map((r) => `${r.name} (${r.score}/100): +[${r.signals.join(", ")}] -[${r.concerns.join(", ")}]`)
@@ -642,7 +637,7 @@ serve(async (req) => {
 
     const aiPrompt = `You are evaluating a GitHub developer as a potential Technical Builder at AI Fund, a venture studio founded by Andrew Ng. The role requires hands-on GenAI building, rapid prototyping, and deep familiarity with the latest AI tools and frameworks.
 
-Username: ${username}
+Username: ${safeUsername}
 Overall Score: ${overallScore}/100
 
 Dimension Scores:
@@ -721,13 +716,9 @@ Respond with ONLY valid JSON (no markdown, no backticks):
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   } catch (error) {
+    const authResp = authErrorResponse(error, getCorsHeaders(req));
+    if (authResp) return authResp;
     console.error("Error in github-code-quality:", error);
-    if (error instanceof Error && error.message === "GITHUB_RATE_LIMITED") {
-      return new Response(
-        JSON.stringify({ error: "GitHub API rate limit exceeded. Try again later." }),
-        { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
-      );
-    }
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }

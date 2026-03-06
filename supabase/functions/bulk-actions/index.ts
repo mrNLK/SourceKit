@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { anthropicStream } from "../_shared/anthropic.ts";
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { requireAuth, authErrorResponse } from '../_shared/auth.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -8,6 +9,8 @@ serve(async (req) => {
   }
 
   try {
+    await requireAuth(req);
+
     const { action, candidates, messages } = await req.json();
 
     let systemPrompt = "You are an expert technical recruiter AI assistant. You help analyze candidate data and provide actionable recruiting insights. Use markdown formatting for readability.";
@@ -54,6 +57,8 @@ serve(async (req) => {
       headers: { ...getCorsHeaders(req), 'Content-Type': 'text/event-stream' },
     });
   } catch (e) {
+    const authResp = authErrorResponse(e, getCorsHeaders(req));
+    if (authResp) return authResp;
     console.error('bulk-actions error:', e);
     if ((e as Error).message === 'RATE_LIMITED') {
       return new Response(JSON.stringify({ error: 'Rate limited. Try again shortly.' }), {

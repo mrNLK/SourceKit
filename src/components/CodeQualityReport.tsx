@@ -26,7 +26,7 @@ function scoreBarColor(score: number) {
   return "bg-red-500";
 }
 
-function DimensionRow({ icon: Icon, label, score }: { icon: React.ComponentType<{ className?: string }>; label: string; score: number }) {
+function DimensionRow({ icon: Icon, label, score }: { icon: any; label: string; score: number }) {
   return (
     <div className="flex items-center gap-2">
       <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { anthropicToolCall } from "../_shared/anthropic.ts";
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { requireAuth, authErrorResponse } from '../_shared/auth.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -9,6 +10,8 @@ serve(async (req) => {
   }
 
   try {
+    await requireAuth(req);
+
     const { username, name, location, bio } = await req.json();
 
     if (!username) {
@@ -131,6 +134,8 @@ serve(async (req) => {
       headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    const authResp = authErrorResponse(error, getCorsHeaders(req));
+    if (authResp) return authResp;
     console.error('Error in enrich-linkedin:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,

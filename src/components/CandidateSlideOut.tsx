@@ -11,6 +11,7 @@ import { EEAFull } from "@/components/EEASignals";
 import { notifyStageChange } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import OutreachTemplateEditor from "@/components/OutreachTemplateEditor";
+import CodeQualityReport from "@/components/CodeQualityReport";
 import type { Developer, Language } from "@/types/developer";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -189,11 +190,9 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
         `Tone: ${tone.prompt}`,
       ].filter(Boolean).join('. ');
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Please sign in to generate outreach');
       const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-outreach`, {
         method: "POST",
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           candidate_name: dev.name,
           github_username: dev.username,
@@ -537,6 +536,9 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
               )}
             </div>
           )}
+
+          {/* ===== BUILDER SCORE ===== */}
+          <CodeQualityReport username={dev.username} />
 
           {/* ===== OUTREACH ===== */}
           <div className="glass rounded-xl p-4">
