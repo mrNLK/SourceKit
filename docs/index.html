@@ -482,33 +482,49 @@
 
   <!-- BUILDER SCORE -->
   <div class="section-tight" style="margin-top:6px;">
-    <div class="label">BUILDER SCORE <span class="pill-accent" style="margin-left:6px;">NEW</span></div>
-    <div style="display:flex; gap:14px; align-items:flex-start;">
-      <div style="flex:1; min-width:0;">
-        <div class="heading" style="font-size:14px;">AI-Weighted GitHub Evaluation</div>
-        <div class="body-sm" style="margin-bottom:6px;">Scans a candidate's top repos for AI mastery, build velocity, tooling, testing, docs, and community. Returns a 0-100 score with per-dimension breakdowns. Claude Code commits weighted 3x.</div>
-        <div style="display:flex; flex-wrap:wrap; gap:4px;">
-          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);">Claude Code 3x</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);">AI Frameworks</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(6,182,212,0.1);color:#06b6d4;border:1px solid rgba(6,182,212,0.25);">Coding Tools</span>
-        </div>
+    <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:8px;">
+      <div class="label" style="margin-bottom:0;">BUILDER SCORE <span class="pill-accent" style="margin-left:6px;">NEW</span></div>
+      <div style="font-size:12px; font-weight:700; color:var(--white);">AI-Weighted GitHub Evaluation</div>
+      <div style="font-size:11px; color:var(--secondary);">Scans top repos. Returns 0-100 with per-dimension breakdowns.</div>
+    </div>
+    <!-- Dimension weight bars -->
+    <div style="display:flex; gap:4px; align-items:stretch; height:48px; margin-bottom:8px;">
+      <div style="flex:30; background:linear-gradient(180deg,rgba(59,130,246,0.18) 0%,rgba(59,130,246,0.06) 100%); border:1px solid rgba(59,130,246,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#3b82f6; line-height:1;">30%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(59,130,246,0.8); letter-spacing:0.04em; text-transform:uppercase;">AI Mastery</div>
       </div>
-      <div style="flex:2; min-width:0;">
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px;">
-          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 8px;text-align:center;">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#3b82f6;">30%</div>
-            <div style="font-size:9px;color:var(--secondary);">AI Mastery</div>
-          </div>
-          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 8px;text-align:center;">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#3b82f6;">20%</div>
-            <div style="font-size:9px;color:var(--secondary);">Build Velocity</div>
-          </div>
-          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 8px;text-align:center;">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#3b82f6;">15%</div>
-            <div style="font-size:9px;color:var(--secondary);">Tooling</div>
-          </div>
-        </div>
+      <div style="flex:20; background:linear-gradient(180deg,rgba(168,85,247,0.18) 0%,rgba(168,85,247,0.06) 100%); border:1px solid rgba(168,85,247,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#a855f7; line-height:1;">20%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(168,85,247,0.8); letter-spacing:0.04em; text-transform:uppercase;">Build Velocity</div>
       </div>
+      <div style="flex:15; background:linear-gradient(180deg,rgba(6,182,212,0.18) 0%,rgba(6,182,212,0.06) 100%); border:1px solid rgba(6,182,212,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#06b6d4; line-height:1;">15%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(6,182,212,0.8); letter-spacing:0.04em; text-transform:uppercase;">Tooling</div>
+      </div>
+      <div style="flex:15; background:linear-gradient(180deg,rgba(0,229,160,0.18) 0%,rgba(0,229,160,0.06) 100%); border:1px solid rgba(0,229,160,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#00e5a0; line-height:1;">15%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(0,229,160,0.8); letter-spacing:0.04em; text-transform:uppercase;">Commit Bonus</div>
+      </div>
+      <div style="flex:10; background:linear-gradient(180deg,rgba(245,158,11,0.18) 0%,rgba(245,158,11,0.06) 100%); border:1px solid rgba(245,158,11,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#f59e0b; line-height:1;">10%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(245,158,11,0.8); letter-spacing:0.04em; text-transform:uppercase;">Testing</div>
+      </div>
+      <div style="flex:8; background:linear-gradient(180deg,rgba(236,72,153,0.18) 0%,rgba(236,72,153,0.06) 100%); border:1px solid rgba(236,72,153,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#ec4899; line-height:1;">8%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(236,72,153,0.8); letter-spacing:0.04em; text-transform:uppercase;">Docs</div>
+      </div>
+      <div style="flex:7; background:linear-gradient(180deg,rgba(161,161,170,0.18) 0%,rgba(161,161,170,0.06) 100%); border:1px solid rgba(161,161,170,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#a1a1aa; line-height:1;">7%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(161,161,170,0.8); letter-spacing:0.04em; text-transform:uppercase;">Community</div>
+      </div>
+    </div>
+    <!-- Signal pills -->
+    <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);">Claude Code 3x</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);">46 AI Keywords</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(6,182,212,0.1);color:#06b6d4;border:1px solid rgba(6,182,212,0.25);">28 Framework Files</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(0,229,160,0.1);color:#00e5a0;border:1px solid rgba(0,229,160,0.25);">7 Coding Tools</span>
+      <span style="font-size:9px; color:var(--secondary); margin-left:4px;">No self-reported data. GitHub activity only.</span>
     </div>
   </div>
 
@@ -650,92 +666,87 @@
   <!-- ARCHITECTURE + API SURFACE -->
   <div class="section-tight">
     <div class="label">ARCHITECTURE + API SURFACE</div>
-    <div style="display:flex; gap:14px; align-items:flex-start;">
-
-      <!-- Left: Architecture Diagram (compact) -->
+    <!-- Architecture: full-width horizontal flow -->
+    <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
+      <!-- Presentation -->
       <div style="flex:1; min-width:0;">
-        <div style="margin-bottom:4px;">
-          <div class="arch-label">Presentation Layer</div>
-          <div class="arch-boxes">
-            <div class="arch-box" style="flex:1;">
-              <div class="arch-box-name">React + TypeScript</div>
-              <div class="arch-box-desc">Mobile-first / OAuth / Search / Pipeline / Websets</div>
-            </div>
-          </div>
+        <div class="arch-label" style="margin-bottom:3px;">Presentation</div>
+        <div class="arch-box" style="margin:0;">
+          <div class="arch-box-name">React + TypeScript</div>
+          <div class="arch-box-desc">Mobile-first / OAuth / Search / Pipeline / Websets</div>
         </div>
-        <div class="arch-arrow">&#9660;</div>
-        <div style="margin-bottom:4px;">
-          <div class="arch-label">AI Intelligence Layer</div>
-          <div class="arch-boxes">
-            <div class="arch-box">
-              <div class="arch-box-name">Claude AI</div>
-              <div class="arch-box-desc">Strategy / Scoring / Builder Score</div>
-            </div>
-            <div class="arch-box">
-              <div class="arch-box-name">Exa + Websets</div>
-              <div class="arch-box-desc">Neural search / Collections</div>
-            </div>
-            <div class="arch-box">
-              <div class="arch-box-name">Parallel.ai</div>
-              <div class="arch-box-desc">JD extraction</div>
-            </div>
-            <div class="arch-box">
-              <div class="arch-box-name">GitHub API</div>
-              <div class="arch-box-desc">Contributors / Commits / Code Quality</div>
-            </div>
+      </div>
+      <div style="color:var(--accent); font-size:14px; opacity:0.5;">&#9654;</div>
+      <!-- AI Intelligence Layer -->
+      <div style="flex:2.5; min-width:0;">
+        <div class="arch-label" style="margin-bottom:3px;">AI Intelligence Layer</div>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:4px;">
+          <div class="arch-box" style="margin:0;">
+            <div class="arch-box-name">Claude AI</div>
+            <div class="arch-box-desc">Strategy / Scoring / Builder Score</div>
           </div>
-        </div>
-        <div class="arch-arrow">&#9660;</div>
-        <div>
-          <div class="arch-label">Data + Infrastructure</div>
-          <div class="arch-boxes">
-            <div class="arch-box" style="flex:2;">
-              <div class="arch-box-name">Supabase (PostgreSQL)</div>
-              <div class="arch-box-desc">Auth / RLS / Pipeline / Websets</div>
-            </div>
-            <div class="arch-box">
-              <div class="arch-box-name">Vercel</div>
-              <div class="arch-box-desc">Edge / Serverless</div>
-            </div>
-            <div class="arch-box">
-              <div class="arch-box-name">Stripe</div>
-              <div class="arch-box-desc">Billing / Tiers</div>
-            </div>
+          <div class="arch-box" style="margin:0;">
+            <div class="arch-box-name">Exa + Websets</div>
+            <div class="arch-box-desc">Neural search / Collections</div>
+          </div>
+          <div class="arch-box" style="margin:0;">
+            <div class="arch-box-name">Parallel.ai</div>
+            <div class="arch-box-desc">JD extraction</div>
+          </div>
+          <div class="arch-box" style="margin:0;">
+            <div class="arch-box-name">GitHub API</div>
+            <div class="arch-box-desc">Contributors / Commits / Code Quality</div>
           </div>
         </div>
       </div>
-
-      <!-- Right: API Surface -->
-      <div style="flex:1; min-width:0;">
-        <div style="margin-bottom:3px;"><span class="pill-blue">Exa API</span> <span style="font-size:9px; color:var(--secondary); margin-left:4px;">5 endpoints</span></div>
-        <div class="api-card-blue">
-          <div class="api-endpoint">
-            <span class="api-key api-key-blue">Research</span> Deep research on any topic<br>
-            <span class="api-key api-key-blue">Search</span> Neural + keyword hybrid search<br>
-            <span class="api-key api-key-blue">Answer</span> Direct answers from web data<br>
-            <span class="api-key api-key-blue">findSimilar</span> Find pages similar to a URL<br>
-            <span class="api-key api-key-blue">Websets</span> Persistent collections with criteria, enrichment, monitoring
+      <div style="color:var(--accent); font-size:14px; opacity:0.5;">&#9654;</div>
+      <!-- Data + Infrastructure -->
+      <div style="flex:1.8; min-width:0;">
+        <div class="arch-label" style="margin-bottom:3px;">Data + Infrastructure</div>
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:4px;">
+          <div class="arch-box" style="margin:0;">
+            <div class="arch-box-name">Supabase</div>
+            <div class="arch-box-desc">Auth / RLS / Pipeline</div>
           </div>
-        </div>
-
-        <div style="margin-bottom:3px;"><span class="pill-purple">Parallel API</span> <span style="font-size:9px; color:var(--secondary); margin-left:4px;">3 endpoints</span></div>
-        <div class="api-card-purple">
-          <div class="api-endpoint">
-            <span class="api-key api-key-purple">Task</span> Single deep-research task with citations<br>
-            <span class="api-key api-key-purple">FindAll</span> Batch entity discovery from a query<br>
-            <span class="api-key api-key-purple">Search</span> Web search with content extraction
+          <div class="arch-box" style="margin:0;">
+            <div class="arch-box-name">Vercel</div>
+            <div class="arch-box-desc">Edge</div>
           </div>
-        </div>
-
-        <div style="margin-bottom:3px;"><span class="pill-orange">GitHub API</span> <span style="font-size:9px; color:var(--secondary); margin-left:4px;">2 interfaces</span></div>
-        <div class="api-card-orange">
-          <div class="api-endpoint">
-            <span class="api-key api-key-orange">REST</span> Contributors, commits, profiles, repo metadata<br>
-            <span class="api-key api-key-orange">GraphQL</span> Contribution graphs, org membership, activity
+          <div class="arch-box" style="margin:0;">
+            <div class="arch-box-name">Stripe</div>
+            <div class="arch-box-desc">Billing</div>
           </div>
         </div>
       </div>
-
+    </div>
+    <!-- API Surface: full-width 3-column grid -->
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
+      <div class="api-group-card blue" style="background:rgba(59,130,246,0.04); border:1px solid rgba(59,130,246,0.15); border-radius:6px; padding:8px 10px;">
+        <div style="margin-bottom:4px;"><span class="pill-blue">Exa API</span> <span style="font-size:9px; color:var(--secondary); margin-left:4px;">5 endpoints</span></div>
+        <div class="api-endpoint" style="font-size:10px; line-height:1.6;">
+          <span class="api-key api-key-blue">Research</span> Deep research on any topic<br>
+          <span class="api-key api-key-blue">Search</span> Neural + keyword hybrid search<br>
+          <span class="api-key api-key-blue">Answer</span> Direct answers from web data<br>
+          <span class="api-key api-key-blue">findSimilar</span> Find pages similar to a URL<br>
+          <span class="api-key api-key-blue">Websets</span> Persistent collections, enrichment, monitoring
+        </div>
+      </div>
+      <div class="api-group-card purple" style="background:rgba(168,85,247,0.04); border:1px solid rgba(168,85,247,0.15); border-radius:6px; padding:8px 10px;">
+        <div style="margin-bottom:4px;"><span class="pill-purple">Parallel API</span> <span style="font-size:9px; color:var(--secondary); margin-left:4px;">3 endpoints</span></div>
+        <div class="api-endpoint" style="font-size:10px; line-height:1.6;">
+          <span class="api-key api-key-purple">Task</span> Single deep-research task with citations<br>
+          <span class="api-key api-key-purple">FindAll</span> Batch entity discovery from a query<br>
+          <span class="api-key api-key-purple">Search</span> Web search with content extraction
+        </div>
+      </div>
+      <div class="api-group-card orange" style="background:rgba(249,115,22,0.04); border:1px solid rgba(249,115,22,0.15); border-radius:6px; padding:8px 10px;">
+        <div style="margin-bottom:4px;"><span class="pill-orange">GitHub API + Builder Score</span> <span style="font-size:9px; color:var(--secondary); margin-left:4px;">3 interfaces</span></div>
+        <div class="api-endpoint" style="font-size:10px; line-height:1.6;">
+          <span class="api-key api-key-orange">REST</span> Contributors, commits, profiles, repo metadata<br>
+          <span class="api-key api-key-orange">GraphQL</span> Contribution graphs, org membership, activity<br>
+          <span class="api-key api-key-orange">Builder Score</span> On-demand code quality eval (6 dims, Claude summary)
+        </div>
+      </div>
     </div>
   </div>
 
