@@ -25,5 +25,5 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
+    Content-Security-Policy = "frame-ancestors 'self' https://getsourcekit.vercel.app"
     Access-Control-Allow-Origin = "https://getsourcekit.vercel.app"
