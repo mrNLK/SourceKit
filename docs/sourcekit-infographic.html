@@ -61,7 +61,7 @@
     text-transform: uppercase;
     letter-spacing: 0.15em;
     color: var(--accent);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
   .heading {
     font-family: 'DM Sans', sans-serif;
@@ -71,8 +71,8 @@
     margin-bottom: 6px;
     line-height: 1.25;
   }
-  .section { margin-bottom: 16px; }
-  .section-tight { margin-bottom: 12px; }
+  .section { margin-bottom: 20px; }
+  .section-tight { margin-bottom: 16px; }
   .body-sm { font-size: 12px; color: var(--body); line-height: 1.5; }
 
   /* Standard card (dark) */
@@ -80,7 +80,7 @@
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 10px 12px;
+    padding: 11px 14px;
   }
   .card-title {
     font-size: 12px;
@@ -99,7 +99,7 @@
     background: var(--accent-bg);
     border: 1px solid var(--accent-border);
     border-radius: var(--radius);
-    padding: 10px 12px;
+    padding: 11px 14px;
   }
   .card-hl .card-title { color: var(--accent); }
 
@@ -240,40 +240,68 @@
   }
 
   /* API cards */
-  .api-card-blue {
-    background: var(--blue-bg);
-    border: 1px solid var(--blue-border);
+  .api-group-card {
     border-radius: var(--radius);
-    padding: 7px 10px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    overflow: hidden;
   }
-  .api-card-purple {
-    background: var(--purple-bg);
-    border: 1px solid var(--purple-border);
-    border-radius: var(--radius);
-    padding: 7px 10px;
-    margin-bottom: 6px;
-  }
-  .api-card-orange {
-    background: var(--orange-bg);
-    border: 1px solid var(--orange-border);
-    border-radius: var(--radius);
-    padding: 7px 10px;
-    margin-bottom: 0;
-  }
-  .api-endpoint {
+  .api-group-card:last-child { margin-bottom: 0; }
+  .api-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
-    line-height: 1.6;
-    color: var(--body);
+    font-weight: 700;
+    letter-spacing: 0.04em;
   }
-  .api-key {
+  .api-group-header .ep-count {
+    font-size: 9px;
+    font-weight: 500;
+    opacity: 0.6;
+    letter-spacing: 0;
+  }
+  .api-group-body {
+    padding: 0;
+  }
+  .api-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 5px 12px;
+    font-size: 10px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .api-row:first-child { border-top: none; }
+  .api-row-key {
     font-family: 'JetBrains Mono', monospace;
     font-size: 9px;
     font-weight: 600;
+    white-space: nowrap;
+    min-width: 72px;
+    flex-shrink: 0;
   }
-  .api-key-blue { color: var(--blue); }
-  .api-key-purple { color: var(--purple); }
-  .api-key-orange { color: var(--orange); }
+  .api-row-desc {
+    color: var(--secondary);
+    font-size: 10px;
+    line-height: 1.4;
+  }
+  /* Blue (Exa) */
+  .api-group-card.blue { background: var(--blue-bg); border: 1px solid var(--blue-border); }
+  .api-group-card.blue .api-group-header { color: var(--blue); border-bottom: 1px solid var(--blue-border); }
+  .api-group-card.blue .api-row-key { color: var(--blue); }
+  .api-group-card.blue .api-row { border-top-color: rgba(59,130,246,0.08); }
+  /* Purple (Parallel) */
+  .api-group-card.purple { background: var(--purple-bg); border: 1px solid var(--purple-border); }
+  .api-group-card.purple .api-group-header { color: var(--purple); border-bottom: 1px solid var(--purple-border); }
+  .api-group-card.purple .api-row-key { color: var(--purple); }
+  .api-group-card.purple .api-row { border-top-color: rgba(168,85,247,0.08); }
+  /* Orange (GitHub) */
+  .api-group-card.orange { background: var(--orange-bg); border: 1px solid var(--orange-border); }
+  .api-group-card.orange .api-group-header { color: var(--orange); border-bottom: 1px solid var(--orange-border); }
+  .api-group-card.orange .api-row-key { color: var(--orange); }
+  .api-group-card.orange .api-row { border-top-color: rgba(245,158,11,0.08); }
   .pill-orange {
     display: inline-block;
     font-family: 'JetBrains Mono', monospace;
@@ -334,12 +362,12 @@
   .stage-arrow { color: var(--accent); font-size: 12px; margin: 0 3px; }
 
   /* Divider */
-  .divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
 
   /* Grid helpers */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
 
   /* EEA Artifact grid */
   .eea-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -385,7 +413,7 @@
     </div>
   </div>
 
-  <hr class="divider" style="margin:8px 0 10px;">
+  <hr class="divider" style="margin:14px 0;">
 
   <!-- HOW IT WORKS (no numbers, category labels instead) -->
   <div class="section-tight">
@@ -481,38 +509,54 @@
   </div>
 
   <!-- BUILDER SCORE -->
-  <div class="section-tight" style="margin-top:6px;">
-    <div class="label">BUILDER SCORE <span class="pill-accent" style="margin-left:6px;">NEW</span></div>
-    <div style="display:flex; gap:14px; align-items:flex-start;">
-      <div style="flex:1; min-width:0;">
-        <div class="heading" style="font-size:14px;">AI-Weighted GitHub Evaluation</div>
-        <div class="body-sm" style="margin-bottom:6px;">Scans a candidate's top repos for AI mastery, build velocity, tooling, testing, docs, and community. Returns a 0-100 score with per-dimension breakdowns. Claude Code commits weighted 3x.</div>
-        <div style="display:flex; flex-wrap:wrap; gap:4px;">
-          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);">Claude Code 3x</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);">AI Frameworks</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(6,182,212,0.1);color:#06b6d4;border:1px solid rgba(6,182,212,0.25);">Coding Tools</span>
-        </div>
+  <div class="section-tight">
+    <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:8px;">
+      <div class="label" style="margin-bottom:0;">BUILDER SCORE <span class="pill-accent" style="margin-left:6px;">NEW</span></div>
+      <div style="font-size:12px; font-weight:700; color:var(--white);">AI-Weighted GitHub Evaluation</div>
+      <div style="font-size:11px; color:var(--secondary);">Scans top repos. Returns 0-100 with per-dimension breakdowns.</div>
+    </div>
+    <!-- Dimension weight bars -->
+    <div style="display:flex; gap:4px; align-items:stretch; height:48px; margin-bottom:8px;">
+      <div style="flex:30; background:linear-gradient(180deg,rgba(59,130,246,0.18) 0%,rgba(59,130,246,0.06) 100%); border:1px solid rgba(59,130,246,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#3b82f6; line-height:1;">30%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(59,130,246,0.8); letter-spacing:0.04em; text-transform:uppercase;">AI Mastery</div>
       </div>
-      <div style="flex:2; min-width:0;">
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px;">
-          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 8px;text-align:center;">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#3b82f6;">30%</div>
-            <div style="font-size:9px;color:var(--secondary);">AI Mastery</div>
-          </div>
-          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 8px;text-align:center;">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#3b82f6;">20%</div>
-            <div style="font-size:9px;color:var(--secondary);">Build Velocity</div>
-          </div>
-          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 8px;text-align:center;">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#3b82f6;">15%</div>
-            <div style="font-size:9px;color:var(--secondary);">Tooling</div>
-          </div>
-        </div>
+      <div style="flex:20; background:linear-gradient(180deg,rgba(168,85,247,0.18) 0%,rgba(168,85,247,0.06) 100%); border:1px solid rgba(168,85,247,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#a855f7; line-height:1;">20%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(168,85,247,0.8); letter-spacing:0.04em; text-transform:uppercase;">Build Velocity</div>
       </div>
+      <div style="flex:15; background:linear-gradient(180deg,rgba(6,182,212,0.18) 0%,rgba(6,182,212,0.06) 100%); border:1px solid rgba(6,182,212,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#06b6d4; line-height:1;">15%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(6,182,212,0.8); letter-spacing:0.04em; text-transform:uppercase;">Tooling</div>
+      </div>
+      <div style="flex:15; background:linear-gradient(180deg,rgba(0,229,160,0.18) 0%,rgba(0,229,160,0.06) 100%); border:1px solid rgba(0,229,160,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:var(--accent); line-height:1;">15%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(0,229,160,0.8); letter-spacing:0.04em; text-transform:uppercase;">Commit Bonus</div>
+      </div>
+      <div style="flex:10; background:linear-gradient(180deg,rgba(251,191,36,0.18) 0%,rgba(251,191,36,0.06) 100%); border:1px solid rgba(251,191,36,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:#fbbf24; line-height:1;">10%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(251,191,36,0.8); letter-spacing:0.04em; text-transform:uppercase;">Testing</div>
+      </div>
+      <div style="flex:8; background:linear-gradient(180deg,rgba(244,114,182,0.18) 0%,rgba(244,114,182,0.06) 100%); border:1px solid rgba(244,114,182,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#f472b6; line-height:1;">8%</div>
+        <div style="font-size:7px; font-weight:600; color:rgba(244,114,182,0.8); letter-spacing:0.04em; text-transform:uppercase;">Docs</div>
+      </div>
+      <div style="flex:7; background:linear-gradient(180deg,rgba(156,163,175,0.18) 0%,rgba(156,163,175,0.06) 100%); border:1px solid rgba(156,163,175,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#9ca3af; line-height:1;">7%</div>
+        <div style="font-size:7px; font-weight:600; color:rgba(156,163,175,0.8); letter-spacing:0.04em; text-transform:uppercase;">Community</div>
+      </div>
+    </div>
+    <!-- Signal pills -->
+    <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);">Claude Code 3x</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);">46 AI Keywords</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(6,182,212,0.1);color:#06b6d4;border:1px solid rgba(6,182,212,0.25);">28 Framework Files</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(0,229,160,0.1);color:var(--accent);border:1px solid rgba(0,229,160,0.25);">7 Coding Tools</span>
+      <span style="font-size:9px; color:var(--secondary); margin-left:4px;">No self-reported data. GitHub activity only.</span>
     </div>
   </div>
 
-  <hr class="divider" style="margin:8px 0 10px;">
+  <hr class="divider" style="margin:14px 0;">
 
   <!-- EXA WEBSETS -->
   <div class="section-tight">
@@ -606,7 +650,7 @@
     </div>
   </div>
 
-  <hr class="divider" style="margin:8px 0 10px;">
+  <hr class="divider" style="margin:14px 0;">
 
   <!-- WEBSET RECIPES -->
   <div class="section-tight">
@@ -650,96 +694,93 @@
   <!-- ARCHITECTURE + API SURFACE -->
   <div class="section-tight">
     <div class="label">ARCHITECTURE + API SURFACE</div>
-    <div style="display:flex; gap:14px; align-items:flex-start;">
 
-      <!-- Left: Architecture Diagram (compact) -->
+    <!-- Architecture: full-width horizontal flow -->
+    <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
+      <!-- Presentation -->
       <div style="flex:1; min-width:0;">
-        <div style="margin-bottom:4px;">
-          <div class="arch-label">Presentation Layer</div>
-          <div class="arch-boxes">
-            <div class="arch-box" style="flex:1;">
-              <div class="arch-box-name">React + TypeScript</div>
-              <div class="arch-box-desc">Mobile-first / OAuth / Search / Pipeline / Websets</div>
-            </div>
-          </div>
+        <div class="arch-label" style="margin-bottom:3px;">Presentation</div>
+        <div class="arch-box" style="margin:0;">
+          <div class="arch-box-name">React + TypeScript</div>
+          <div class="arch-box-desc">Mobile-first / OAuth / Search / Pipeline / Websets</div>
         </div>
-        <div class="arch-arrow">&#9660;</div>
-        <div style="margin-bottom:4px;">
-          <div class="arch-label">AI Intelligence Layer</div>
-          <div class="arch-boxes">
-            <div class="arch-box">
-              <div class="arch-box-name">Claude AI</div>
-              <div class="arch-box-desc">Strategy / Scoring / Builder Score</div>
-            </div>
-            <div class="arch-box">
-              <div class="arch-box-name">Exa + Websets</div>
-              <div class="arch-box-desc">Neural search / Collections</div>
-            </div>
-            <div class="arch-box">
-              <div class="arch-box-name">Parallel.ai</div>
-              <div class="arch-box-desc">JD extraction</div>
-            </div>
-            <div class="arch-box">
-              <div class="arch-box-name">GitHub API</div>
-              <div class="arch-box-desc">Contributors / Commits / Code Quality</div>
-            </div>
+      </div>
+      <div style="color:var(--accent); font-size:14px; opacity:0.5;">&#9654;</div>
+      <!-- AI Layer -->
+      <div style="flex:2.5; min-width:0;">
+        <div class="arch-label" style="margin-bottom:3px;">AI Intelligence Layer</div>
+        <div class="arch-boxes" style="gap:4px;">
+          <div class="arch-box">
+            <div class="arch-box-name">Claude AI</div>
+            <div class="arch-box-desc">Strategy / Scoring / Builder Score</div>
           </div>
-        </div>
-        <div class="arch-arrow">&#9660;</div>
-        <div>
-          <div class="arch-label">Data + Infrastructure</div>
-          <div class="arch-boxes">
-            <div class="arch-box" style="flex:2;">
-              <div class="arch-box-name">Supabase (PostgreSQL)</div>
-              <div class="arch-box-desc">Auth / RLS / Pipeline / Websets</div>
-            </div>
-            <div class="arch-box">
-              <div class="arch-box-name">Vercel</div>
-              <div class="arch-box-desc">Edge / Serverless</div>
-            </div>
-            <div class="arch-box">
-              <div class="arch-box-name">Stripe</div>
-              <div class="arch-box-desc">Billing / Tiers</div>
-            </div>
+          <div class="arch-box">
+            <div class="arch-box-name">Exa + Websets</div>
+            <div class="arch-box-desc">Neural search / Collections</div>
+          </div>
+          <div class="arch-box">
+            <div class="arch-box-name">Parallel.ai</div>
+            <div class="arch-box-desc">JD extraction</div>
+          </div>
+          <div class="arch-box">
+            <div class="arch-box-name">GitHub API</div>
+            <div class="arch-box-desc">Contributors / Commits / Code Quality</div>
           </div>
         </div>
       </div>
-
-      <!-- Right: API Surface -->
-      <div style="flex:1; min-width:0;">
-        <div style="margin-bottom:3px;"><span class="pill-blue">Exa API</span> <span style="font-size:9px; color:var(--secondary); margin-left:4px;">5 endpoints</span></div>
-        <div class="api-card-blue">
-          <div class="api-endpoint">
-            <span class="api-key api-key-blue">Research</span> Deep research on any topic<br>
-            <span class="api-key api-key-blue">Search</span> Neural + keyword hybrid search<br>
-            <span class="api-key api-key-blue">Answer</span> Direct answers from web data<br>
-            <span class="api-key api-key-blue">findSimilar</span> Find pages similar to a URL<br>
-            <span class="api-key api-key-blue">Websets</span> Persistent collections with criteria, enrichment, monitoring
+      <div style="color:var(--accent); font-size:14px; opacity:0.5;">&#9654;</div>
+      <!-- Data Layer -->
+      <div style="flex:1.8; min-width:0;">
+        <div class="arch-label" style="margin-bottom:3px;">Data + Infrastructure</div>
+        <div class="arch-boxes" style="gap:4px;">
+          <div class="arch-box" style="flex:2;">
+            <div class="arch-box-name">Supabase</div>
+            <div class="arch-box-desc">Auth / RLS / Pipeline</div>
           </div>
-        </div>
-
-        <div style="margin-bottom:3px;"><span class="pill-purple">Parallel API</span> <span style="font-size:9px; color:var(--secondary); margin-left:4px;">3 endpoints</span></div>
-        <div class="api-card-purple">
-          <div class="api-endpoint">
-            <span class="api-key api-key-purple">Task</span> Single deep-research task with citations<br>
-            <span class="api-key api-key-purple">FindAll</span> Batch entity discovery from a query<br>
-            <span class="api-key api-key-purple">Search</span> Web search with content extraction
+          <div class="arch-box">
+            <div class="arch-box-name">Vercel</div>
+            <div class="arch-box-desc">Edge</div>
           </div>
-        </div>
-
-        <div style="margin-bottom:3px;"><span class="pill-orange">GitHub API</span> <span style="font-size:9px; color:var(--secondary); margin-left:4px;">2 interfaces</span></div>
-        <div class="api-card-orange">
-          <div class="api-endpoint">
-            <span class="api-key api-key-orange">REST</span> Contributors, commits, profiles, repo metadata<br>
-            <span class="api-key api-key-orange">GraphQL</span> Contribution graphs, org membership, activity
+          <div class="arch-box">
+            <div class="arch-box-name">Stripe</div>
+            <div class="arch-box-desc">Billing</div>
           </div>
         </div>
       </div>
+    </div>
 
+    <!-- API Surface: full-width 3-column grid -->
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
+      <div class="api-group-card blue">
+        <div class="api-group-header">Exa API <span class="ep-count">5 endpoints</span></div>
+        <div class="api-group-body">
+          <div class="api-row"><span class="api-row-key">Research</span><span class="api-row-desc">Deep research on any topic</span></div>
+          <div class="api-row"><span class="api-row-key">Search</span><span class="api-row-desc">Neural + keyword hybrid search</span></div>
+          <div class="api-row"><span class="api-row-key">Answer</span><span class="api-row-desc">Direct answers from web data</span></div>
+          <div class="api-row"><span class="api-row-key">findSimilar</span><span class="api-row-desc">Find pages similar to a URL</span></div>
+          <div class="api-row"><span class="api-row-key">Websets</span><span class="api-row-desc">Persistent collections, enrichment, monitoring</span></div>
+        </div>
+      </div>
+      <div class="api-group-card purple">
+        <div class="api-group-header">Parallel API <span class="ep-count">3 endpoints</span></div>
+        <div class="api-group-body">
+          <div class="api-row"><span class="api-row-key">Task</span><span class="api-row-desc">Single deep-research task with citations</span></div>
+          <div class="api-row"><span class="api-row-key">FindAll</span><span class="api-row-desc">Batch entity discovery from a query</span></div>
+          <div class="api-row"><span class="api-row-key">Search</span><span class="api-row-desc">Web search with content extraction</span></div>
+        </div>
+      </div>
+      <div class="api-group-card orange">
+        <div class="api-group-header">GitHub API + Builder Score <span class="ep-count">3 interfaces</span></div>
+        <div class="api-group-body">
+          <div class="api-row"><span class="api-row-key">REST</span><span class="api-row-desc">Contributors, commits, profiles, repo metadata</span></div>
+          <div class="api-row"><span class="api-row-key">GraphQL</span><span class="api-row-desc">Contribution graphs, org membership, activity</span></div>
+          <div class="api-row"><span class="api-row-key">Builder Score</span><span class="api-row-desc">On-demand code quality eval (6 dims, Claude summary)</span></div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <hr class="divider" style="margin:6px 0 10px;">
+  <hr class="divider" style="margin:14px 0;">
 
   <!-- PRO TIPS (4x2 grid) -->
   <div class="section-tight">

@@ -3,308 +3,830 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SourceKit Docs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0f;
-    --bg-card: #1c1c22;
-    --border: #2a2a32;
+    /* Brand accent (icon + CTA only) */
     --accent: #00E5A0;
-    --accent-start: #00E5C3;
-    --accent-end: #00BFA5;
+    --accent-strong: #00C896;
+    --accent-subtle: rgba(0,229,160,0.08);
+    --accent-bg: rgba(0,229,160,0.06);
+    --accent-border: rgba(0,229,160,0.22);
+    /* Background hierarchy */
+    --bg: #0A0A0F;
+    --bg-elevated: #111116;
+    --bg-card: #15151B;
+    /* Foreground hierarchy */
     --white: #FFFFFF;
     --body: #E0E0E0;
-    --secondary: #9E9E9E;
+    --secondary: #A1A1AA;
     --muted: #6B7280;
-    --radius: 14px;
+    /* Structural */
+    --border: #1F1F26;
+    --border-focus: #00E5A0;
+    /* API colors */
+    --blue: #3b82f6;
+    --blue-bg: rgba(59,130,246,0.06);
+    --blue-border: rgba(59,130,246,0.22);
+    --purple: #a855f7;
+    --purple-bg: rgba(168,85,247,0.06);
+    --purple-border: rgba(168,85,247,0.22);
+    --orange: #f59e0b;
+    --orange-bg: rgba(245,158,11,0.06);
+    --orange-border: rgba(245,158,11,0.22);
+    --radius: 8px;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     background: var(--bg);
     color: var(--body);
     font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
     -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
+  }
+  .page {
+    width: 1080px;
+    margin: 0 auto;
+    padding: 24px 40px 32px;
+  }
+
+  /* Typography */
+  .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .heading {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 6px;
+    line-height: 1.25;
+  }
+  .section { margin-bottom: 20px; }
+  .section-tight { margin-bottom: 16px; }
+  .body-sm { font-size: 12px; color: var(--body); line-height: 1.5; }
+
+  /* Standard card (dark) */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 3px;
+  }
+  .card-body {
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--body);
+  }
+
+  /* Highlighted card (green tint) */
+  .card-hl {
+    background: var(--accent-bg);
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+  }
+  .card-hl .card-title { color: var(--accent); }
+
+  /* EEA card (left accent bar) */
+  .card-eea {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+  }
+
+  /* Workflow steps (no numbers) */
+  .workflow { display: flex; align-items: stretch; gap: 0; }
+  .wf-step {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .wf-step:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+  .wf-step:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+  .wf-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 2px;
+    opacity: 0.7;
+  }
+  .wf-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+  .wf-desc {
+    font-size: 10px;
+    color: var(--secondary);
+    line-height: 1.35;
+  }
+  .wf-arrow {
+    width: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--accent);
+    font-size: 14px;
+    flex-shrink: 0;
   }
-  .container {
-    max-width: 720px;
-    width: 100%;
-    padding: 60px 32px;
-    text-align: center;
-  }
-  .logo-wrap { margin-bottom: 24px; }
+
+  /* Badges / Pills */
   .badge {
     display: inline-block;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     letter-spacing: 0.1em;
     color: var(--accent);
     border: 1px solid var(--accent);
     border-radius: 100px;
-    padding: 4px 14px;
-    margin-bottom: 16px;
+    padding: 3px 10px;
   }
-  h1 {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--white);
-    margin-bottom: 8px;
-    line-height: 1.2;
-  }
-  .subtitle {
-    font-size: 15px;
-    color: var(--secondary);
-    margin-bottom: 8px;
-  }
-  .url {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    color: var(--accent);
-    margin-bottom: 40px;
-    display: block;
-  }
-  .docs-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 40px;
-  }
-  .doc-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 28px 20px;
-    text-decoration: none;
-    transition: border-color 0.2s, transform 0.15s;
-  }
-  .doc-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-  }
-  .doc-card-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--accent);
-    margin-bottom: 10px;
-    display: block;
-  }
-  .doc-card-title {
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--white);
-    margin-bottom: 8px;
-    display: block;
-  }
-  .doc-card-desc {
-    font-size: 13px;
-    color: var(--secondary);
-    line-height: 1.5;
-    display: block;
-  }
-  .doc-card-badge {
+  .pill-accent {
     display: inline-block;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 8px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
     color: var(--bg);
-    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+    background: var(--accent);
     border-radius: 100px;
     padding: 2px 8px;
-    margin-left: 6px;
-    vertical-align: middle;
   }
-  .footer {
-    font-size: 12px;
-    color: var(--muted);
+  .pill-blue {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--blue);
+    background: var(--blue-bg);
+    border: 1px solid var(--blue-border);
+    border-radius: 100px;
+    padding: 2px 8px;
   }
-  .footer a {
-    color: var(--accent);
-    text-decoration: none;
+  .pill-purple {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--purple);
+    background: var(--purple-bg);
+    border: 1px solid var(--purple-border);
+    border-radius: 100px;
+    padding: 2px 8px;
   }
 
-  /* API section */
-  .api-section {
-    text-align: left;
-    margin-bottom: 40px;
-    padding: 0 4px;
-  }
-  .api-label {
+  /* Architecture boxes (highlighted green) */
+  .arch-label {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
+    font-size: 9px;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--accent);
-    margin-bottom: 12px;
+    margin-bottom: 4px;
   }
-  .api-group {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 18px;
-    margin-bottom: 10px;
+  .arch-boxes { display: flex; gap: 6px; }
+  .arch-box {
+    flex: 1;
+    background: var(--accent-bg);
+    border: 1px solid var(--accent-border);
+    border-radius: 6px;
+    padding: 5px 7px;
   }
-  .api-group-name {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+  .arch-box-name {
+    font-size: 10px;
     font-weight: 700;
-    margin-bottom: 6px;
-  }
-  .api-group-name.exa { color: var(--accent); }
-  .api-group-name.parallel { color: #a855f7; }
-  .api-group-name.github { color: var(--white); }
-  .api-endpoint {
-    display: flex;
-    justify-content: space-between;
-    padding: 3px 0;
-    font-size: 12px;
-  }
-  .api-endpoint-name {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 600;
     color: var(--white);
+    margin-bottom: 1px;
   }
-  .api-endpoint-desc {
+  .arch-box-desc {
+    font-size: 9px;
     color: var(--secondary);
+    line-height: 1.3;
+  }
+  .arch-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 10px;
+    margin: 2px 0;
+    opacity: 0.6;
+  }
+
+  /* API cards */
+  .api-group-card {
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .api-group-card:last-child { margin-bottom: 0; }
+  .api-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .api-group-header .ep-count {
+    font-size: 9px;
+    font-weight: 500;
+    opacity: 0.6;
+    letter-spacing: 0;
+  }
+  .api-group-body {
+    padding: 0;
+  }
+  .api-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 5px 12px;
+    font-size: 10px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .api-row:first-child { border-top: none; }
+  .api-row-key {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 72px;
+    flex-shrink: 0;
+  }
+  .api-row-desc {
+    color: var(--secondary);
+    font-size: 10px;
+    line-height: 1.4;
+  }
+  /* Blue (Exa) */
+  .api-group-card.blue { background: var(--blue-bg); border: 1px solid var(--blue-border); }
+  .api-group-card.blue .api-group-header { color: var(--blue); border-bottom: 1px solid var(--blue-border); }
+  .api-group-card.blue .api-row-key { color: var(--blue); }
+  .api-group-card.blue .api-row { border-top-color: rgba(59,130,246,0.08); }
+  /* Purple (Parallel) */
+  .api-group-card.purple { background: var(--purple-bg); border: 1px solid var(--purple-border); }
+  .api-group-card.purple .api-group-header { color: var(--purple); border-bottom: 1px solid var(--purple-border); }
+  .api-group-card.purple .api-row-key { color: var(--purple); }
+  .api-group-card.purple .api-row { border-top-color: rgba(168,85,247,0.08); }
+  /* Orange (GitHub) */
+  .api-group-card.orange { background: var(--orange-bg); border: 1px solid var(--orange-border); }
+  .api-group-card.orange .api-group-header { color: var(--orange); border-bottom: 1px solid var(--orange-border); }
+  .api-group-card.orange .api-row-key { color: var(--orange); }
+  .api-group-card.orange .api-row { border-top-color: rgba(245,158,11,0.08); }
+  .pill-orange {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--orange);
+    background: var(--orange-bg);
+    border: 1px solid var(--orange-border);
+    border-radius: 100px;
+    padding: 2px 8px;
+  }
+
+  /* Table */
+  .tbl {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
     font-size: 11px;
   }
+  .tbl th {
+    background: var(--bg-card);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .tbl td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--body);
+    font-size: 11px;
+    line-height: 1.4;
+    vertical-align: top;
+  }
+  .tbl tr:last-child td { border-bottom: none; }
+
+  /* Pipeline stages */
+  .stages { display: flex; align-items: center; gap: 0; }
+  .stage-pill {
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .stage-arrow { color: var(--accent); font-size: 12px; margin: 0 3px; }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+  /* Grid helpers */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+
+  /* EEA Artifact grid */
+  .eea-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+  /* Pro tips grid */
+  .tips-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 10px 0 0;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
 </style>
 </head>
 <body>
-<div class="container">
+<div class="page">
 
-  <!-- Logo -->
-  <div class="logo-wrap">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 180" width="260" height="69">
-      <defs>
-        <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1c1c22"/><stop offset="100%" stop-color="#151519"/></linearGradient>
-        <linearGradient id="ac1" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#00E5C3"/><stop offset="100%" stop-color="#00BFA5"/></linearGradient>
-      </defs>
-      <rect x="12" y="12" width="156" height="156" rx="34" fill="url(#bg1)"/>
-      <rect x="12" y="12" width="156" height="156" rx="34" fill="none" stroke="#2a2a32" stroke-width="1"/>
-      <g transform="translate(90,90)">
-        <path d="M-22,-30 L-48,0 L-22,30" fill="none" stroke="url(#ac1)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <line x1="-5" y1="25" x2="5" y2="-25" stroke="url(#ac1)" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
-        <path d="M22,-30 L48,0 L22,30" fill="none" stroke="url(#ac1)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </g>
-      <text x="196" y="105" font-family="'JetBrains Mono','SF Mono',monospace" font-size="50" font-weight="600" letter-spacing="-1">
-        <tspan fill="#9E9E9E">Source</tspan><tspan fill="#00BFA5">Kit</tspan>
-      </text>
-    </svg>
-  </div>
-
-  <div class="badge">BETA V2.0 / DOCUMENTATION</div>
-  <h1>Find engineers by what they build.</h1>
-  <div class="subtitle">AI-powered technical sourcing, grounded in real GitHub data.</div>
-  <span class="url">getsourcekit.vercel.app</span>
-
-  <!-- Docs Grid -->
-  <div class="docs-grid">
-    <a href="beta-v2-tldr.html" class="doc-card">
-      <span class="doc-card-label">Quick Start</span>
-      <span class="doc-card-title">TL;DR</span>
-      <span class="doc-card-desc">One-page overview. Everything you need to know to start searching in 60 seconds.</span>
-    </a>
-    <a href="beta-v2-guide.html" class="doc-card">
-      <span class="doc-card-label">Full Guide</span>
-      <span class="doc-card-title">Beta v2.0 Guide</span>
-      <span class="doc-card-desc">Complete documentation. Architecture, scoring, Websets, EEA framework, pro tips, and known limitations.</span>
-    </a>
-    <a href="sourcekit-infographic.html" class="doc-card">
-      <span class="doc-card-label">Share</span>
-      <span class="doc-card-title">Infographic</span>
-      <span class="doc-card-desc">Dense one-pager optimized for screenshot sharing. The entire product on a single screen.</span>
-    </a>
-  </div>
-
-  <!-- Builder Score -->
-  <div style="margin: 32px 0 24px; text-align: left;">
-    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 10px;">BUILDER SCORE <span style="display:inline-block; font-size:9px; color:#a855f7; border:1px solid rgba(168,85,247,0.3); border-radius:100px; padding:2px 8px; margin-left:6px;">NEW</span></div>
-    <div style="font-size: 16px; font-weight: 600; color: var(--white); margin-bottom: 6px;">AI-Weighted GitHub Code Evaluation</div>
-    <div style="font-size: 13px; color: var(--secondary); margin-bottom: 14px;">Analyzes a candidate's repos for AI mastery, build velocity, tooling maturity, and commit quality. Returns a 0-100 score with dimension breakdowns and an AI-generated summary.</div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;">
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;">
-        <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: #3b82f6;">30%</span>
-        <span style="font-size: 12px; color: var(--secondary); margin-left: 8px;">AI Mastery</span>
-      </div>
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;">
-        <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: #3b82f6;">20%</span>
-        <span style="font-size: 12px; color: var(--secondary); margin-left: 8px;">Build Velocity</span>
-      </div>
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;">
-        <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: #3b82f6;">15%</span>
-        <span style="font-size: 12px; color: var(--secondary); margin-left: 8px;">Tooling</span>
-      </div>
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;">
-        <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: #3b82f6;">10%</span>
-        <span style="font-size: 12px; color: var(--secondary); margin-left: 8px;">Testing</span>
+  <!-- HERO: Icon + Wordmark left, tagline right -->
+  <div style="display:flex; align-items:center; gap:28px; margin-bottom:10px;">
+    <div style="display:flex; align-items:center; gap:14px; flex-shrink:0;">
+      <!-- SourceKit icon (exact SVG) -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="52" height="52">
+        <path d="M88 72 L56 128 L88 184" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" fill="none"/>
+        <path d="M168 72 L200 128 L168 184" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" fill="none"/>
+        <line x1="128" y1="88" x2="128" y2="64" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
+        <line x1="128" y1="192" x2="128" y2="168" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
+        <circle cx="128" cy="128" r="10" fill="#00E5A0"/>
+      </svg>
+      <!-- Wordmark + URL stacked -->
+      <div>
+        <div style="font-family:'DM Sans',sans-serif; font-size:38px; line-height:1; letter-spacing:-0.5px;">
+          <span style="color:#FFFFFF; font-weight:600;">Source </span><span style="color:#9E9E9E; font-weight:500;">Kit</span>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); margin-top:3px; letter-spacing:0.5px;">getsourcekit.vercel.app</div>
       </div>
     </div>
-    <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
-      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 10px; border-radius: 100px; background: rgba(168,85,247,0.1); color: #a855f7; border: 1px solid rgba(168,85,247,0.25);">Claude Code 3x</span>
-      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 10px; border-radius: 100px; background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid rgba(59,130,246,0.25);">AI Frameworks</span>
-      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 10px; border-radius: 100px; background: rgba(6,182,212,0.1); color: #06b6d4; border: 1px solid rgba(6,182,212,0.25);">Coding Tools</span>
-      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 10px; border-radius: 100px; background: rgba(107,114,128,0.1); color: #9ca3af; border: 1px solid rgba(107,114,128,0.25);">+40 more signals</span>
+    <div style="flex:1; text-align:right;">
+      <span style="font-family:'DM Sans',sans-serif; font-size:20px; font-weight:600; color:var(--white); line-height:1.2;">Find engineers by what they build.</span>
     </div>
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-      <div style="background: rgba(34,197,94,0.06); border: 1px solid rgba(34,197,94,0.2); border-radius: 8px; padding: 8px 10px; text-align: center;">
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #22c55e;">70-100</div>
-        <div style="font-size: 10px; color: var(--secondary);">Strong Builder</div>
+  </div>
+
+  <hr class="divider" style="margin:14px 0;">
+
+  <!-- HOW IT WORKS (no numbers, category labels instead) -->
+  <div class="section-tight">
+    <div class="label">HOW IT WORKS</div>
+    <div class="workflow">
+      <div class="wf-step">
+        <div class="wf-label">Input</div>
+        <div class="wf-title">Your Role</div>
+        <div class="wf-desc">Role + company, paste JD text, or drop in a job URL</div>
       </div>
-      <div style="background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2); border-radius: 8px; padding: 8px 10px; text-align: center;">
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #f59e0b;">40-69</div>
-        <div style="font-size: 10px; color: var(--secondary);">Room to Grow</div>
+      <div class="wf-arrow">&#9654;</div>
+      <div class="wf-step">
+        <div class="wf-label">Claude + Parallel</div>
+        <div class="wf-title">AI Strategy</div>
+        <div class="wf-desc">Builds target repos, poach list, skills matrix</div>
       </div>
-      <div style="background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; padding: 8px 10px; text-align: center;">
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #ef4444;">0-39</div>
-        <div style="font-size: 10px; color: var(--secondary);">Significant Gaps</div>
+      <div class="wf-arrow">&#9654;</div>
+      <div class="wf-step">
+        <div class="wf-label">You</div>
+        <div class="wf-title">Refine</div>
+        <div class="wf-desc">Edit repo list, add or remove targets, adjust criteria</div>
+      </div>
+      <div class="wf-arrow">&#9654;</div>
+      <div class="wf-step">
+        <div class="wf-label">Exa + GitHub</div>
+        <div class="wf-title">Multi-API Search</div>
+        <div class="wf-desc">Exa + Parallel + GitHub scan for top contributors</div>
+      </div>
+      <div class="wf-arrow">&#9654;</div>
+      <div class="wf-step">
+        <div class="wf-label">Exa Websets</div>
+        <div class="wf-title">Scored Pipeline</div>
+        <div class="wf-desc">Candidates ranked by code signal, ready for outreach</div>
       </div>
     </div>
   </div>
 
-  <!-- API Surface -->
-  <div class="api-section">
-    <div class="api-label">API Surface</div>
-
-    <div class="api-group">
-      <div class="api-group-name exa">Exa API</div>
-      <div class="api-endpoint"><span class="api-endpoint-name">Research</span><span class="api-endpoint-desc">Deep research on any topic</span></div>
-      <div class="api-endpoint"><span class="api-endpoint-name">Search</span><span class="api-endpoint-desc">Neural + keyword hybrid search</span></div>
-      <div class="api-endpoint"><span class="api-endpoint-name">Answer</span><span class="api-endpoint-desc">Direct answers from web data</span></div>
-      <div class="api-endpoint"><span class="api-endpoint-name">findSimilar</span><span class="api-endpoint-desc">Find pages similar to a URL</span></div>
-      <div class="api-endpoint"><span class="api-endpoint-name">Websets</span><span class="api-endpoint-desc">Persistent collections with criteria, enrichment, monitoring</span></div>
-    </div>
-
-    <div class="api-group">
-      <div class="api-group-name parallel">Parallel API</div>
-      <div class="api-endpoint"><span class="api-endpoint-name">Task</span><span class="api-endpoint-desc">Single deep-research task with citations</span></div>
-      <div class="api-endpoint"><span class="api-endpoint-name">FindAll</span><span class="api-endpoint-desc">Batch entity discovery from a query</span></div>
-      <div class="api-endpoint"><span class="api-endpoint-name">Search</span><span class="api-endpoint-desc">Web search with content extraction</span></div>
-    </div>
-
-    <div class="api-group">
-      <div class="api-group-name github">GitHub API</div>
-      <div class="api-endpoint"><span class="api-endpoint-name">REST</span><span class="api-endpoint-desc">Contributors, commits, profiles, repo metadata</span></div>
-      <div class="api-endpoint"><span class="api-endpoint-name">GraphQL</span><span class="api-endpoint-desc">Contribution graphs, org membership, activity</span></div>
+  <!-- THREE WAYS TO START (3-col, compact) -->
+  <div class="section-tight">
+    <div class="label">THREE WAYS TO START</div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">Role + Company</div>
+        <div class="card-body">Type a title and company. Claude infers the stack, identifies repos, builds strategy.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Paste a JD</div>
+        <div class="card-body">Paste the full job description. AI parses requirements, tech stack, and seniority level.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Paste a Job URL</div>
+        <div class="card-body">Drop a Lever, Greenhouse, or Ashby link. Parallel.ai extracts content from JS pages.</div>
+      </div>
     </div>
   </div>
 
-  <!-- Footer -->
+  <!-- SCORING (3-col, compact) -->
+  <div class="section-tight">
+    <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:6px;">
+      <div class="label" style="margin-bottom:0;">SCORING</div>
+      <div style="font-size:12px; font-weight:700; color:var(--white);">Composite Score: <span style="color:var(--accent);">0 to 100</span></div>
+      <div style="font-size:11px; color:var(--secondary);">GitHub activity weighted by role relevance. No self-reported data.</div>
+    </div>
+    <div class="grid-3">
+      <div class="card-hl">
+        <div class="card-title">Commit Volume + Recency</div>
+        <div class="card-body">How actively and recently the candidate has contributed. Recent activity weighted higher.</div>
+      </div>
+      <div class="card-hl">
+        <div class="card-title">Language + Stack Match</div>
+        <div class="card-body">How well primary languages align with role requirements. Python for ML, Rust for systems.</div>
+      </div>
+      <div class="card-hl">
+        <div class="card-title">Repo Relevance + Impact</div>
+        <div class="card-body">High-signal repos (well-starred, actively maintained) weighted over personal projects.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE (compact) -->
+  <div class="section-tight">
+    <div class="label">PIPELINE</div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="stages">
+        <span class="stage-pill">Sourced</span><span class="stage-arrow">&#9654;</span>
+        <span class="stage-pill">Contacted</span><span class="stage-arrow">&#9654;</span>
+        <span class="stage-pill">Responded</span><span class="stage-arrow">&#9654;</span>
+        <span class="stage-pill">Screen</span><span class="stage-arrow">&#9654;</span>
+        <span class="stage-pill">In Process</span>
+      </div>
+      <div class="body-sm" style="margin:0;">Drag between stages. Bulk select for compare, summary, or batch outreach. CSV export anytime.</div>
+    </div>
+  </div>
+
+  <!-- BUILDER SCORE -->
+  <div class="section-tight">
+    <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:8px;">
+      <div class="label" style="margin-bottom:0;">BUILDER SCORE <span class="pill-accent" style="margin-left:6px;">NEW</span></div>
+      <div style="font-size:12px; font-weight:700; color:var(--white);">AI-Weighted GitHub Evaluation</div>
+      <div style="font-size:11px; color:var(--secondary);">Scans top repos. Returns 0-100 with per-dimension breakdowns.</div>
+    </div>
+    <!-- Dimension weight bars -->
+    <div style="display:flex; gap:4px; align-items:stretch; height:48px; margin-bottom:8px;">
+      <div style="flex:30; background:linear-gradient(180deg,rgba(59,130,246,0.18) 0%,rgba(59,130,246,0.06) 100%); border:1px solid rgba(59,130,246,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#3b82f6; line-height:1;">30%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(59,130,246,0.8); letter-spacing:0.04em; text-transform:uppercase;">AI Mastery</div>
+      </div>
+      <div style="flex:20; background:linear-gradient(180deg,rgba(168,85,247,0.18) 0%,rgba(168,85,247,0.06) 100%); border:1px solid rgba(168,85,247,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#a855f7; line-height:1;">20%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(168,85,247,0.8); letter-spacing:0.04em; text-transform:uppercase;">Build Velocity</div>
+      </div>
+      <div style="flex:15; background:linear-gradient(180deg,rgba(6,182,212,0.18) 0%,rgba(6,182,212,0.06) 100%); border:1px solid rgba(6,182,212,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#06b6d4; line-height:1;">15%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(6,182,212,0.8); letter-spacing:0.04em; text-transform:uppercase;">Tooling</div>
+      </div>
+      <div style="flex:15; background:linear-gradient(180deg,rgba(0,229,160,0.18) 0%,rgba(0,229,160,0.06) 100%); border:1px solid rgba(0,229,160,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:var(--accent); line-height:1;">15%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(0,229,160,0.8); letter-spacing:0.04em; text-transform:uppercase;">Commit Bonus</div>
+      </div>
+      <div style="flex:10; background:linear-gradient(180deg,rgba(251,191,36,0.18) 0%,rgba(251,191,36,0.06) 100%); border:1px solid rgba(251,191,36,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:#fbbf24; line-height:1;">10%</div>
+        <div style="font-size:8px; font-weight:600; color:rgba(251,191,36,0.8); letter-spacing:0.04em; text-transform:uppercase;">Testing</div>
+      </div>
+      <div style="flex:8; background:linear-gradient(180deg,rgba(244,114,182,0.18) 0%,rgba(244,114,182,0.06) 100%); border:1px solid rgba(244,114,182,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#f472b6; line-height:1;">8%</div>
+        <div style="font-size:7px; font-weight:600; color:rgba(244,114,182,0.8); letter-spacing:0.04em; text-transform:uppercase;">Docs</div>
+      </div>
+      <div style="flex:7; background:linear-gradient(180deg,rgba(156,163,175,0.18) 0%,rgba(156,163,175,0.06) 100%); border:1px solid rgba(156,163,175,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#9ca3af; line-height:1;">7%</div>
+        <div style="font-size:7px; font-weight:600; color:rgba(156,163,175,0.8); letter-spacing:0.04em; text-transform:uppercase;">Community</div>
+      </div>
+    </div>
+    <!-- Signal pills -->
+    <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);">Claude Code 3x</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);">46 AI Keywords</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(6,182,212,0.1);color:#06b6d4;border:1px solid rgba(6,182,212,0.25);">28 Framework Files</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(0,229,160,0.1);color:var(--accent);border:1px solid rgba(0,229,160,0.25);">7 Coding Tools</span>
+      <span style="font-size:9px; color:var(--secondary); margin-left:4px;">No self-reported data. GitHub activity only.</span>
+    </div>
+  </div>
+
+  <hr class="divider" style="margin:14px 0;">
+
+  <!-- EXA WEBSETS -->
+  <div class="section-tight">
+    <div class="label">EXA WEBSETS <span class="pill-accent" style="margin-left:6px;">NEW IN V2.0</span></div>
+    <div style="display:flex; gap:14px; align-items:flex-start;">
+      <div style="flex:1; min-width:0;">
+        <div class="heading" style="font-size:14px; white-space:nowrap;">Persistent, Auto-Updating Candidate Sets</div>
+        <div class="body-sm" style="margin-bottom:8px;">Define search criteria once. Get new verified matches continuously as new contributors emerge. Websets are talent pipelines that run themselves.</div>
+      </div>
+      <div style="flex:2; min-width:0;">
+        <div class="grid-4">
+          <div class="card-hl">
+            <div class="card-title">Create</div>
+            <div class="card-body">Define query + criteria. Exa's neural search finds matches. Each verified before admission.</div>
+          </div>
+          <div class="card-hl">
+            <div class="card-title">Enrich</div>
+            <div class="card-body">Auto-extract: contact email, current company, publications, talks, GitHub stats.</div>
+          </div>
+          <div class="card-hl">
+            <div class="card-title">Monitor</div>
+            <div class="card-body">Daily or weekly schedule. New matches appended automatically. Override replaces stale.</div>
+          </div>
+          <div class="card-hl">
+            <div class="card-title">Export</div>
+            <div class="card-body">API, CSV, or feed into Clay and Parallel for enrichment and outreach sequencing.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EEA FRAMEWORK -->
+  <div class="section-tight">
+    <div class="label">EEA FRAMEWORK</div>
+    <div style="display:flex; gap:14px; align-items:flex-start;">
+      <!-- Left: what is EEA -->
+      <div style="flex:1; min-width:0;">
+        <div class="heading" style="font-size:14px;">Evidence of Exceptional Ability</div>
+        <div class="body-sm" style="margin-bottom:8px;">Verifiable signal that puts someone in the <span style="color:var(--accent); font-weight:600;">top 5-10%</span> of practitioners. Instead of searching for titles or keywords, build Websets around the specific evidence that defines elite performance.</div>
+        <!-- EEA Artifact Catalog -->
+        <div class="eea-grid">
+          <div class="card" style="padding:7px 10px;">
+            <div class="card-title">Published Research</div>
+            <div class="card-body" style="font-size:10px;">NeurIPS, ICML, ICLR, CVPR, ACL papers. H-index. Citation count.</div>
+          </div>
+          <div class="card" style="padding:7px 10px;">
+            <div class="card-title">Open Source Impact</div>
+            <div class="card-body" style="font-size:10px;">Top-10 contributor to repos with 1K+ stars. Maintainer status.</div>
+          </div>
+          <div class="card" style="padding:7px 10px;">
+            <div class="card-title">Conference + Teaching</div>
+            <div class="card-body" style="font-size:10px;">KubeCon, QCon, Strange Loop, DEF CON talks. Course instructor.</div>
+          </div>
+          <div class="card" style="padding:7px 10px;">
+            <div class="card-title">Industry Recognition</div>
+            <div class="card-body" style="font-size:10px;">Patents filed. CVE author. Awards. Press coverage.</div>
+          </div>
+          <div class="card" style="padding:7px 10px;">
+            <div class="card-title">Technical Leadership</div>
+            <div class="card-body" style="font-size:10px;">RFCs adopted. Design docs merged. Architecture decisions at scale.</div>
+          </div>
+          <div class="card" style="padding:7px 10px;">
+            <div class="card-title">Scale + Impact</div>
+            <div class="card-body" style="font-size:10px;">Shipped to 1M+ users. Infra serving 10K+ QPS. Production ML at scale.</div>
+          </div>
+        </div>
+      </div>
+      <!-- Right: Building EEA Websets + Comparison -->
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; font-family:'JetBrains Mono',monospace;">Building EEA-Driven Websets</div>
+        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;">
+          <div class="card-hl" style="border-left:2px solid var(--accent);">
+            <div class="card-title" style="font-size:11px;">Decompose the Role</div>
+            <div class="card-body" style="font-size:10px;">Identify 3-5 concrete, verifiable markers of exceptional ability. These become your Webset criteria.</div>
+          </div>
+          <div class="card-hl" style="border-left:2px solid var(--accent);">
+            <div class="card-title" style="font-size:11px;">Build the Webset</div>
+            <div class="card-body" style="font-size:10px;">Pass EEA signals as criteria. Exa's verification agent checks each candidate before admission.</div>
+          </div>
+          <div class="card-hl" style="border-left:2px solid var(--accent);">
+            <div class="card-title" style="font-size:11px;">Add Enrichments</div>
+            <div class="card-body" style="font-size:10px;">Surface the evidence itself: conference talks, star count, publication venues, contact email.</div>
+          </div>
+          <div class="card-hl" style="border-left:2px solid var(--accent);">
+            <div class="card-title" style="font-size:11px;">Monitor</div>
+            <div class="card-body" style="font-size:10px;">Weekly monitoring. New people who publish, ship OSS, or give talks auto-enter the pipeline.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" style="margin:14px 0;">
+
+  <!-- WEBSET RECIPES -->
+  <div class="section-tight">
+    <div class="label">WEBSET RECIPES</div>
+    <div class="grid-4">
+      <div class="card-hl" style="padding:8px 10px;">
+        <div class="card-title" style="font-size:11px;">ML Infra Engineer</div>
+        <div class="card-body" style="font-size:10px;">
+          Top contributor to PyTorch, JAX, DeepSpeed (500+ stars)<br>
+          Shipped distributed training at scale<br>
+          <span style="color:var(--secondary); font-size:9px;">Enrich: talks, star count, email, company</span>
+        </div>
+      </div>
+      <div class="card-hl" style="padding:8px 10px;">
+        <div class="card-title" style="font-size:11px;">Robotics Software</div>
+        <div class="card-body" style="font-size:10px;">
+          ROS/ROS2 maintainer or MoveIt, Drake, Isaac contributor<br>
+          Published at ICRA, RSS, or CoRL<br>
+          <span style="color:var(--secondary); font-size:9px;">Enrich: patents, lab, H-index, email</span>
+        </div>
+      </div>
+      <div class="card-hl" style="padding:8px 10px;">
+        <div class="card-title" style="font-size:11px;">Staff Frontend</div>
+        <div class="card-body" style="font-size:10px;">
+          Core contributor to React, Vue, Svelte (2K+ stars)<br>
+          Speaker at React Conf, VueConf, JSConf<br>
+          <span style="color:var(--secondary); font-size:9px;">Enrich: blog posts, npm packages, email</span>
+        </div>
+      </div>
+      <div class="card-hl" style="padding:8px 10px;">
+        <div class="card-title" style="font-size:11px;">Security Engineer</div>
+        <div class="card-body" style="font-size:10px;">
+          Published CVE or security advisory author<br>
+          DEF CON, Black Hat, BSides speaker<br>
+          <span style="color:var(--secondary); font-size:9px;">Enrich: CVEs, bounties, certs, email</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE + API SURFACE -->
+  <div class="section-tight">
+    <div class="label">ARCHITECTURE + API SURFACE</div>
+
+    <!-- Architecture: full-width horizontal flow -->
+    <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
+      <!-- Presentation -->
+      <div style="flex:1; min-width:0;">
+        <div class="arch-label" style="margin-bottom:3px;">Presentation</div>
+        <div class="arch-box" style="margin:0;">
+          <div class="arch-box-name">React + TypeScript</div>
+          <div class="arch-box-desc">Mobile-first / OAuth / Search / Pipeline / Websets</div>
+        </div>
+      </div>
+      <div style="color:var(--accent); font-size:14px; opacity:0.5;">&#9654;</div>
+      <!-- AI Layer -->
+      <div style="flex:2.5; min-width:0;">
+        <div class="arch-label" style="margin-bottom:3px;">AI Intelligence Layer</div>
+        <div class="arch-boxes" style="gap:4px;">
+          <div class="arch-box">
+            <div class="arch-box-name">Claude AI</div>
+            <div class="arch-box-desc">Strategy / Scoring / Builder Score</div>
+          </div>
+          <div class="arch-box">
+            <div class="arch-box-name">Exa + Websets</div>
+            <div class="arch-box-desc">Neural search / Collections</div>
+          </div>
+          <div class="arch-box">
+            <div class="arch-box-name">Parallel.ai</div>
+            <div class="arch-box-desc">JD extraction</div>
+          </div>
+          <div class="arch-box">
+            <div class="arch-box-name">GitHub API</div>
+            <div class="arch-box-desc">Contributors / Commits / Code Quality</div>
+          </div>
+        </div>
+      </div>
+      <div style="color:var(--accent); font-size:14px; opacity:0.5;">&#9654;</div>
+      <!-- Data Layer -->
+      <div style="flex:1.8; min-width:0;">
+        <div class="arch-label" style="margin-bottom:3px;">Data + Infrastructure</div>
+        <div class="arch-boxes" style="gap:4px;">
+          <div class="arch-box" style="flex:2;">
+            <div class="arch-box-name">Supabase</div>
+            <div class="arch-box-desc">Auth / RLS / Pipeline</div>
+          </div>
+          <div class="arch-box">
+            <div class="arch-box-name">Vercel</div>
+            <div class="arch-box-desc">Edge</div>
+          </div>
+          <div class="arch-box">
+            <div class="arch-box-name">Stripe</div>
+            <div class="arch-box-desc">Billing</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Surface: full-width 3-column grid -->
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
+      <div class="api-group-card blue">
+        <div class="api-group-header">Exa API <span class="ep-count">5 endpoints</span></div>
+        <div class="api-group-body">
+          <div class="api-row"><span class="api-row-key">Research</span><span class="api-row-desc">Deep research on any topic</span></div>
+          <div class="api-row"><span class="api-row-key">Search</span><span class="api-row-desc">Neural + keyword hybrid search</span></div>
+          <div class="api-row"><span class="api-row-key">Answer</span><span class="api-row-desc">Direct answers from web data</span></div>
+          <div class="api-row"><span class="api-row-key">findSimilar</span><span class="api-row-desc">Find pages similar to a URL</span></div>
+          <div class="api-row"><span class="api-row-key">Websets</span><span class="api-row-desc">Persistent collections, enrichment, monitoring</span></div>
+        </div>
+      </div>
+      <div class="api-group-card purple">
+        <div class="api-group-header">Parallel API <span class="ep-count">3 endpoints</span></div>
+        <div class="api-group-body">
+          <div class="api-row"><span class="api-row-key">Task</span><span class="api-row-desc">Single deep-research task with citations</span></div>
+          <div class="api-row"><span class="api-row-key">FindAll</span><span class="api-row-desc">Batch entity discovery from a query</span></div>
+          <div class="api-row"><span class="api-row-key">Search</span><span class="api-row-desc">Web search with content extraction</span></div>
+        </div>
+      </div>
+      <div class="api-group-card orange">
+        <div class="api-group-header">GitHub API + Builder Score <span class="ep-count">3 interfaces</span></div>
+        <div class="api-group-body">
+          <div class="api-row"><span class="api-row-key">REST</span><span class="api-row-desc">Contributors, commits, profiles, repo metadata</span></div>
+          <div class="api-row"><span class="api-row-key">GraphQL</span><span class="api-row-desc">Contribution graphs, org membership, activity</span></div>
+          <div class="api-row"><span class="api-row-key">Builder Score</span><span class="api-row-desc">On-demand code quality eval (6 dims, Claude summary)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" style="margin:14px 0;">
+
+  <!-- PRO TIPS (4x2 grid) -->
+  <div class="section-tight">
+    <div class="label">PRO TIPS</div>
+    <div class="tips-grid">
+      <div class="card" style="padding:7px 10px;">
+        <div class="card-title">Be Specific With Titles</div>
+        <div class="card-body" style="font-size:10px;">"ML Infrastructure Engineer focused on training pipelines" beats "ML Engineer."</div>
+      </div>
+      <div class="card" style="padding:7px 10px;">
+        <div class="card-title">Always Edit the Repo List</div>
+        <div class="card-body" style="font-size:10px;">AI suggestions are a starting point. Editing the repo list is the single biggest lever for result quality.</div>
+      </div>
+      <div class="card" style="padding:7px 10px;">
+        <div class="card-title">Target Hidden Gems</div>
+        <div class="card-body" style="font-size:10px;">High contributions, low follower counts. Under-recruited and more responsive to outreach.</div>
+      </div>
+      <div class="card" style="padding:7px 10px;">
+        <div class="card-title">Run Multiple Searches</div>
+        <div class="card-body" style="font-size:10px;">Same role across different companies surfaces different repo ecosystems and candidate pools.</div>
+      </div>
+      <div class="card" style="padding:7px 10px;">
+        <div class="card-title">Use Websets for Ongoing Roles</div>
+        <div class="card-body" style="font-size:10px;">Set up monitoring. New contributors matching your criteria surface automatically.</div>
+      </div>
+      <div class="card" style="padding:7px 10px;">
+        <div class="card-title">Write Criteria Like Filters</div>
+        <div class="card-body" style="font-size:10px;">"Has 50+ commits to a distributed systems project with 1K+ stars" works. "Passionate about backend" does not.</div>
+      </div>
+      <div class="card" style="padding:7px 10px;">
+        <div class="card-title">Start Narrow, Broaden Later</div>
+        <div class="card-body" style="font-size:10px;">3 tight criteria and 20 verified matches beats 1 loose criterion and 200 unqualified results.</div>
+      </div>
+      <div class="card" style="padding:7px 10px;">
+        <div class="card-title">Layer Enrichments After</div>
+        <div class="card-body" style="font-size:10px;">Let the Webset verify matches first, then add contact info and publications to survivors.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
   <div class="footer">
-    <a href="https://getsourcekit.vercel.app">getsourcekit.vercel.app</a> &middot; Feedback: mike@rubino.dev
+    <span style="color:var(--white); font-weight:600;">SourceKit Beta v2.0</span> &middot;
+    <a href="https://getsourcekit.vercel.app">getsourcekit.vercel.app</a> &middot;
+    <a href="https://sourcekit-docs.netlify.app">sourcekit-docs.netlify.app</a> &middot;
+    <span>Feedback: michael.f.rubino@gmail.com</span>
   </div>
 
 </div>
