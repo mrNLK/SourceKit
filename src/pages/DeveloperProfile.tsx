@@ -4,6 +4,7 @@ import { ArrowLeft, Star, GitFork, Users, MapPin, Calendar, ExternalLink, Gem, Z
 import { GitBranch } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getDeveloperProfile } from "@/lib/api";
+import { CompanyContext } from "@/components/CompanyContext";
 import type { Developer, Language } from "@/types/developer";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -213,6 +214,9 @@ const DeveloperProfile = () => {
             </div>
           </div>
         </div>
+
+        {/* ── COMPANY INTEL (Harmonic) ── */}
+        <CompanyContext bio={developer.bio} about={developer.about} />
 
         {/* ── CONTRIBUTION BREAKDOWN ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

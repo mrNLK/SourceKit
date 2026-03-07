@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { toast } from "@/hooks/use-toast";
 import { EEAFull } from "@/components/EEASignals";
+import { CompanyContext } from "@/components/CompanyContext";
 import { notifyStageChange } from "@/lib/api";
 import type { Language } from "@/types/developer";
 
@@ -362,6 +363,9 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
               <p className="text-sm text-muted-foreground italic">No enrichment data available for this candidate.</p>
             )}
           </div>
+
+          {/* ===== COMPANY INTEL (Harmonic) ===== */}
+          <CompanyContext bio={candidate?.bio} about={about || undefined} />
 
           {/* ===== SKILLS / LANGUAGES ===== */}
           {topLanguages.length > 0 && (

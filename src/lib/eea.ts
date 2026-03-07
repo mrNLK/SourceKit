@@ -839,6 +839,101 @@ export function computeEEA(data: CandidateData): EEAProfile {
   return { dimensions, overallScore, tier: getTier(overallScore), topSignals, strongCount, documentationGaps };
 }
 
+// ---------------------------------------------------------------------------
+// Harmonic company data enhancement
+// ---------------------------------------------------------------------------
+
+export interface HarmonicCompanySignals {
+  stage?: string;
+  headcount?: number;
+  fundingTotal?: number;
+  topInvestors?: string[];
+  highlights?: string[];
+  tags?: string[];
+}
+
+/**
+ * Enhance an existing EEA profile with Harmonic company intelligence.
+ * Boosts dimensions where company data provides additional evidence.
+ */
+export function enhanceEEAWithHarmonic(
+  profile: EEAProfile,
+  company: HarmonicCompanySignals,
+): EEAProfile {
+  const dimensions = profile.dimensions.map(dim => ({ ...dim, evidence: [...dim.evidence] }));
+
+  // Boost "Critical / Leading Role" if company is VC-backed or well-funded
+  const criticalRole = dimensions.find(d => d.id === 'critical_role');
+  if (criticalRole) {
+    if (company.topInvestors && company.topInvestors.length > 0) {
+      const topTier = ['Sequoia', 'a16z', 'Andreessen Horowitz', 'Benchmark', 'Greylock', 'Accel', 'Lightspeed', 'Index Ventures', 'General Catalyst', 'Founders Fund', 'Bessemer', 'Tiger Global', 'Insight Partners', 'Coatue', 'Kleiner Perkins'];
+      const hasTopTier = company.topInvestors.some(inv =>
+        topTier.some(t => inv.toLowerCase().includes(t.toLowerCase()))
+      );
+      if (hasTopTier) {
+        criticalRole.evidence.push(`Harmonic: Backed by top-tier investors (${company.topInvestors.slice(0, 2).join(', ')})`);
+        if (criticalRole.strength < 3) criticalRole.strength = Math.min(4, criticalRole.strength + 1) as EEAStrength;
+      }
+    }
+    if (company.fundingTotal && company.fundingTotal > 10_000_000) {
+      const formatted = company.fundingTotal >= 1e9 ? `$${(company.fundingTotal / 1e9).toFixed(1)}B` : `$${(company.fundingTotal / 1e6).toFixed(0)}M`;
+      criticalRole.evidence.push(`Harmonic: Company raised ${formatted} total funding`);
+    }
+    if (company.stage && ['SERIES_C', 'SERIES_D', 'SERIES_E', 'GROWTH', 'IPO'].includes(company.stage)) {
+      criticalRole.evidence.push(`Harmonic: ${company.stage.replace(/_/g, ' ')} stage company — distinguished organization`);
+      if (criticalRole.strength < 2) criticalRole.strength = 2;
+    }
+  }
+
+  // Boost "High Salary / Remuneration" with company stage + funding proxies
+  const remuneration = dimensions.find(d => d.id === 'remuneration');
+  if (remuneration) {
+    if (company.fundingTotal && company.fundingTotal > 50_000_000) {
+      remuneration.evidence.push(`Harmonic: Well-funded company ($${(company.fundingTotal / 1e6).toFixed(0)}M) — likely premium compensation`);
+      if (remuneration.strength < 2) remuneration.strength = 2;
+    }
+    if (company.headcount && company.headcount > 200) {
+      remuneration.evidence.push(`Harmonic: ${company.headcount} employees — established compensation bands`);
+      if (remuneration.strength < 1) remuneration.strength = 1;
+    }
+  }
+
+  // Boost "Membership" if company is in prestigious accelerator/program (from tags)
+  const membership = dimensions.find(d => d.id === 'membership');
+  if (membership && company.tags) {
+    const accelTags = company.tags.filter(t =>
+      ['Y Combinator', 'YC', 'Techstars', 'a16z', '500 Startups', 'On Deck'].some(a => t.toLowerCase().includes(a.toLowerCase()))
+    );
+    if (accelTags.length > 0) {
+      membership.evidence.push(`Harmonic: Company tagged as ${accelTags[0]} — exclusive program membership`);
+      if (membership.strength < 2) membership.strength = 2;
+    }
+  }
+
+  // Recalculate overall score
+  const uscisWeight = 10;
+  const suppWeight = 8;
+  const overallScore = Math.round(
+    dimensions.reduce((sum, dim) => {
+      const weight = dim.criterion === 'uscis' ? uscisWeight : suppWeight;
+      return sum + (dim.strength / 4) * weight;
+    }, 0)
+  );
+
+  const strongCount = dimensions.filter(dim => dim.strength >= 3).length;
+  const topSignals = dimensions
+    .filter(dim => dim.strength >= 2)
+    .sort((a, b) => b.strength - a.strength)
+    .slice(0, 3)
+    .map(dim => `${dim.icon} ${dim.shortLabel}: ${dim.evidence[0] || STRENGTH_LABELS[dim.strength]}`);
+  const documentationGaps = dimensions
+    .filter(dim => dim.criterion === 'uscis' && dim.strength < 3)
+    .flatMap(dim => dim.needsDocumentation.slice(0, 1))
+    .slice(0, 4);
+
+  return { dimensions, overallScore, tier: getTier(overallScore), topSignals, strongCount, documentationGaps };
+}
+
 /**
  * Convert a Developer search result (camelCase) or candidate row (snake_case)
  * into the shape computeEEA expects.
