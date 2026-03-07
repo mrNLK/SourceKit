@@ -6,7 +6,7 @@
  */
 
 // ---------------------------------------------------------------------------
-// Company
+// Raw Harmonic API response types (as returned by Harmonic directly)
 // ---------------------------------------------------------------------------
 
 export interface HarmonicCompany {
@@ -26,10 +26,7 @@ export interface HarmonicCompany {
   headcount?: number;
   founding_date?: { date: string };
   location?: HarmonicLocation;
-  contact?: {
-    emails?: string[];
-    phone_numbers?: string[];
-  };
+  contact?: { emails?: string[]; phone_numbers?: string[] };
   socials?: HarmonicCompanySocials;
   website?: { url?: string; domain?: string; is_broken?: boolean };
   funding?: HarmonicFunding;
@@ -41,10 +38,7 @@ export interface HarmonicCompany {
   employee_highlights?: { text: string }[];
   traction_metrics?: HarmonicTractionMetrics;
   snapshots?: HarmonicSnapshot[];
-  related_companies?: {
-    similar?: string[];
-    competitors?: string[];
-  };
+  related_companies?: { similar?: string[]; competitors?: string[] };
   investor_urn?: string;
   website_domain_aliases?: string[];
   name_aliases?: string[];
@@ -84,26 +78,13 @@ export interface HarmonicFundingRound {
   fundingAmount?: number;
   fundingRoundType?: string;
   announcedDate?: string;
-  investors?: {
-    investorName: string;
-    isLead: boolean;
-    investorUrn?: string;
-  }[];
+  investors?: { investorName: string; isLead: boolean; investorUrn?: string }[];
 }
 
 export interface HarmonicTractionMetrics {
-  webTraffic?: {
-    ago30d?: { percentChange?: number };
-    ago90d?: { percentChange?: number };
-  };
-  headcount?: {
-    ago30d?: { percentChange?: number };
-    ago90d?: { percentChange?: number };
-  };
-  headcountEngineering?: {
-    ago30d?: { percentChange?: number };
-    ago90d?: { percentChange?: number };
-  };
+  webTraffic?: { ago30d?: { percentChange?: number }; ago90d?: { percentChange?: number } };
+  headcount?: { ago30d?: { percentChange?: number }; ago90d?: { percentChange?: number } };
+  headcountEngineering?: { ago30d?: { percentChange?: number }; ago90d?: { percentChange?: number } };
 }
 
 export interface HarmonicSnapshot {
@@ -130,17 +111,10 @@ export interface HarmonicPerson {
   last_name?: string;
   profile_picture_url?: string;
   linkedin_headline?: string;
-  contact?: {
-    emails?: string[];
-    phone_numbers?: string[];
-  };
+  contact?: { emails?: string[]; phone_numbers?: string[] };
   location?: HarmonicLocation;
   education?: HarmonicEducation[];
-  socials?: {
-    linkedin?: { url?: string };
-    twitter?: { url?: string };
-    github?: { url?: string };
-  };
+  socials?: { linkedin?: { url?: string }; twitter?: { url?: string }; github?: { url?: string } };
   experience?: HarmonicExperience[];
   highlights?: { text: string }[];
   awards__beta?: { title: string; description?: string }[];
@@ -169,10 +143,7 @@ export interface HarmonicExperience {
   is_current_position?: boolean;
   location?: string;
   role_type?: string;
-  contact?: {
-    emails?: string[];
-    phone_numbers?: string[];
-  };
+  contact?: { emails?: string[]; phone_numbers?: string[] };
 }
 
 // ---------------------------------------------------------------------------
@@ -192,11 +163,7 @@ export interface HarmonicEnrichmentStatus {
 
 export interface HarmonicSearchResult<T> {
   count: number;
-  page_info?: {
-    next?: string;
-    current?: string | null;
-    has_next?: boolean;
-  };
+  page_info?: { next?: string; current?: string | null; has_next?: boolean };
   results: T[];
 }
 
@@ -219,7 +186,7 @@ export interface HarmonicTypeaheadResult {
 }
 
 // ---------------------------------------------------------------------------
-// Network / Team Connections
+// Network / Team Connections (gated — deferred until verified)
 // ---------------------------------------------------------------------------
 
 export interface HarmonicUserConnection {
@@ -231,66 +198,89 @@ export interface HarmonicUserConnection {
   connected_person_name?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Edge function request/response shapes
-// ---------------------------------------------------------------------------
-
-export type HarmonicAction =
-  | 'enrich_company'
-  | 'enrich_person'
-  | 'get_company'
-  | 'get_person'
-  | 'get_employees'
-  | 'search_companies'
-  | 'similar_companies'
-  | 'search_agent'
-  | 'typeahead'
-  | 'team_connections'
-  | 'enrichment_status'
-  | 'batch_companies';
-
-export interface HarmonicEnrichRequest {
-  action: HarmonicAction;
-  // Company enrichment identifiers
-  website_domain?: string;
-  website_url?: string;
-  linkedin_url?: string;
-  crunchbase_url?: string;
-  // Person enrichment
-  person_linkedin_url?: string;
-  // Fetch by ID
-  id_or_urn?: string;
-  // Search
-  query?: string;
-  keywords?: string;
-  // Employees
-  employee_group_type?: 'ALL' | 'FOUNDERS_AND_CEO' | 'EXECUTIVES' | 'FOUNDERS' | 'LEADERSHIP';
-  // Pagination
-  size?: number;
-  page?: number;
-  cursor?: string;
-  // Batch
-  ids?: number[];
-  urns?: string[];
-  // Similar companies
-  company_urns?: string[];
+/**
+ * Placeholder for warm-intro / team connections feature.
+ * Reserved for when account-level access is verified.
+ */
+export interface HarmonicConnectionSummary {
+  company_id: string;
+  company_name: string;
+  has_connections: boolean;
+  connection_count: number;
+  connections: HarmonicUserConnection[];
 }
 
 // ---------------------------------------------------------------------------
-// Derived "poachability" analysis (computed from Harmonic data)
+// Normalized company_cache row (as stored in Supabase)
 // ---------------------------------------------------------------------------
 
-export interface CompanyPoachability {
+export interface CompanyContext {
+  id?: string;
+  harmonic_company_id?: string;
+  name?: string;
+  domain?: string;
+  website_url?: string;
+  linkedin_url?: string;
+  location?: string;
+  funding_stage?: string;
+  funding_total?: number;
+  last_funding_date?: string;
+  last_funding_total?: number;
+  headcount?: number;
+  headcount_growth_30d?: number;
+  headcount_growth_90d?: number;
+  headcount_growth_180d?: number;
+  web_traffic?: unknown; // JSONB
+  investors?: unknown; // JSONB: { name: string; isLead: boolean }[]
+  founders?: unknown; // JSONB: { name: string; title: string; urn: string }[]
+  industry_tags?: string[];
+  technology_tags?: string[];
+  customer_tags?: string[];
+  company_quality?: unknown; // JSONB: { highlights, employee_highlights, logo_url, short_description }
+  raw_payload?: unknown; // JSONB: full Harmonic response
+  fetched_at?: string;
+  updated_at?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Poach company enrichment (from research-role)
+// ---------------------------------------------------------------------------
+
+export interface PoachCompanyEnrichment {
+  name: string;
+  domain?: string;
+  category: 'direct_competitor' | 'adjacent' | 'talent_hub';
+  reason: string;
+  source: 'claude_seed' | 'harmonic_similar';
+  funding_stage?: string;
+  funding_total?: number;
+  last_funding_date?: string;
+  last_funding_total?: number;
+  headcount?: number;
+  headcount_growth_30d?: number;
+  headcount_growth_90d?: number;
+  top_investors?: string[];
+  industry_tags?: string[];
+  technology_tags?: string[];
+  poachability_score?: number;
+  poachability_rationale?: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Poachability score (computed client-side from CompanyContext)
+// ---------------------------------------------------------------------------
+
+export interface PoachabilityScore {
   domain: string;
   name: string;
   score: number; // 0-100, higher = easier to poach from
   signals: string[];
-  stage?: HarmonicFundingStage;
+  funding_stage?: string;
   headcount?: number;
-  engineeringGrowth90d?: number;
-  webTrafficChange30d?: number;
-  fundingTotal?: number;
-  lastRoundDate?: string;
-  topInvestors?: string[];
-  logoUrl?: string;
+  headcount_growth_90d?: number;
+  web_traffic_change_30d?: number;
+  funding_total?: number;
+  last_funding_date?: string;
+  top_investors?: string[];
+  logo_url?: string;
 }

@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { enrichCompanyByDomain, computePoachability } from '@/services/harmonic'
-import type { HarmonicCompany, CompanyPoachability } from '@/types/harmonic'
+import type { CompanyContext, PoachabilityScore } from '@/types/harmonic'
 
 /**
  * Fetch and cache Harmonic company data for a given domain.
- * Returns company enrichment data + computed poachability score.
+ * Returns normalized company_cache data + computed poachability score.
+ * Non-blocking: profile renders first, company context streams in separately.
  */
 export function useHarmonicCompany(domain: string | null | undefined) {
   const query = useQuery({
@@ -16,14 +17,14 @@ export function useHarmonicCompany(domain: string | null | undefined) {
       return { company, poachability }
     },
     enabled: !!domain,
-    staleTime: 1000 * 60 * 30, // 30 minutes
-    retry: 1,
+    staleTime: 1000 * 60 * 30, // 30 minutes client-side
+    retry: 1, // No auto-retry storms
   })
 
   return {
-    company: query.data?.company as HarmonicCompany | undefined,
-    poachability: query.data?.poachability as CompanyPoachability | undefined,
-    isLoading: query.isLoading,
+    company: query.data?.company as CompanyContext | undefined,
+    poachability: query.data?.poachability as PoachabilityScore | undefined,
+    isLoading: query.isLoading && query.fetchStatus !== 'idle',
     error: query.error,
     refetch: query.refetch,
   }

@@ -1,19 +1,19 @@
 import { supabase } from "@/integrations/supabase/client"
 import type {
-  HarmonicCompany,
   HarmonicPerson,
   HarmonicEnrichmentStatus,
   HarmonicSearchResult,
-  HarmonicAction,
-  HarmonicEnrichRequest,
-  CompanyPoachability,
+  HarmonicCompany,
+  CompanyContext,
+  PoachabilityScore,
 } from "@/types/harmonic"
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
-async function callHarmonicApi(
-  action: HarmonicAction,
+async function callEdgeFunction(
+  functionName: string,
+  action: string,
   params: Record<string, unknown>,
 ) {
   if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Supabase not configured')
@@ -23,7 +23,7 @@ async function callHarmonicApi(
     throw new Error('Authentication required – please sign in.')
   }
 
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/harmonic-enrich`, {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -44,43 +44,27 @@ async function callHarmonicApi(
 }
 
 // ---------------------------------------------------------------------------
-// Company enrichment
+// Company enrichment (harmonic-enrich function)
 // ---------------------------------------------------------------------------
 
-export async function enrichCompanyByDomain(domain: string): Promise<HarmonicCompany> {
-  return callHarmonicApi('enrich_company', { website_domain: domain })
+export async function enrichCompanyByDomain(domain: string): Promise<CompanyContext> {
+  return callEdgeFunction('harmonic-enrich', 'enrich_company', { website_domain: domain })
 }
 
-export async function enrichCompanyByLinkedIn(linkedinUrl: string): Promise<HarmonicCompany> {
-  return callHarmonicApi('enrich_company', { linkedin_url: linkedinUrl })
+export async function enrichCompanyByLinkedIn(linkedinUrl: string): Promise<CompanyContext> {
+  return callEdgeFunction('harmonic-enrich', 'enrich_company', { linkedin_url: linkedinUrl })
 }
 
 export async function getCompanyById(idOrUrn: string): Promise<HarmonicCompany> {
-  return callHarmonicApi('get_company', { id_or_urn: idOrUrn })
+  return callEdgeFunction('harmonic-enrich', 'get_company', { id_or_urn: idOrUrn })
 }
-
-// ---------------------------------------------------------------------------
-// Person enrichment
-// ---------------------------------------------------------------------------
-
-export async function enrichPersonByLinkedIn(linkedinUrl: string): Promise<HarmonicPerson> {
-  return callHarmonicApi('enrich_person', { person_linkedin_url: linkedinUrl })
-}
-
-export async function getPersonById(idOrUrn: string): Promise<HarmonicPerson> {
-  return callHarmonicApi('get_person', { id_or_urn: idOrUrn })
-}
-
-// ---------------------------------------------------------------------------
-// Company employees
-// ---------------------------------------------------------------------------
 
 export async function getCompanyEmployees(
   idOrUrn: string,
   groupType?: 'ALL' | 'FOUNDERS_AND_CEO' | 'EXECUTIVES' | 'FOUNDERS' | 'LEADERSHIP',
   size = 20,
 ) {
-  return callHarmonicApi('get_employees', {
+  return callEdgeFunction('harmonic-enrich', 'get_employees', {
     id_or_urn: idOrUrn,
     employee_group_type: groupType,
     size,
@@ -88,125 +72,124 @@ export async function getCompanyEmployees(
 }
 
 // ---------------------------------------------------------------------------
-// Search
+// Person enrichment (harmonic-enrich function)
+// ---------------------------------------------------------------------------
+
+export async function enrichPersonByLinkedIn(linkedinUrl: string): Promise<HarmonicPerson> {
+  return callEdgeFunction('harmonic-enrich', 'enrich_person', { person_linkedin_url: linkedinUrl })
+}
+
+export async function getPersonById(idOrUrn: string): Promise<HarmonicPerson> {
+  return callEdgeFunction('harmonic-enrich', 'get_person', { id_or_urn: idOrUrn })
+}
+
+export async function checkEnrichmentStatus(
+  ids?: string[],
+  urns?: string[],
+): Promise<HarmonicEnrichmentStatus[]> {
+  return callEdgeFunction('harmonic-enrich', 'enrichment_status', { ids, urns })
+}
+
+// ---------------------------------------------------------------------------
+// Search (harmonic-search function)
 // ---------------------------------------------------------------------------
 
 export async function searchCompaniesNaturalLanguage(
   query: string,
 ): Promise<HarmonicSearchResult<HarmonicCompany>> {
-  return callHarmonicApi('search_agent', { query })
+  return callEdgeFunction('harmonic-search', 'search_agent', { query })
 }
 
 export async function findSimilarCompanies(
   companyUrns: string[],
 ): Promise<HarmonicSearchResult<HarmonicCompany>> {
-  return callHarmonicApi('similar_companies', { company_urns: companyUrns })
+  return callEdgeFunction('harmonic-search', 'similar_companies', { company_urns: companyUrns })
 }
 
 export async function searchCompaniesByKeywords(
   keywords: string,
   size = 25,
 ): Promise<HarmonicSearchResult<HarmonicCompany>> {
-  return callHarmonicApi('search_companies', { keywords, size })
+  return callEdgeFunction('harmonic-search', 'search_companies', { keywords, size })
 }
 
 export async function typeaheadSearch(
   query: string,
   searchType: 'COMPANY' | 'PERSON' | 'INVESTOR' = 'COMPANY',
 ) {
-  return callHarmonicApi('typeahead', { query, search_type: searchType })
+  return callEdgeFunction('harmonic-search', 'typeahead', { query, search_type: searchType })
 }
 
 // ---------------------------------------------------------------------------
-// Network / Connections
+// Network / Connections (gated — may not be available on all plans)
 // ---------------------------------------------------------------------------
 
 export async function getTeamConnections(companyIdOrUrn: string) {
-  return callHarmonicApi('team_connections', { id_or_urn: companyIdOrUrn })
+  return callEdgeFunction('harmonic-search', 'team_connections', { id_or_urn: companyIdOrUrn })
 }
 
 // ---------------------------------------------------------------------------
-// Enrichment status
+// Poachability scoring (client-side computation from normalized company data)
 // ---------------------------------------------------------------------------
 
-export async function checkEnrichmentStatus(
-  ids?: string[],
-  urns?: string[],
-): Promise<HarmonicEnrichmentStatus[]> {
-  return callHarmonicApi('enrichment_status', { ids, urns })
-}
-
-// ---------------------------------------------------------------------------
-// Batch operations
-// ---------------------------------------------------------------------------
-
-export async function batchGetCompanies(ids?: number[], urns?: string[]) {
-  return callHarmonicApi('batch_companies', { ids, urns })
-}
-
-// ---------------------------------------------------------------------------
-// Poachability scoring (client-side computation from Harmonic data)
-// ---------------------------------------------------------------------------
-
-export function computePoachability(company: HarmonicCompany): CompanyPoachability {
+export function computePoachability(company: CompanyContext): PoachabilityScore {
   const signals: string[] = []
-  let score = 50 // Base score
+  let score = 50
 
-  const tm = company.traction_metrics
-  const engGrowth = tm?.headcountEngineering?.ago90d?.percentChange
-  const webChange = tm?.webTraffic?.ago30d?.percentChange
-
-  // Shrinking engineering team = easier to poach
-  if (engGrowth !== undefined && engGrowth < -5) {
+  // Engineering headcount growth
+  const engGrowth = company.headcount_growth_90d
+  if (engGrowth !== undefined && engGrowth !== null && engGrowth < -5) {
     score += 20
     signals.push(`Engineering team shrinking (${engGrowth.toFixed(0)}% in 90d)`)
-  } else if (engGrowth !== undefined && engGrowth > 20) {
+  } else if (engGrowth !== undefined && engGrowth !== null && engGrowth > 20) {
     score -= 15
     signals.push(`Engineering team growing fast (+${engGrowth.toFixed(0)}% in 90d)`)
   }
 
-  // Declining web traffic = company may be struggling
-  if (webChange !== undefined && webChange < -10) {
+  // Web traffic
+  const webTraffic = company.web_traffic as { ago30d?: { percentChange?: number } } | null
+  const webChange = webTraffic?.ago30d?.percentChange
+  if (webChange !== undefined && webChange !== null && webChange < -10) {
     score += 15
     signals.push(`Web traffic declining (${webChange.toFixed(0)}% in 30d)`)
-  } else if (webChange !== undefined && webChange > 30) {
+  } else if (webChange !== undefined && webChange !== null && webChange > 30) {
     score -= 10
     signals.push(`Web traffic surging (+${webChange.toFixed(0)}% in 30d)`)
   }
 
-  // Funding stage signals
-  const stage = company.stage
+  // Funding stage
+  const stage = company.funding_stage
   if (stage === 'PRE_SEED' || stage === 'SEED') {
     score += 10
     signals.push('Early stage — candidates may want stability')
-  } else if (stage === 'SERIES_D' || stage === 'SERIES_E' || stage === 'GROWTH') {
+  } else if (stage && ['SERIES_D', 'SERIES_E', 'GROWTH'].includes(stage)) {
     score -= 5
     signals.push('Late-stage / growth — harder to poach')
   }
 
-  // No recent funding
-  const lastRound = company.funding?.lastFundingDate
-  if (lastRound) {
-    const monthsSinceRound = (Date.now() - new Date(lastRound).getTime()) / (30 * 24 * 60 * 60 * 1000)
-    if (monthsSinceRound > 24) {
+  // Last funding date
+  if (company.last_funding_date) {
+    const monthsSince = (Date.now() - new Date(company.last_funding_date).getTime()) / (30 * 24 * 60 * 60 * 1000)
+    if (monthsSince > 24) {
       score += 15
-      signals.push(`No funding in ${Math.round(monthsSinceRound)} months`)
-    } else if (monthsSinceRound < 6) {
+      signals.push(`No funding in ${Math.round(monthsSince)} months`)
+    } else if (monthsSince < 6) {
       score -= 10
       signals.push('Recently funded — retention likely strong')
     }
   }
 
-  // Small headcount = less stability
-  if (company.headcount !== undefined && company.headcount < 20) {
+  // Small headcount
+  if (company.headcount !== undefined && company.headcount !== null && company.headcount < 20) {
     score += 5
     signals.push(`Small team (${company.headcount} employees)`)
   }
 
-  // Company highlights (layoff signals, etc.)
-  const highlights = company.highlights || []
+  // Layoff signals from highlights
+  const quality = company.company_quality as { highlights?: string[] } | null
+  const highlights = quality?.highlights || []
   for (const h of highlights) {
-    const text = h.text?.toLowerCase() || ''
+    const text = (h || '').toLowerCase()
     if (text.includes('layoff') || text.includes('restructur') || text.includes('downsiz')) {
       score += 20
       signals.push('Recent layoff/restructuring signals')
@@ -215,24 +198,25 @@ export function computePoachability(company: HarmonicCompany): CompanyPoachabili
   }
 
   // Top investors
-  const topInvestors = company.funding_rounds
-    ?.flatMap(r => r.investors?.filter(i => i.isLead).map(i => i.investorName) || [])
-    .filter(Boolean)
+  const investors = company.investors as { name: string; isLead: boolean }[] | null
+  const topInvestors = investors
+    ?.filter(i => i.isLead)
+    .map(i => i.name)
     .slice(0, 3) || []
 
   return {
-    domain: company.website?.domain || '',
-    name: company.name,
+    domain: company.domain || '',
+    name: company.name || '',
     score: Math.max(0, Math.min(100, score)),
     signals,
-    stage: company.stage,
+    funding_stage: company.funding_stage,
     headcount: company.headcount,
-    engineeringGrowth90d: engGrowth,
-    webTrafficChange30d: webChange,
-    fundingTotal: company.funding?.fundingTotal,
-    lastRoundDate: lastRound,
-    topInvestors,
-    logoUrl: company.logo_url,
+    headcount_growth_90d: company.headcount_growth_90d,
+    web_traffic_change_30d: webChange,
+    funding_total: company.funding_total,
+    last_funding_date: company.last_funding_date ? String(company.last_funding_date) : undefined,
+    top_investors: topInvestors,
+    logo_url: (company.company_quality as any)?.logo_url,
   }
 }
 
@@ -253,7 +237,7 @@ export function companyNameToDomain(name: string): string {
 
 export async function enrichAndRankCompanies(
   companies: { name: string; domain?: string }[],
-): Promise<CompanyPoachability[]> {
+): Promise<PoachabilityScore[]> {
   const results = await Promise.allSettled(
     companies.map(async (c) => {
       const domain = c.domain || companyNameToDomain(c.name)
@@ -263,7 +247,7 @@ export async function enrichAndRankCompanies(
   )
 
   return results
-    .filter((r): r is PromiseFulfilledResult<CompanyPoachability> => r.status === 'fulfilled')
+    .filter((r): r is PromiseFulfilledResult<PoachabilityScore> => r.status === 'fulfilled')
     .map(r => r.value)
-    .sort((a, b) => b.score - a.score) // Most poachable first
+    .sort((a, b) => b.score - a.score)
 }

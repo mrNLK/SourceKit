@@ -1,7 +1,7 @@
-import { Building2, TrendingUp, TrendingDown, Users, DollarSign, Loader2, ExternalLink, AlertTriangle, ChevronDown, ChevronRight } from "lucide-react"
+import { Building2, TrendingUp, TrendingDown, Loader2, ExternalLink, AlertTriangle, ChevronDown, ChevronRight } from "lucide-react"
 import { useState } from "react"
 import { useHarmonicCompany, extractCompanyDomain } from "@/hooks/useHarmonicCompany"
-import type { CompanyPoachability } from "@/types/harmonic"
+import type { PoachabilityScore, CompanyContext as CompanyContextType } from "@/types/harmonic"
 
 interface CompanyContextProps {
   bio?: string
@@ -9,7 +9,7 @@ interface CompanyContextProps {
   companyDomain?: string | null
 }
 
-function formatFunding(amount?: number): string {
+function formatFunding(amount?: number | null): string {
   if (!amount) return 'Undisclosed'
   if (amount >= 1_000_000_000) return `$${(amount / 1_000_000_000).toFixed(1)}B`
   if (amount >= 1_000_000) return `$${(amount / 1_000_000).toFixed(1)}M`
@@ -17,7 +17,7 @@ function formatFunding(amount?: number): string {
   return `$${amount}`
 }
 
-function formatStage(stage?: string): string {
+function formatStage(stage?: string | null): string {
   if (!stage) return 'Unknown'
   return stage.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
@@ -28,13 +28,13 @@ function PoachabilityBadge({ score }: { score: number }) {
 
   if (score >= 70) {
     color = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-    label = 'High Poachability'
+    label = 'Easy'
   } else if (score >= 50) {
     color = 'bg-amber-500/15 text-amber-400 border-amber-500/30'
     label = 'Moderate'
   } else {
     color = 'bg-red-500/15 text-red-400 border-red-500/30'
-    label = 'Hard to Poach'
+    label = 'Hard'
   }
 
   return (
@@ -45,13 +45,13 @@ function PoachabilityBadge({ score }: { score: number }) {
   )
 }
 
-function MetricRow({ label, value, trend }: { label: string; value: string; trend?: number }) {
+function MetricRow({ label, value, trend }: { label: string; value: string; trend?: number | null }) {
   return (
     <div className="flex items-center justify-between py-1">
       <span className="text-xs text-muted-foreground">{label}</span>
       <div className="flex items-center gap-1.5">
-        <span className="text-xs font-medium text-foreground">{value}</span>
-        {trend !== undefined && trend !== 0 && (
+        {value && <span className="text-xs font-medium text-foreground">{value}</span>}
+        {trend !== undefined && trend !== null && trend !== 0 && (
           <span className={`text-xs ${trend > 0 ? 'text-emerald-400' : 'text-red-400'} flex items-center gap-0.5`}>
             {trend > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             {trend > 0 ? '+' : ''}{trend.toFixed(0)}%
@@ -62,13 +62,20 @@ function MetricRow({ label, value, trend }: { label: string; value: string; tren
   )
 }
 
+/**
+ * Company Context card — renders Harmonic company intelligence for a candidate.
+ * Non-blocking: parent profile renders first, this loads independently.
+ * Shows nothing if no company domain can be extracted.
+ */
 export function CompanyContext({ bio, about, companyDomain }: CompanyContextProps) {
   const [expanded, setExpanded] = useState(false)
   const domain = companyDomain || extractCompanyDomain(bio, about)
   const { company, poachability, isLoading, error } = useHarmonicCompany(domain)
 
+  // Empty state: no company domain detected
   if (!domain) return null
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="rounded-lg border border-border bg-card/50 p-3">
@@ -80,19 +87,26 @@ export function CompanyContext({ bio, about, companyDomain }: CompanyContextProp
     )
   }
 
+  // Error / no data state — silently hide, profile still renders
   if (error || !company || !poachability) return null
 
-  const tm = company.traction_metrics
+  const quality = company.company_quality as { highlights?: string[]; logo_url?: string; short_description?: string } | null
+  const webTraffic = company.web_traffic as { ago30d?: { percentChange?: number } } | null
+  const investors = company.investors as { name: string; isLead: boolean }[] | null
+  const industryTags = company.industry_tags || []
+  const techTags = company.technology_tags || []
+  const allTags = [...industryTags, ...techTags]
+  const leadInvestors = investors?.filter(i => i.isLead).map(i => i.name).slice(0, 3) || []
 
   return (
     <div className="rounded-lg border border-border bg-card/50 overflow-hidden">
-      {/* Header */}
+      {/* Header — always visible */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-3 p-3 hover:bg-muted/30 transition-colors text-left"
       >
-        {company.logo_url ? (
-          <img src={company.logo_url} alt="" className="w-8 h-8 rounded-md object-contain bg-white/5 border border-border" />
+        {quality?.logo_url ? (
+          <img src={quality.logo_url} alt="" className="w-8 h-8 rounded-md object-contain bg-white/5 border border-border" />
         ) : (
           <div className="w-8 h-8 rounded-md bg-primary/10 border border-primary/30 flex items-center justify-center">
             <Building2 className="w-4 h-4 text-primary" />
@@ -104,8 +118,8 @@ export function CompanyContext({ bio, about, companyDomain }: CompanyContextProp
             <PoachabilityBadge score={poachability.score} />
           </div>
           <span className="text-xs text-muted-foreground">
-            {formatStage(company.stage)} · {company.headcount ? `${company.headcount} employees` : 'Size unknown'}
-            {company.funding?.fundingTotal ? ` · ${formatFunding(company.funding.fundingTotal)} raised` : ''}
+            {formatStage(company.funding_stage)} · {company.headcount ? `${company.headcount} employees` : 'Size unknown'}
+            {company.funding_total ? ` · ${formatFunding(company.funding_total)} raised` : ''}
           </span>
         </div>
         {expanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
@@ -114,44 +128,38 @@ export function CompanyContext({ bio, about, companyDomain }: CompanyContextProp
       {/* Expanded details */}
       {expanded && (
         <div className="px-3 pb-3 border-t border-border/50">
-          {/* Description */}
-          {company.short_description && (
+          {quality?.short_description && (
             <p className="text-xs text-muted-foreground mt-2 mb-2 line-clamp-2">
-              {company.short_description}
+              {quality.short_description}
             </p>
           )}
 
           {/* Key Metrics */}
           <div className="space-y-0.5 mt-2">
-            {company.headcount !== undefined && (
+            {company.headcount != null && (
               <MetricRow
                 label="Headcount"
                 value={company.headcount.toLocaleString()}
-                trend={tm?.headcount?.ago90d?.percentChange}
+                trend={company.headcount_growth_90d}
               />
             )}
-            {tm?.headcountEngineering?.ago90d?.percentChange !== undefined && (
-              <MetricRow
-                label="Engineering Team"
-                value=""
-                trend={tm.headcountEngineering.ago90d.percentChange}
-              />
+            {company.headcount_growth_30d != null && (
+              <MetricRow label="Headcount (30d)" value="" trend={company.headcount_growth_30d} />
             )}
-            {tm?.webTraffic?.ago30d?.percentChange !== undefined && (
-              <MetricRow
-                label="Web Traffic (30d)"
-                value=""
-                trend={tm.webTraffic.ago30d.percentChange}
-              />
+            {webTraffic?.ago30d?.percentChange != null && (
+              <MetricRow label="Web Traffic (30d)" value="" trend={webTraffic.ago30d.percentChange} />
             )}
-            {company.funding?.fundingTotal !== undefined && (
-              <MetricRow label="Total Funding" value={formatFunding(company.funding.fundingTotal)} />
+            {company.funding_total != null && (
+              <MetricRow label="Total Funding" value={formatFunding(company.funding_total)} />
             )}
-            {company.funding?.lastFundingDate && (
+            {company.last_funding_date && (
               <MetricRow
                 label="Last Round"
-                value={`${company.funding.lastFundingType || ''} ${new Date(company.funding.lastFundingDate).toLocaleDateString()}`}
+                value={new Date(company.last_funding_date).toLocaleDateString()}
               />
+            )}
+            {company.location && (
+              <MetricRow label="Location" value={company.location} />
             )}
           </div>
 
@@ -170,12 +178,12 @@ export function CompanyContext({ bio, about, companyDomain }: CompanyContextProp
             </div>
           )}
 
-          {/* Top Investors */}
-          {poachability.topInvestors && poachability.topInvestors.length > 0 && (
+          {/* Lead Investors */}
+          {leadInvestors.length > 0 && (
             <div className="mt-3">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Lead Investors</span>
               <div className="flex flex-wrap gap-1 mt-1">
-                {poachability.topInvestors.map((inv, i) => (
+                {leadInvestors.map((inv, i) => (
                   <span key={i} className="text-xs px-1.5 py-0.5 rounded bg-muted/40 text-foreground/70 border border-border/50">
                     {inv}
                   </span>
@@ -185,11 +193,11 @@ export function CompanyContext({ bio, about, companyDomain }: CompanyContextProp
           )}
 
           {/* Tags */}
-          {company.tags_v2 && company.tags_v2.length > 0 && (
+          {allTags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-3">
-              {company.tags_v2.slice(0, 6).map((tag, i) => (
+              {allTags.slice(0, 6).map((tag, i) => (
                 <span key={i} className="text-xs px-1.5 py-0.5 rounded bg-primary/5 text-primary/70 border border-primary/20">
-                  {tag.displayValue}
+                  {tag}
                 </span>
               ))}
             </div>
@@ -197,9 +205,9 @@ export function CompanyContext({ bio, about, companyDomain }: CompanyContextProp
 
           {/* Links */}
           <div className="flex gap-3 mt-3">
-            {company.website?.url && (
+            {company.website_url && (
               <a
-                href={company.website.url}
+                href={company.website_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-primary/70 hover:text-primary flex items-center gap-1"
@@ -207,9 +215,9 @@ export function CompanyContext({ bio, about, companyDomain }: CompanyContextProp
                 <ExternalLink className="w-3 h-3" /> Website
               </a>
             )}
-            {company.socials?.linkedin?.url && (
+            {company.linkedin_url && (
               <a
-                href={company.socials.linkedin.url}
+                href={company.linkedin_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-primary/70 hover:text-primary flex items-center gap-1"
