@@ -652,16 +652,7 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
   }
   .process-step::before {
-    content: '';
-    position: absolute;
-    top: 80px;
-    left: 50%;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, var(--accent-strong), var(--accent));
-    box-shadow: 0 0 0 5px rgba(110,242,199,0.08);
+    display: none;
   }
   .process-stage {
     font-family: 'JetBrains Mono', monospace;
@@ -755,24 +746,6 @@
     line-height: 1.35;
   }
 
-  /* Feature stat */
-  .stat-row {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 10px;
-    align-items: stretch;
-    margin-bottom: 16px;
-  }
-  .stat {
-    text-align: left;
-    padding: 16px 18px;
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(24, 37, 49, 0.88), rgba(13, 21, 30, 0.94));
-    border: 1px solid rgba(255,255,255,0.07);
-    min-width: 0;
-  }
-  .stat-num { font-family: 'JetBrains Mono', monospace; font-size: clamp(24px, 3vw, 30px); font-weight: 700; color: var(--accent); line-height: 1; }
-  .stat-label { font-size: 11px; color: var(--secondary); margin-top: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
 
   /* Footer */
   .footer {
@@ -807,25 +780,17 @@
     .wf-arrow {
       display: none;
     }
-    .stat-row {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
     .grid-4, .grid-5, .tips-grid { grid-template-columns: 1fr 1fr; }
     .api-grid, .ef-grid { grid-template-columns: 1fr; }
     .lede-grid { grid-template-columns: 1fr; }
     .process-map { grid-template-columns: 1fr; }
     .process-map::before { display: none; }
-    .process-step::before {
-      top: auto;
-      bottom: -8px;
-    }
     .arch-flow { flex-direction: column; align-items: stretch; gap: 6px; }
     .arch-arrow-icon { display: none; }
     .arch-inner-grid-4, .arch-inner-grid-5 { grid-template-columns: 1fr 1fr; }
     .arch-inner-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
     .eea-split { flex-direction: column; gap: 16px; }
     .webset-split { flex-direction: column; gap: 12px; }
-    .stat-row { flex-wrap: wrap; gap: 16px; }
   }
 
   @media (max-width: 640px) {
@@ -899,8 +864,6 @@
 
     .scoring-header { flex-direction: column; gap: 4px; }
     .builder-header { flex-direction: column; gap: 4px; }
-    .stat-row { grid-template-columns: 1fr; }
-    .stat { padding: 12px 14px; }
     .signal-pills {
       gap: 8px;
     }
@@ -947,29 +910,6 @@
     </div>
   </div>
 
-  <!-- Stats bar -->
-  <div class="stat-row">
-    <div class="stat">
-      <div class="stat-num">0</div>
-      <div class="stat-label">Self-Reported Data</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num">6</div>
-      <div class="stat-label">Pipeline Stages</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num">7</div>
-      <div class="stat-label">Signal Dimensions</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num">15</div>
-      <div class="stat-label">Automation Endpoints</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num">5</div>
-      <div class="stat-label">External Data Sources</div>
-    </div>
-  </div>
 
   <div class="section-tight">
     <div class="process-shell">
