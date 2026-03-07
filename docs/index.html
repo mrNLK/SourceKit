@@ -3,162 +3,249 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SourceKit - Find engineers by what they build</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* Brand accent (icon + CTA only) */
-    --accent: #00E5A0;
-    --accent-strong: #00C896;
-    --accent-subtle: rgba(0,229,160,0.08);
-    --accent-bg: rgba(0,229,160,0.06);
-    --accent-border: rgba(0,229,160,0.22);
-    /* Background hierarchy */
-    --bg: #0A0A0F;
-    --bg-elevated: #111116;
-    --bg-card: #15151B;
-    /* Foreground hierarchy */
-    --white: #FFFFFF;
-    --body: #E0E0E0;
-    --secondary: #A1A1AA;
-    --muted: #6B7280;
-    /* Structural */
-    --border: #1F1F26;
-    --border-focus: #00E5A0;
-    /* API colors */
-    --blue: #3b82f6;
-    --blue-bg: rgba(59,130,246,0.06);
-    --blue-border: rgba(59,130,246,0.22);
-    --purple: #a855f7;
-    --purple-bg: rgba(168,85,247,0.06);
-    --purple-border: rgba(168,85,247,0.22);
-    --orange: #f59e0b;
-    --orange-bg: rgba(245,158,11,0.06);
-    --orange-border: rgba(245,158,11,0.22);
-    --radius: 8px;
+    --accent: #6ef2c7;
+    --accent-strong: #8dffd8;
+    --accent-subtle: rgba(110,242,199,0.09);
+    --accent-bg: rgba(110,242,199,0.08);
+    --accent-border: rgba(110,242,199,0.24);
+    --accent-warm: #d7c39a;
+    --bg: #071018;
+    --bg-elevated: #0d1720;
+    --bg-card: #111d28;
+    --white: #f7faf8;
+    --body: #d8e1df;
+    --secondary: #99a8ac;
+    --muted: #72818a;
+    --border: rgba(215, 225, 223, 0.08);
+    --border-focus: #6ef2c7;
+    --blue: #7fb4ff;
+    --blue-bg: rgba(127,180,255,0.08);
+    --blue-border: rgba(127,180,255,0.24);
+    --purple: #b7a6ff;
+    --purple-bg: rgba(183,166,255,0.08);
+    --purple-border: rgba(183,166,255,0.22);
+    --orange: #f3c47c;
+    --orange-bg: rgba(243,196,124,0.08);
+    --orange-border: rgba(243,196,124,0.22);
+    --red: #ff8f8f;
+    --red-bg: rgba(255,143,143,0.06);
+    --red-border: rgba(255,143,143,0.2);
+    --cyan: #6ad8f0;
+    --cyan-bg: rgba(106,216,240,0.08);
+    --cyan-border: rgba(106,216,240,0.22);
+    --pink: #f2a4c9;
+    --pink-bg: rgba(242,164,201,0.08);
+    --pink-border: rgba(242,164,201,0.2);
+    --radius: 10px;
+    --radius-lg: 22px;
+    --shadow-soft: 0 26px 80px rgba(0, 0, 0, 0.34);
+    --shadow-card: 0 18px 38px rgba(0, 0, 0, 0.22);
+    --surface-top: rgba(18, 30, 40, 0.94);
+    --surface-bottom: rgba(10, 18, 27, 0.96);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
-    background: var(--bg);
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 10% 0%, rgba(110,242,199,0.14), transparent 24%),
+      radial-gradient(circle at 100% 10%, rgba(127,180,255,0.12), transparent 22%),
+      radial-gradient(circle at 50% 100%, rgba(215,195,154,0.08), transparent 26%),
+      linear-gradient(180deg, #071018 0%, #09131d 48%, #060d14 100%);
     color: var(--body);
     font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: 15px;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+    padding: max(18px, env(safe-area-inset-top)) 0 max(24px, env(safe-area-inset-bottom));
   }
   .page {
-    width: 1080px;
+    position: relative;
+    max-width: 1180px;
+    width: 100%;
     margin: 0 auto;
-    padding: 24px 40px 32px;
+    padding: clamp(18px, 3vw, 32px) clamp(16px, 4vw, 44px) clamp(28px, 4vw, 40px);
+    background: linear-gradient(180deg, rgba(15, 25, 35, 0.82) 0%, rgba(8, 15, 22, 0.92) 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: clamp(20px, 3vw, 30px);
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(14px);
+  }
+  .page::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.05), transparent 28%),
+      linear-gradient(180deg, rgba(110,242,199,0.04), transparent 45%);
+  }
+  .page > * {
+    position: relative;
+    z-index: 1;
+  }
+  svg, img {
+    max-width: 100%;
+    height: auto;
   }
 
   /* Typography */
   .label {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: var(--accent);
-    margin-bottom: 6px;
+    color: var(--accent-strong);
+    margin-bottom: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .label::after {
+    content: '';
+    width: 48px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(110,242,199,0.8), rgba(110,242,199,0));
   }
   .heading {
     font-family: 'DM Sans', sans-serif;
-    font-size: 17px;
+    font-size: clamp(18px, 2vw, 24px);
     font-weight: 700;
     color: var(--white);
-    margin-bottom: 6px;
-    line-height: 1.25;
+    margin-bottom: 8px;
+    line-height: 1.3;
   }
-  .section { margin-bottom: 16px; }
-  .section-tight { margin-bottom: 12px; }
-  .body-sm { font-size: 12px; color: var(--body); line-height: 1.5; }
+  .section { margin-bottom: 28px; }
+  .section-tight {
+    margin-bottom: clamp(22px, 3vw, 30px);
+    padding: clamp(18px, 2.6vw, 24px);
+    border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background:
+      linear-gradient(180deg, rgba(20, 31, 42, 0.84) 0%, rgba(12, 20, 29, 0.9) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .body-sm { font-size: 14px; color: var(--body); line-height: 1.65; max-width: 66ch; }
 
-  /* Standard card (dark) */
+  /* Standard card */
   .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 10px 12px;
+    background: linear-gradient(180deg, rgba(24, 37, 49, 0.92) 0%, rgba(15, 24, 34, 0.96) 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
   }
   .card-title {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--accent);
-    margin-bottom: 3px;
+    margin-bottom: 4px;
   }
   .card-body {
-    font-size: 11px;
-    line-height: 1.45;
+    font-size: 13px;
+    line-height: 1.5;
     color: var(--body);
   }
+  .card:hover,
+  .card-hl:hover,
+  .card-blue:hover,
+  .card-purple:hover,
+  .card-orange:hover,
+  .card-cyan:hover,
+  .ef-card:hover,
+  .api-group-card:hover,
+  .arch-box:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0,229,160,0.22);
+    box-shadow: var(--shadow-card);
+  }
 
-  /* Highlighted card (green tint) */
+  /* Highlighted card */
   .card-hl {
-    background: var(--accent-bg);
+    background: linear-gradient(180deg, rgba(110,242,199,0.12) 0%, rgba(110,242,199,0.04) 100%);
     border: 1px solid var(--accent-border);
-    border-radius: var(--radius);
-    padding: 10px 12px;
+    border-radius: 16px;
+    padding: 14px 16px;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
   }
   .card-hl .card-title { color: var(--accent); }
 
-  /* EEA card (left accent bar) */
-  .card-eea {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    border-radius: var(--radius);
-    padding: 8px 10px;
-  }
+  /* Color-coded cards */
+  .card-blue { background: linear-gradient(180deg, rgba(127,180,255,0.1) 0%, rgba(127,180,255,0.03) 100%); border: 1px solid var(--blue-border); border-radius: 16px; padding: 14px 16px; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+  .card-blue .card-title { color: var(--blue); }
+  .card-purple { background: linear-gradient(180deg, rgba(183,166,255,0.1) 0%, rgba(183,166,255,0.03) 100%); border: 1px solid var(--purple-border); border-radius: 16px; padding: 14px 16px; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+  .card-purple .card-title { color: var(--purple); }
+  .card-orange { background: linear-gradient(180deg, rgba(243,196,124,0.1) 0%, rgba(243,196,124,0.03) 100%); border: 1px solid var(--orange-border); border-radius: 16px; padding: 14px 16px; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+  .card-orange .card-title { color: var(--orange); }
+  .card-cyan { background: linear-gradient(180deg, rgba(106,216,240,0.1) 0%, rgba(106,216,240,0.03) 100%); border: 1px solid var(--cyan-border); border-radius: 16px; padding: 14px 16px; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+  .card-cyan .card-title { color: var(--cyan); }
 
-  /* Workflow steps (no numbers) */
-  .workflow { display: flex; align-items: stretch; gap: 0; }
+  /* Workflow */
+  .workflow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: stretch;
+    gap: 8px;
+  }
   .wf-step {
     flex: 1;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    padding: 8px 10px;
+    background: linear-gradient(180deg, rgba(24, 37, 49, 0.96) 0%, rgba(15, 24, 34, 0.98) 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 14px 16px;
     text-align: center;
+    min-width: 0;
+    border-radius: 18px !important;
   }
-  .wf-step:first-child { border-radius: var(--radius) 0 0 var(--radius); }
-  .wf-step:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
   .wf-label {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 8px;
+    font-size: 9px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--accent);
-    margin-bottom: 2px;
+    margin-bottom: 3px;
     opacity: 0.7;
   }
   .wf-title {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--white);
-    margin-bottom: 2px;
+    margin-bottom: 3px;
   }
   .wf-desc {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--secondary);
-    line-height: 1.35;
+    line-height: 1.4;
   }
   .wf-arrow {
-    width: 18px;
+    width: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--accent);
+    color: var(--accent-warm);
     font-size: 14px;
     flex-shrink: 0;
+    opacity: 0.75;
   }
 
   /* Badges / Pills */
   .badge {
     display: inline-block;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.1em;
     color: var(--accent);
@@ -169,285 +256,869 @@
   .pill-accent {
     display: inline-block;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.05em;
-    color: var(--bg);
-    background: var(--accent);
+    color: #082019;
+    background: linear-gradient(135deg, var(--accent-strong), var(--accent));
     border-radius: 100px;
-    padding: 2px 8px;
+    padding: 2px 10px;
   }
   .pill-blue {
     display: inline-block;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.05em;
     color: var(--blue);
     background: var(--blue-bg);
     border: 1px solid var(--blue-border);
     border-radius: 100px;
-    padding: 2px 8px;
+    padding: 3px 10px;
   }
   .pill-purple {
     display: inline-block;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.05em;
     color: var(--purple);
     background: var(--purple-bg);
     border: 1px solid var(--purple-border);
     border-radius: 100px;
-    padding: 2px 8px;
+    padding: 3px 10px;
   }
-
-  /* Architecture boxes (highlighted green) */
-  .arch-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--accent);
-    margin-bottom: 4px;
-  }
-  .arch-boxes { display: flex; gap: 6px; }
-  .arch-box {
-    flex: 1;
-    background: var(--accent-bg);
-    border: 1px solid var(--accent-border);
-    border-radius: 6px;
-    padding: 5px 7px;
-  }
-  .arch-box-name {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--white);
-    margin-bottom: 1px;
-  }
-  .arch-box-desc {
-    font-size: 9px;
-    color: var(--secondary);
-    line-height: 1.3;
-  }
-  .arch-arrow {
-    text-align: center;
-    color: var(--accent);
-    font-size: 10px;
-    margin: 2px 0;
-    opacity: 0.6;
-  }
-
-  /* API cards */
-  .api-card-blue {
-    background: var(--blue-bg);
-    border: 1px solid var(--blue-border);
-    border-radius: var(--radius);
-    padding: 7px 10px;
-    margin-bottom: 6px;
-  }
-  .api-card-purple {
-    background: var(--purple-bg);
-    border: 1px solid var(--purple-border);
-    border-radius: var(--radius);
-    padding: 7px 10px;
-    margin-bottom: 6px;
-  }
-  .api-card-orange {
-    background: var(--orange-bg);
-    border: 1px solid var(--orange-border);
-    border-radius: var(--radius);
-    padding: 7px 10px;
-    margin-bottom: 0;
-  }
-  .api-endpoint {
-    font-size: 10px;
-    line-height: 1.6;
-    color: var(--body);
-  }
-  .api-key {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    font-weight: 600;
-  }
-  .api-key-blue { color: var(--blue); }
-  .api-key-purple { color: var(--purple); }
-  .api-key-orange { color: var(--orange); }
   .pill-orange {
     display: inline-block;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.05em;
     color: var(--orange);
     background: var(--orange-bg);
     border: 1px solid var(--orange-border);
     border-radius: 100px;
-    padding: 2px 8px;
+    padding: 3px 10px;
   }
 
-  /* Table */
-  .tbl {
-    width: 100%;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    border-collapse: separate;
-    border-spacing: 0;
-    overflow: hidden;
-    font-size: 11px;
-  }
-  .tbl th {
-    background: var(--bg-card);
-    color: var(--accent);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    padding: 6px 10px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-  }
-  .tbl td {
-    padding: 5px 10px;
-    border-bottom: 1px solid var(--border);
-    color: var(--body);
-    font-size: 11px;
-    line-height: 1.4;
-    vertical-align: top;
-  }
-  .tbl tr:last-child td { border-bottom: none; }
-
-  /* Pipeline stages */
-  .stages { display: flex; align-items: center; gap: 0; }
-  .stage-pill {
-    background: var(--accent);
-    color: var(--bg);
+  /* Architecture */
+  .arch-label {
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
-    font-weight: 600;
-    padding: 4px 12px;
-    border-radius: 100px;
-    white-space: nowrap;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 6px;
   }
-  .stage-arrow { color: var(--accent); font-size: 12px; margin: 0 3px; }
+  .arch-box {
+    flex: 1;
+    background: linear-gradient(180deg, rgba(110,242,199,0.08) 0%, rgba(255,255,255,0.03) 100%);
+    border: 1px solid var(--accent-border);
+    border-radius: 14px;
+    padding: 10px 12px;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .arch-box-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+  .arch-box-desc {
+    font-size: 11px;
+    color: var(--secondary);
+    line-height: 1.35;
+  }
+
+  /* API cards */
+  .api-endpoint {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--body);
+  }
+  .api-key {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .api-key-blue { color: var(--blue); }
+  .api-key-purple { color: var(--purple); }
+  .api-key-orange { color: var(--orange); }
+
+  /* Pipeline track */
+  .pipeline-track {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 12px 8px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(15, 24, 34, 0.72), rgba(15, 24, 34, 0.35));
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .pipeline-track::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(110,242,199,0.95), rgba(215,195,154,0.2));
+    transform: translateY(-50%);
+    z-index: 0;
+  }
+  .stage-node {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+  }
+  .stage-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 2px var(--accent);
+    margin-bottom: 8px;
+  }
+  .stage-node:first-child .stage-dot {
+    width: 14px;
+    height: 14px;
+    box-shadow: 0 0 0 2px var(--accent), 0 0 12px rgba(0,229,160,0.3);
+  }
+  .stage-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--white);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+  .pipeline-note {
+    font-size: 13px;
+    color: var(--secondary);
+    margin-top: 10px;
+  }
 
   /* Divider */
-  .divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .section-muted {
+    background: linear-gradient(180deg, rgba(16, 24, 33, 0.6) 0%, rgba(10, 16, 23, 0.72) 100%);
+    border-color: rgba(255,255,255,0.04);
+  }
+  .lede-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 12px;
+  }
+  .lede-card {
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: linear-gradient(180deg, rgba(24, 37, 49, 0.9), rgba(14, 22, 31, 0.96));
+  }
+  .lede-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+  .lede-copy {
+    font-size: 13px;
+    color: var(--secondary);
+    line-height: 1.6;
+  }
+  .lede-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-warm);
+    margin-bottom: 10px;
+  }
 
   /* Grid helpers */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+  .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .eea-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .tips-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 
-  /* EEA Artifact grid */
-  .eea-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  /* Builder Score bars */
+  .builder-bars { display: flex; gap: 5px; align-items: stretch; height: 56px; }
+  .builder-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border-radius: 12px;
+  }
+  .builder-bar-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .builder-bar-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
 
-  /* Pro tips grid */
-  .tips-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  /* Signal pills row */
+  .signal-pills { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+  .signal-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 5px 10px;
+    border-radius: 100px;
+  }
+
+  /* EEA split layout */
+  .eea-split { display: flex; gap: 20px; align-items: flex-start; }
+  .eea-left { flex: 1; min-width: 0; }
+  .eea-right { flex: 1; min-width: 0; }
+
+  /* Webset split */
+  .webset-split { display: flex; gap: 20px; align-items: flex-start; }
+  .webset-intro { flex: 1; min-width: 0; }
+  .webset-cards { flex: 2; min-width: 0; }
+
+  /* Architecture flow */
+  .arch-flow { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .arch-section { flex: 1; min-width: 0; }
+  .arch-section-wide { flex: 2.5; min-width: 0; }
+  .arch-section-mid { flex: 1.8; min-width: 0; }
+  .arch-arrow-icon { color: var(--accent); font-size: 14px; opacity: 0.5; flex-shrink: 0; }
+  .arch-inner-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .arch-inner-grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .arch-inner-grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 5px; }
+
+  /* API grid */
+  .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .api-group-card {
+    border-radius: 16px;
+    padding: 14px 16px;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .api-group-card.blue { background: linear-gradient(180deg, rgba(127,180,255,0.08), rgba(127,180,255,0.03)); border: 1px solid rgba(127,180,255,0.18); }
+  .api-group-card.purple { background: linear-gradient(180deg, rgba(183,166,255,0.08), rgba(183,166,255,0.03)); border: 1px solid rgba(183,166,255,0.18); }
+  .api-group-card.orange { background: linear-gradient(180deg, rgba(243,196,124,0.08), rgba(243,196,124,0.03)); border: 1px solid rgba(243,196,124,0.18); }
+
+  /* Hero */
+  .hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    margin-bottom: 22px;
+    padding: clamp(22px, 3vw, 32px);
+    border-radius: 28px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background:
+      radial-gradient(circle at top right, rgba(215,195,154,0.12), transparent 24%),
+      radial-gradient(circle at top left, rgba(110,242,199,0.12), transparent 24%),
+      linear-gradient(180deg, rgba(22, 34, 45, 0.96) 0%, rgba(10, 17, 25, 0.96) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 44px rgba(0,0,0,0.2);
+  }
+  .hero-left { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+  .hero-wordmark { font-family: 'DM Sans', sans-serif; font-size: clamp(32px, 5vw, 48px); line-height: 0.95; letter-spacing: -1px; }
+  .hero-url { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); margin-top: 6px; letter-spacing: 0.5px; word-break: break-word; }
+  .hero-copy {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .hero-kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-warm);
+  }
+  .hero-tagline { text-align: right; font-family: 'DM Sans', sans-serif; font-size: clamp(24px, 3.2vw, 38px); font-weight: 600; color: var(--white); line-height: 1.05; max-width: 13ch; }
+  .hero-subtitle {
+    text-align: right;
+    max-width: 48ch;
+    font-size: 14px;
+    color: var(--secondary);
+    line-height: 1.65;
+  }
+  .hero-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--white);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+  }
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-card);
+  }
+  .btn-primary {
+    color: #082019;
+    background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+    border-color: rgba(110,242,199,0.35);
+  }
+  .btn-secondary {
+    background: rgba(255,255,255,0.03);
+  }
+  .hero-proof {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .hero-proof-item {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--secondary);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px;
+    padding: 5px 10px;
+    background: rgba(255,255,255,0.02);
+  }
+  .process-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .process-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .process-title {
+    font-size: clamp(24px, 3vw, 34px);
+    line-height: 1.05;
+    color: var(--white);
+    max-width: 14ch;
+  }
+  .process-copy {
+    max-width: 56ch;
+    font-size: 14px;
+    color: var(--secondary);
+    line-height: 1.65;
+  }
+  .process-map {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .process-map::before {
+    content: '';
+    position: absolute;
+    top: 88px;
+    left: 11%;
+    right: 11%;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(110,242,199,0.2), rgba(215,195,154,0.35), rgba(110,242,199,0.2));
+    z-index: 0;
+  }
+  .process-step {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    padding: 18px;
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,0.07);
+    background: linear-gradient(180deg, rgba(23, 36, 47, 0.96), rgba(13, 20, 29, 0.98));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .process-step::before {
+    content: '';
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+    box-shadow: 0 0 0 5px rgba(110,242,199,0.08);
+  }
+  .process-stage {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-warm);
+    margin-bottom: 8px;
+  }
+  .process-step-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 14px;
+    min-height: 40px;
+  }
+  .process-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  .process-list li {
+    position: relative;
+    padding-left: 14px;
+    color: var(--body);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .process-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .process-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 12px;
+  }
+  .process-brand-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  /* Scoring header */
+  .scoring-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .scoring-composite { font-size: 14px; font-weight: 700; color: var(--white); }
+  .scoring-note { font-size: 13px; color: var(--secondary); }
+
+  /* Builder Score header */
+  .builder-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+
+  /* Edge function grid */
+  .ef-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .ef-card {
+    background: linear-gradient(180deg, rgba(24, 37, 49, 0.92) 0%, rgba(15, 24, 34, 0.96) 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 10px 12px;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .ef-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 2px;
+  }
+  .ef-desc {
+    font-size: 11px;
+    color: var(--secondary);
+    line-height: 1.35;
+  }
+
+  /* Feature stat */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    align-items: stretch;
+    margin-bottom: 16px;
+  }
+  .stat {
+    text-align: left;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(24, 37, 49, 0.88), rgba(13, 21, 30, 0.94));
+    border: 1px solid rgba(255,255,255,0.07);
+    min-width: 0;
+  }
+  .stat-num { font-family: 'JetBrains Mono', monospace; font-size: clamp(24px, 3vw, 30px); font-weight: 700; color: var(--accent); line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--secondary); margin-top: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
 
   /* Footer */
   .footer {
     text-align: center;
-    padding: 10px 0 0;
+    padding: 20px 0 0;
     border-top: 1px solid var(--border);
-    font-size: 11px;
+    font-size: 13px;
     color: var(--muted);
+    line-height: 1.7;
   }
   .footer a { color: var(--accent); text-decoration: none; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    body {
+      padding-top: 12px;
+    }
+    .page {
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+      padding: 24px 24px 32px;
+    }
+    .workflow {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .wf-step {
+      text-align: left;
+      border-radius: 16px !important;
+    }
+    .wf-arrow {
+      display: none;
+    }
+    .stat-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .grid-4, .grid-5, .tips-grid { grid-template-columns: 1fr 1fr; }
+    .api-grid, .ef-grid { grid-template-columns: 1fr; }
+    .lede-grid { grid-template-columns: 1fr; }
+    .process-map { grid-template-columns: 1fr; }
+    .process-map::before { display: none; }
+    .process-step::before {
+      top: auto;
+      bottom: -8px;
+    }
+    .arch-flow { flex-direction: column; align-items: stretch; gap: 6px; }
+    .arch-arrow-icon { display: none; }
+    .arch-inner-grid-4, .arch-inner-grid-5 { grid-template-columns: 1fr 1fr; }
+    .arch-inner-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .eea-split { flex-direction: column; gap: 16px; }
+    .webset-split { flex-direction: column; gap: 12px; }
+    .stat-row { flex-wrap: wrap; gap: 16px; }
+  }
+
+  @media (max-width: 640px) {
+    .page { padding: 18px 16px 28px; }
+    body { font-size: 14px; }
+    .hero {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .hero-left { width: 100%; }
+    .hero-copy {
+      align-items: flex-start;
+      width: 100%;
+    }
+    .hero-kicker,
+    .hero-tagline,
+    .hero-subtitle { text-align: left; }
+    .hero-tagline { font-size: 18px; max-width: 100%; }
+    .hero-wordmark { font-size: 32px; }
+    .hero-actions,
+    .hero-proof { justify-content: flex-start; }
+    .btn {
+      width: 100%;
+    }
+    .process-head {
+      align-items: flex-start;
+    }
+    .process-title {
+      max-width: 100%;
+      font-size: 22px;
+    }
+
+    .label {
+      margin-bottom: 8px;
+    }
+
+    .section-tight {
+      padding: 16px;
+      border-radius: 20px;
+    }
+
+    .grid-3, .eea-grid { grid-template-columns: 1fr; }
+    .grid-4, .grid-5, .tips-grid { grid-template-columns: 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .lede-card { padding: 14px 16px; }
+
+    .builder-bars { flex-wrap: wrap; height: auto; }
+    .builder-bar { min-width: calc(50% - 4px); height: 56px; flex-basis: calc(50% - 4px); }
+
+    .pipeline-track {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+      padding-left: 20px;
+    }
+    .pipeline-track::before {
+      top: 0; bottom: 0; left: 6px; right: auto;
+      width: 2px; height: 100%;
+      background: linear-gradient(180deg, var(--accent), rgba(0,229,160,0.15));
+      transform: none;
+    }
+    .stage-node { flex-direction: row; align-items: center; gap: 10px; padding: 6px 0; }
+    .stage-dot { margin-bottom: 0; margin-left: -20px; }
+    .stage-node:first-child .stage-dot { margin-left: -22px; }
+
+    .arch-inner-grid-4, .arch-inner-grid-5 { grid-template-columns: 1fr; }
+    .arch-inner-grid-3 { grid-template-columns: 1fr; }
+    .ef-grid { grid-template-columns: 1fr; }
+
+    .scoring-header { flex-direction: column; gap: 4px; }
+    .builder-header { flex-direction: column; gap: 4px; }
+    .stat-row { grid-template-columns: 1fr; }
+    .stat { padding: 12px 14px; }
+    .signal-pills {
+      gap: 8px;
+    }
+    .signal-pills > span:last-child {
+      margin-left: 0 !important;
+    }
+    .footer {
+      text-align: left;
+    }
+  }
 </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- HERO: Icon + Wordmark left, tagline right -->
-  <div style="display:flex; align-items:center; gap:28px; margin-bottom:10px;">
-    <div style="display:flex; align-items:center; gap:14px; flex-shrink:0;">
-      <!-- SourceKit icon (exact SVG) -->
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="52" height="52">
-        <path d="M88 72 L56 128 L88 184" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" fill="none"/>
-        <path d="M168 72 L200 128 L168 184" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" fill="none"/>
-        <line x1="128" y1="88" x2="128" y2="64" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
-        <line x1="128" y1="192" x2="128" y2="168" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
-        <circle cx="128" cy="128" r="10" fill="#00E5A0"/>
+        <path d="M88 72 L56 128 L88 184" stroke="#6EF2C7" stroke-width="20" stroke-linecap="round" fill="none"/>
+        <path d="M168 72 L200 128 L168 184" stroke="#6EF2C7" stroke-width="20" stroke-linecap="round" fill="none"/>
+        <line x1="128" y1="88" x2="128" y2="64" stroke="#D7C39A" stroke-width="11" stroke-linecap="round"/>
+        <line x1="128" y1="192" x2="128" y2="168" stroke="#D7C39A" stroke-width="11" stroke-linecap="round"/>
+        <circle cx="128" cy="128" r="10" fill="#6EF2C7"/>
       </svg>
-      <!-- Wordmark + URL stacked -->
       <div>
-        <div style="font-family:'DM Sans',sans-serif; font-size:38px; line-height:1; letter-spacing:-0.5px;">
-          <span style="color:#FFFFFF; font-weight:600;">Source </span><span style="color:#9E9E9E; font-weight:500;">Kit</span>
+        <div class="hero-wordmark"><span style="color:#F7FAF8; font-weight:600;">Source</span><span style="color:#D7C39A; font-weight:500;">Kit</span></div>
+        <div class="hero-url">getsourcekit.vercel.app</div>
+      </div>
+    </div>
+    <div class="hero-copy">
+      <div class="hero-kicker">Technical Sourcing Platform</div>
+      <div class="hero-tagline">Find engineers by what they actually build.</div>
+      <div class="hero-subtitle">Research the role, surface high-signal contributors, score real GitHub output, and turn searches into living candidate pipelines.</div>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://getsourcekit.vercel.app">Open SourceKit</a>
+        <a class="btn btn-secondary" href="https://sourcekit-docs.netlify.app">View Docs</a>
+      </div>
+      <div class="hero-proof">
+        <span class="hero-proof-item">Evidence-based sourcing</span>
+        <span class="hero-proof-item">GitHub-native ranking</span>
+        <span class="hero-proof-item">Living Websets</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="stat-row">
+    <div class="stat">
+      <div class="stat-num">0</div>
+      <div class="stat-label">Self-Reported Data</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">6</div>
+      <div class="stat-label">Pipeline Stages</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">7</div>
+      <div class="stat-label">Signal Dimensions</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">15</div>
+      <div class="stat-label">Automation Endpoints</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">5</div>
+      <div class="stat-label">External Data Sources</div>
+    </div>
+  </div>
+
+  <div class="section-tight">
+    <div class="process-shell">
+      <div class="process-head">
+        <div>
+          <div class="label">How SourceKit Works</div>
+          <div class="process-title">One search becomes strategy, discovery, and a live talent pipeline.</div>
         </div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); margin-top:3px; letter-spacing:0.5px;">getsourcekit.vercel.app</div>
+        <div class="process-copy">Start from a role, job description, or URL. SourceKit maps the market, ranks technical fit using public evidence, and keeps strong searches running as living candidate sets.</div>
       </div>
-    </div>
-    <div style="flex:1; text-align:right;">
-      <span style="font-family:'DM Sans',sans-serif; font-size:20px; font-weight:600; color:var(--white); line-height:1.2;">Find engineers by what they build.</span>
+      <div class="process-map">
+        <div class="process-step">
+          <div class="process-stage">Role Input</div>
+          <div class="process-step-title">Start with the hiring brief</div>
+          <ul class="process-list">
+            <li>Job description</li>
+            <li>Role specification</li>
+            <li>Lever, Greenhouse, or Ashby URL</li>
+          </ul>
+        </div>
+        <div class="process-step">
+          <div class="process-stage">Strategy Generation</div>
+          <div class="process-brand"><span class="process-brand-mark">E</span>Exa Research</div>
+          <div class="process-step-title">Translate the role into sourcing logic</div>
+          <ul class="process-list">
+            <li>Target repos</li>
+            <li>Target companies</li>
+            <li>Ability criteria</li>
+          </ul>
+        </div>
+        <div class="process-step">
+          <div class="process-stage">Ecosystem Mapping</div>
+          <div class="process-brand"><span class="process-brand-mark">P</span>Parallel</div>
+          <div class="process-step-title">Map the company and talent landscape</div>
+          <ul class="process-list">
+            <li>Company intelligence</li>
+            <li>Engineer mapping</li>
+            <li>Search expansion</li>
+          </ul>
+        </div>
+        <div class="process-step">
+          <div class="process-stage">Candidate Discovery</div>
+          <div class="process-brand"><span class="process-brand-mark">GH</span>GitHub</div>
+          <div class="process-step-title">Find builders with visible technical proof</div>
+          <ul class="process-list">
+            <li>Repo mining</li>
+            <li>Contribution signals</li>
+            <li>Code quality scoring</li>
+          </ul>
+        </div>
+        <div class="process-step">
+          <div class="process-stage">Candidate Pipeline</div>
+          <div class="process-step-title">Move from shortlist to outreach</div>
+          <ul class="process-list">
+            <li>Ranked candidates</li>
+            <li>Similar profile discovery</li>
+            <li>Source citations and pipeline stages</li>
+          </ul>
+        </div>
+      </div>
+      <div class="lede-grid">
+        <div class="lede-card">
+          <div class="lede-eyebrow">Signal Over Keywords</div>
+          <div class="lede-title">Source on evidence, not resumes.</div>
+          <div class="lede-copy">SourceKit starts from shipped work: commits, repos, activity, talks, papers, and technical proof that can actually be verified.</div>
+        </div>
+        <div class="lede-card">
+          <div class="lede-eyebrow">Research Built In</div>
+          <div class="lede-title">Turn vague roles into precise search logic.</div>
+          <div class="lede-copy">Instead of searching blind, use AI-assisted role decomposition and market mapping to define what strong looks like.</div>
+        </div>
+        <div class="lede-card">
+          <div class="lede-eyebrow">Persistent Pipelines</div>
+          <div class="lede-title">Keep great searches alive.</div>
+          <div class="lede-copy">Promote strong criteria into monitored Websets so the right candidates keep appearing over time.</div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <hr class="divider" style="margin:8px 0 10px;">
+  <hr class="divider">
 
-  <!-- HOW IT WORKS (no numbers, category labels instead) -->
+  <!-- BUILDER SCORE -->
   <div class="section-tight">
-    <div class="label">HOW IT WORKS</div>
-    <div class="workflow">
-      <div class="wf-step">
-        <div class="wf-label">Input</div>
-        <div class="wf-title">Your Role</div>
-        <div class="wf-desc">Role + company, paste JD text, or drop in a job URL</div>
+    <div class="builder-header">
+      <div class="label" style="margin-bottom:0;">Builder Score <span class="pill-accent" style="margin-left:6px;">Core Signal</span></div>
+      <div style="font-size:14px; font-weight:700; color:var(--white);">A premium read on real engineering output</div>
+      <div style="font-size:13px; color:var(--secondary);">Evaluate public GitHub work with a weighted 0-100 score, dimension breakdowns, and an AI-written narrative recruiters can actually use.</div>
+    </div>
+    <div class="builder-bars">
+      <div class="builder-bar" style="flex:30; background:linear-gradient(180deg,rgba(59,130,246,0.18) 0%,rgba(59,130,246,0.06) 100%); border:1px solid rgba(59,130,246,0.3);">
+        <div class="builder-bar-pct" style="color:#3b82f6;">30%</div>
+        <div class="builder-bar-label" style="color:rgba(59,130,246,0.8);">AI Mastery</div>
       </div>
-      <div class="wf-arrow">&#9654;</div>
-      <div class="wf-step">
-        <div class="wf-label">Claude + Parallel</div>
-        <div class="wf-title">AI Strategy</div>
-        <div class="wf-desc">Builds target repos, poach list, skills matrix</div>
+      <div class="builder-bar" style="flex:20; background:linear-gradient(180deg,rgba(168,85,247,0.18) 0%,rgba(168,85,247,0.06) 100%); border:1px solid rgba(168,85,247,0.3);">
+        <div class="builder-bar-pct" style="color:#a855f7;">20%</div>
+        <div class="builder-bar-label" style="color:rgba(168,85,247,0.8);">Build Velocity</div>
       </div>
-      <div class="wf-arrow">&#9654;</div>
-      <div class="wf-step">
-        <div class="wf-label">You</div>
-        <div class="wf-title">Refine</div>
-        <div class="wf-desc">Edit repo list, add or remove targets, adjust criteria</div>
+      <div class="builder-bar" style="flex:15; background:linear-gradient(180deg,rgba(6,182,212,0.18) 0%,rgba(6,182,212,0.06) 100%); border:1px solid rgba(6,182,212,0.3);">
+        <div class="builder-bar-pct" style="color:#06b6d4;">15%</div>
+        <div class="builder-bar-label" style="color:rgba(6,182,212,0.8);">Tooling</div>
       </div>
-      <div class="wf-arrow">&#9654;</div>
-      <div class="wf-step">
-        <div class="wf-label">Exa + GitHub</div>
-        <div class="wf-title">Multi-API Search</div>
-        <div class="wf-desc">Exa + Parallel + GitHub scan for top contributors</div>
+      <div class="builder-bar" style="flex:15; background:linear-gradient(180deg,rgba(0,229,160,0.18) 0%,rgba(0,229,160,0.06) 100%); border:1px solid rgba(0,229,160,0.3);">
+        <div class="builder-bar-pct" style="color:#00e5a0;">15%</div>
+        <div class="builder-bar-label" style="color:rgba(0,229,160,0.8);">Commit Bonus</div>
       </div>
-      <div class="wf-arrow">&#9654;</div>
-      <div class="wf-step">
-        <div class="wf-label">Exa Websets</div>
-        <div class="wf-title">Scored Pipeline</div>
-        <div class="wf-desc">Candidates ranked by code signal, ready for outreach</div>
+      <div class="builder-bar" style="flex:10; background:linear-gradient(180deg,rgba(245,158,11,0.18) 0%,rgba(245,158,11,0.06) 100%); border:1px solid rgba(245,158,11,0.3);">
+        <div class="builder-bar-pct" style="color:#f59e0b;">10%</div>
+        <div class="builder-bar-label" style="color:rgba(245,158,11,0.8);">Testing</div>
+      </div>
+      <div class="builder-bar" style="flex:8; background:linear-gradient(180deg,rgba(236,72,153,0.18) 0%,rgba(236,72,153,0.06) 100%); border:1px solid rgba(236,72,153,0.3);">
+        <div class="builder-bar-pct" style="color:#ec4899;">8%</div>
+        <div class="builder-bar-label" style="color:rgba(236,72,153,0.8);">Docs</div>
+      </div>
+      <div class="builder-bar" style="flex:7; background:linear-gradient(180deg,rgba(161,161,170,0.18) 0%,rgba(161,161,170,0.06) 100%); border:1px solid rgba(161,161,170,0.3);">
+        <div class="builder-bar-pct" style="color:#a1a1aa;">7%</div>
+        <div class="builder-bar-label" style="color:rgba(161,161,170,0.8);">Community</div>
+      </div>
+    </div>
+    <div class="signal-pills">
+      <span class="signal-pill" style="background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);">Claude Code 3x</span>
+      <span class="signal-pill" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);">46 AI Keywords</span>
+      <span class="signal-pill" style="background:rgba(6,182,212,0.1);color:#06b6d4;border:1px solid rgba(6,182,212,0.25);">28 Framework Files</span>
+      <span class="signal-pill" style="background:rgba(0,229,160,0.1);color:#00e5a0;border:1px solid rgba(0,229,160,0.25);">7 Coding Tools</span>
+      <span class="signal-pill" style="background:rgba(236,72,153,0.1);color:#ec4899;border:1px solid rgba(236,72,153,0.25);">Claude Narrative</span>
+      <span style="font-size:11px; color:var(--secondary); margin-left:4px;">GitHub activity only. No self-reported data.</span>
+    </div>
+    <div class="grid-3" style="margin-top:12px;">
+      <div class="card" style="padding:10px 12px;">
+        <div class="card-title">AI Mastery (30%)</div>
+        <div class="card-body">GenAI repo count, AI framework detection (LangChain, OpenAI, HuggingFace), Claude Code usage weighted 3x.</div>
+      </div>
+      <div class="card" style="padding:10px 12px;">
+        <div class="card-title">Build Velocity (20%)</div>
+        <div class="card-body">Recent commit frequency, repo activity patterns, push cadence across top repos.</div>
+      </div>
+      <div class="card" style="padding:10px 12px;">
+        <div class="card-title">Tooling + Testing + Docs</div>
+        <div class="card-body">CI/CD configs, linting, dependency management, test frameworks, README quality, inline docs.</div>
       </div>
     </div>
   </div>
 
-  <!-- THREE WAYS TO START (3-col, compact) -->
+  <!-- SCORING (legacy composite) -->
   <div class="section-tight">
-    <div class="label">THREE WAYS TO START</div>
-    <div class="grid-3">
-      <div class="card">
-        <div class="card-title">Role + Company</div>
-        <div class="card-body">Type a title and company. Claude infers the stack, identifies repos, builds strategy.</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Paste a JD</div>
-        <div class="card-body">Paste the full job description. AI parses requirements, tech stack, and seniority level.</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Paste a Job URL</div>
-        <div class="card-body">Drop a Lever, Greenhouse, or Ashby link. Parallel.ai extracts content from JS pages.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SCORING (3-col, compact) -->
-  <div class="section-tight">
-    <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:6px;">
-      <div class="label" style="margin-bottom:0;">SCORING</div>
-      <div style="font-size:12px; font-weight:700; color:var(--white);">Composite Score: <span style="color:var(--accent);">0 to 100</span></div>
-      <div style="font-size:11px; color:var(--secondary);">GitHub activity weighted by role relevance. No self-reported data.</div>
+    <div class="scoring-header">
+      <div class="label" style="margin-bottom:0;">Why The Ranking Works</div>
+      <div class="scoring-composite">Search Score: <span style="color:var(--accent);">0 to 100</span></div>
+      <div class="scoring-note">Per-search relevance blends current activity, stack fit, and repo quality before Builder Score adds code depth.</div>
     </div>
     <div class="grid-3">
       <div class="card-hl">
@@ -456,89 +1127,58 @@
       </div>
       <div class="card-hl">
         <div class="card-title">Language + Stack Match</div>
-        <div class="card-body">How well primary languages align with role requirements. Python for ML, Rust for systems.</div>
+        <div class="card-body">How well primary languages align with role requirements. Python for ML, Rust for systems, TypeScript for frontend.</div>
       </div>
       <div class="card-hl">
         <div class="card-title">Repo Relevance + Impact</div>
-        <div class="card-body">High-signal repos (well-starred, actively maintained) weighted over personal projects.</div>
+        <div class="card-body">High-signal repos (well-starred, actively maintained) weighted over personal or tutorial projects.</div>
       </div>
     </div>
   </div>
 
-  <!-- PIPELINE (compact) -->
+  <!-- PIPELINE -->
   <div class="section-tight">
-    <div class="label">PIPELINE</div>
-    <div style="display:flex; align-items:center; gap:12px;">
-      <div class="stages">
-        <span class="stage-pill">Sourced</span><span class="stage-arrow">&#9654;</span>
-        <span class="stage-pill">Contacted</span><span class="stage-arrow">&#9654;</span>
-        <span class="stage-pill">Responded</span><span class="stage-arrow">&#9654;</span>
-        <span class="stage-pill">Screen</span><span class="stage-arrow">&#9654;</span>
-        <span class="stage-pill">In Process</span>
+    <div class="label">From Search To Outreach</div>
+    <div class="pipeline-track">
+      <div class="stage-node">
+        <div class="stage-dot"></div>
+        <div class="stage-name">Sourced</div>
       </div>
-      <div class="body-sm" style="margin:0;">Drag between stages. Bulk select for compare, summary, or batch outreach. CSV export anytime.</div>
+      <div class="stage-node">
+        <div class="stage-dot"></div>
+        <div class="stage-name">Contacted</div>
+      </div>
+      <div class="stage-node">
+        <div class="stage-dot"></div>
+        <div class="stage-name">Responded</div>
+      </div>
+      <div class="stage-node">
+        <div class="stage-dot"></div>
+        <div class="stage-name">Screen</div>
+      </div>
+      <div class="stage-node">
+        <div class="stage-dot"></div>
+        <div class="stage-name">In Process</div>
+      </div>
+      <div class="stage-node">
+        <div class="stage-dot"></div>
+        <div class="stage-name">Offer</div>
+      </div>
     </div>
+    <div class="pipeline-note">Turn discovery into action with stage-based workflow, candidate comparison, outreach generation, and export when needed.</div>
   </div>
 
-  <!-- BUILDER SCORE -->
-  <div class="section-tight" style="margin-top:6px;">
-    <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:8px;">
-      <div class="label" style="margin-bottom:0;">BUILDER SCORE <span class="pill-accent" style="margin-left:6px;">NEW</span></div>
-      <div style="font-size:12px; font-weight:700; color:var(--white);">AI-Weighted GitHub Evaluation</div>
-      <div style="font-size:11px; color:var(--secondary);">Scans top repos. Returns 0-100 with per-dimension breakdowns.</div>
-    </div>
-    <!-- Dimension weight bars -->
-    <div style="display:flex; gap:4px; align-items:stretch; height:48px; margin-bottom:8px;">
-      <div style="flex:30; background:linear-gradient(180deg,rgba(59,130,246,0.18) 0%,rgba(59,130,246,0.06) 100%); border:1px solid rgba(59,130,246,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#3b82f6; line-height:1;">30%</div>
-        <div style="font-size:8px; font-weight:600; color:rgba(59,130,246,0.8); letter-spacing:0.04em; text-transform:uppercase;">AI Mastery</div>
-      </div>
-      <div style="flex:20; background:linear-gradient(180deg,rgba(168,85,247,0.18) 0%,rgba(168,85,247,0.06) 100%); border:1px solid rgba(168,85,247,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#a855f7; line-height:1;">20%</div>
-        <div style="font-size:8px; font-weight:600; color:rgba(168,85,247,0.8); letter-spacing:0.04em; text-transform:uppercase;">Build Velocity</div>
-      </div>
-      <div style="flex:15; background:linear-gradient(180deg,rgba(6,182,212,0.18) 0%,rgba(6,182,212,0.06) 100%); border:1px solid rgba(6,182,212,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#06b6d4; line-height:1;">15%</div>
-        <div style="font-size:8px; font-weight:600; color:rgba(6,182,212,0.8); letter-spacing:0.04em; text-transform:uppercase;">Tooling</div>
-      </div>
-      <div style="flex:15; background:linear-gradient(180deg,rgba(0,229,160,0.18) 0%,rgba(0,229,160,0.06) 100%); border:1px solid rgba(0,229,160,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#00e5a0; line-height:1;">15%</div>
-        <div style="font-size:8px; font-weight:600; color:rgba(0,229,160,0.8); letter-spacing:0.04em; text-transform:uppercase;">Commit Bonus</div>
-      </div>
-      <div style="flex:10; background:linear-gradient(180deg,rgba(245,158,11,0.18) 0%,rgba(245,158,11,0.06) 100%); border:1px solid rgba(245,158,11,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#f59e0b; line-height:1;">10%</div>
-        <div style="font-size:8px; font-weight:600; color:rgba(245,158,11,0.8); letter-spacing:0.04em; text-transform:uppercase;">Testing</div>
-      </div>
-      <div style="flex:8; background:linear-gradient(180deg,rgba(236,72,153,0.18) 0%,rgba(236,72,153,0.06) 100%); border:1px solid rgba(236,72,153,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#ec4899; line-height:1;">8%</div>
-        <div style="font-size:8px; font-weight:600; color:rgba(236,72,153,0.8); letter-spacing:0.04em; text-transform:uppercase;">Docs</div>
-      </div>
-      <div style="flex:7; background:linear-gradient(180deg,rgba(161,161,170,0.18) 0%,rgba(161,161,170,0.06) 100%); border:1px solid rgba(161,161,170,0.3); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#a1a1aa; line-height:1;">7%</div>
-        <div style="font-size:8px; font-weight:600; color:rgba(161,161,170,0.8); letter-spacing:0.04em; text-transform:uppercase;">Community</div>
-      </div>
-    </div>
-    <!-- Signal pills -->
-    <div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
-      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);">Claude Code 3x</span>
-      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);">46 AI Keywords</span>
-      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(6,182,212,0.1);color:#06b6d4;border:1px solid rgba(6,182,212,0.25);">28 Framework Files</span>
-      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(0,229,160,0.1);color:#00e5a0;border:1px solid rgba(0,229,160,0.25);">7 Coding Tools</span>
-      <span style="font-size:9px; color:var(--secondary); margin-left:4px;">No self-reported data. GitHub activity only.</span>
-    </div>
-  </div>
-
-  <hr class="divider" style="margin:8px 0 10px;">
+  <hr class="divider">
 
   <!-- EXA WEBSETS -->
   <div class="section-tight">
-    <div class="label">EXA WEBSETS <span class="pill-accent" style="margin-left:6px;">NEW IN V2.0</span></div>
-    <div style="display:flex; gap:14px; align-items:flex-start;">
-      <div style="flex:1; min-width:0;">
-        <div class="heading" style="font-size:14px; white-space:nowrap;">Persistent, Auto-Updating Candidate Sets</div>
-        <div class="body-sm" style="margin-bottom:8px;">Define search criteria once. Get new verified matches continuously as new contributors emerge. Websets are talent pipelines that run themselves.</div>
+    <div class="label">Living Talent Maps <span class="pill-accent" style="margin-left:6px;">Websets</span></div>
+    <div class="webset-split">
+      <div class="webset-intro">
+        <div class="heading" style="font-size:16px;">Persistent, auto-updating candidate sets</div>
+        <div class="body-sm" style="margin-bottom:8px;">When a search works, save it as a living market map. New verified matches can appear automatically as the ecosystem changes.</div>
       </div>
-      <div style="flex:2; min-width:0;">
+      <div class="webset-cards">
         <div class="grid-4">
           <div class="card-hl">
             <div class="card-title">Create</div>
@@ -546,11 +1186,11 @@
           </div>
           <div class="card-hl">
             <div class="card-title">Enrich</div>
-            <div class="card-body">Auto-extract: contact email, current company, publications, talks, GitHub stats.</div>
+            <div class="card-body">Auto-extract: contact email, company, publications, talks, GitHub username, Builder Score.</div>
           </div>
           <div class="card-hl">
             <div class="card-title">Monitor</div>
-            <div class="card-body">Daily or weekly schedule. New matches appended automatically. Override replaces stale.</div>
+            <div class="card-body">Daily or weekly schedule. New matches appended automatically. Override replaces stale data.</div>
           </div>
           <div class="card-hl">
             <div class="card-title">Export</div>
@@ -563,239 +1203,331 @@
 
   <!-- EEA FRAMEWORK -->
   <div class="section-tight">
-    <div class="label">EEA FRAMEWORK</div>
-    <div style="display:flex; gap:14px; align-items:flex-start;">
-      <!-- Left: what is EEA -->
-      <div style="flex:1; min-width:0;">
-        <div class="heading" style="font-size:14px;">Evidence of Exceptional Ability</div>
-        <div class="body-sm" style="margin-bottom:8px;">Verifiable signal that puts someone in the <span style="color:var(--accent); font-weight:600;">top 5-10%</span> of practitioners. Instead of searching for titles or keywords, build Websets around the specific evidence that defines elite performance.</div>
-        <!-- EEA Artifact Catalog -->
+    <div class="label">What Elite Looks Like</div>
+    <div class="eea-split">
+      <div class="eea-left">
+        <div class="heading" style="font-size:16px;">Evidence of exceptional ability</div>
+        <div class="body-sm" style="margin-bottom:10px;">For hard technical roles, titles are weak proxies. SourceKit helps define the <span style="color:var(--accent); font-weight:600;">top 5-10%</span> using proof you can verify.</div>
         <div class="eea-grid">
-          <div class="card" style="padding:7px 10px;">
+          <div class="card" style="padding:10px 12px;">
             <div class="card-title">Published Research</div>
-            <div class="card-body" style="font-size:10px;">NeurIPS, ICML, ICLR, CVPR, ACL papers. H-index. Citation count.</div>
+            <div class="card-body">NeurIPS, ICML, ICLR, CVPR, ACL papers. H-index. Citation count.</div>
           </div>
-          <div class="card" style="padding:7px 10px;">
+          <div class="card" style="padding:10px 12px;">
             <div class="card-title">Open Source Impact</div>
-            <div class="card-body" style="font-size:10px;">Top-10 contributor to repos with 1K+ stars. Maintainer status.</div>
+            <div class="card-body">Top-10 contributor to repos with 1K+ stars. Maintainer status. Builder Score 70+.</div>
           </div>
-          <div class="card" style="padding:7px 10px;">
+          <div class="card" style="padding:10px 12px;">
             <div class="card-title">Conference + Teaching</div>
-            <div class="card-body" style="font-size:10px;">KubeCon, QCon, Strange Loop, DEF CON talks. Course instructor.</div>
+            <div class="card-body">KubeCon, QCon, Strange Loop, DEF CON talks. Course instructor.</div>
           </div>
-          <div class="card" style="padding:7px 10px;">
+          <div class="card" style="padding:10px 12px;">
             <div class="card-title">Industry Recognition</div>
-            <div class="card-body" style="font-size:10px;">Patents filed. CVE author. Awards. Press coverage.</div>
+            <div class="card-body">Patents filed. CVE author. Awards. Press coverage.</div>
           </div>
-          <div class="card" style="padding:7px 10px;">
+          <div class="card" style="padding:10px 12px;">
             <div class="card-title">Technical Leadership</div>
-            <div class="card-body" style="font-size:10px;">RFCs adopted. Design docs merged. Architecture decisions at scale.</div>
+            <div class="card-body">RFCs adopted. Design docs merged. Architecture decisions at scale.</div>
           </div>
-          <div class="card" style="padding:7px 10px;">
+          <div class="card" style="padding:10px 12px;">
             <div class="card-title">Scale + Impact</div>
-            <div class="card-body" style="font-size:10px;">Shipped to 1M+ users. Infra serving 10K+ QPS. Production ML at scale.</div>
+            <div class="card-body">Shipped to 1M+ users. Infra serving 10K+ QPS. Production ML at scale.</div>
           </div>
         </div>
       </div>
-      <!-- Right: Building EEA Websets + Comparison -->
-      <div style="flex:1; min-width:0;">
-        <div style="font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; font-family:'JetBrains Mono',monospace;">Building EEA-Driven Websets</div>
-        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;">
-          <div class="card-hl" style="border-left:2px solid var(--accent);">
-            <div class="card-title" style="font-size:11px;">Decompose the Role</div>
-            <div class="card-body" style="font-size:10px;">Identify 3-5 concrete, verifiable markers of exceptional ability. These become your Webset criteria.</div>
+      <div class="eea-right">
+        <div style="font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; font-family:'JetBrains Mono',monospace;">Turning elite signals into repeatable search logic</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="card-hl" style="border-left:3px solid var(--accent);">
+            <div class="card-title" style="font-size:13px;">Decompose the Role</div>
+            <div class="card-body">Identify 3-5 concrete, verifiable markers of exceptional ability. These become your Webset criteria.</div>
           </div>
-          <div class="card-hl" style="border-left:2px solid var(--accent);">
-            <div class="card-title" style="font-size:11px;">Build the Webset</div>
-            <div class="card-body" style="font-size:10px;">Pass EEA signals as criteria. Exa's verification agent checks each candidate before admission.</div>
+          <div class="card-hl" style="border-left:3px solid var(--accent);">
+            <div class="card-title" style="font-size:13px;">Build the Webset</div>
+            <div class="card-body">Pass EEA signals as criteria. Exa's verification agent checks each candidate before admission.</div>
           </div>
-          <div class="card-hl" style="border-left:2px solid var(--accent);">
-            <div class="card-title" style="font-size:11px;">Add Enrichments</div>
-            <div class="card-body" style="font-size:10px;">Surface the evidence itself: conference talks, star count, publication venues, contact email.</div>
+          <div class="card-hl" style="border-left:3px solid var(--accent);">
+            <div class="card-title" style="font-size:13px;">Enrich + Score</div>
+            <div class="card-body">Surface evidence: talks, star count, publications. Run Builder Score on GitHub usernames for code quality signal.</div>
           </div>
-          <div class="card-hl" style="border-left:2px solid var(--accent);">
-            <div class="card-title" style="font-size:11px;">Monitor</div>
-            <div class="card-body" style="font-size:10px;">Weekly monitoring. New people who publish, ship OSS, or give talks auto-enter the pipeline.</div>
+          <div class="card-hl" style="border-left:3px solid var(--accent);">
+            <div class="card-title" style="font-size:13px;">Monitor</div>
+            <div class="card-body">Weekly monitoring. New people who publish, ship OSS, or give talks auto-enter the pipeline.</div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <hr class="divider" style="margin:8px 0 10px;">
+  <hr class="divider">
 
   <!-- WEBSET RECIPES -->
   <div class="section-tight">
-    <div class="label">WEBSET RECIPES</div>
+    <div class="label">Search Blueprints</div>
     <div class="grid-4">
-      <div class="card-hl" style="padding:8px 10px;">
-        <div class="card-title" style="font-size:11px;">ML Infra Engineer</div>
-        <div class="card-body" style="font-size:10px;">
+      <div class="card-hl" style="padding:12px 14px;">
+        <div class="card-title">ML Infra Engineer</div>
+        <div class="card-body">
           Top contributor to PyTorch, JAX, DeepSpeed (500+ stars)<br>
           Shipped distributed training at scale<br>
-          <span style="color:var(--secondary); font-size:9px;">Enrich: talks, star count, email, company</span>
+          <span style="color:var(--secondary); font-size:11px;">Enrich: talks, star count, email, Builder Score</span>
         </div>
       </div>
-      <div class="card-hl" style="padding:8px 10px;">
-        <div class="card-title" style="font-size:11px;">Robotics Software</div>
-        <div class="card-body" style="font-size:10px;">
+      <div class="card-hl" style="padding:12px 14px;">
+        <div class="card-title">Robotics Software</div>
+        <div class="card-body">
           ROS/ROS2 maintainer or MoveIt, Drake, Isaac contributor<br>
           Published at ICRA, RSS, or CoRL<br>
-          <span style="color:var(--secondary); font-size:9px;">Enrich: patents, lab, H-index, email</span>
+          <span style="color:var(--secondary); font-size:11px;">Enrich: patents, lab, H-index, email</span>
         </div>
       </div>
-      <div class="card-hl" style="padding:8px 10px;">
-        <div class="card-title" style="font-size:11px;">Staff Frontend</div>
-        <div class="card-body" style="font-size:10px;">
+      <div class="card-hl" style="padding:12px 14px;">
+        <div class="card-title">Staff Frontend</div>
+        <div class="card-body">
           Core contributor to React, Vue, Svelte (2K+ stars)<br>
           Speaker at React Conf, VueConf, JSConf<br>
-          <span style="color:var(--secondary); font-size:9px;">Enrich: blog posts, npm packages, email</span>
+          <span style="color:var(--secondary); font-size:11px;">Enrich: blog posts, npm packages, email</span>
         </div>
       </div>
-      <div class="card-hl" style="padding:8px 10px;">
-        <div class="card-title" style="font-size:11px;">Security Engineer</div>
-        <div class="card-body" style="font-size:10px;">
-          Published CVE or security advisory author<br>
-          DEF CON, Black Hat, BSides speaker<br>
-          <span style="color:var(--secondary); font-size:9px;">Enrich: CVEs, bounties, certs, email</span>
+      <div class="card-hl" style="padding:12px 14px;">
+        <div class="card-title">AI-Native Engineer</div>
+        <div class="card-body">
+          Claude Code or Cursor power user (detected via commits)<br>
+          Builder Score 70+ with AI Mastery top quartile<br>
+          <span style="color:var(--secondary); font-size:11px;">Enrich: Builder Score, AI repos, email</span>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- EDGE FUNCTIONS -->
+  <div class="section-tight section-muted">
+    <div class="label">Platform Depth <span style="font-size:10px; color:var(--secondary); font-weight:400; letter-spacing:0.05em; text-transform:none; margin-left:6px;">15 deployed functions</span></div>
+    <div class="ef-grid">
+      <div class="ef-card">
+        <div class="ef-name">github-code-quality</div>
+        <div class="ef-desc">Builder Score engine. Scans repos, scores 7 dimensions, returns Claude narrative.</div>
+      </div>
+      <div class="ef-card">
+        <div class="ef-name">search-candidates</div>
+        <div class="ef-desc">Multi-source candidate search across GitHub + Exa.</div>
+      </div>
+      <div class="ef-card">
+        <div class="ef-name">github-search</div>
+        <div class="ef-desc">GitHub contributor discovery by repo, language, activity.</div>
+      </div>
+      <div class="ef-card">
+        <div class="ef-name">github-profile</div>
+        <div class="ef-desc">Full GitHub profile enrichment with activity graphs.</div>
+      </div>
+      <div class="ef-card">
+        <div class="ef-name">exa-websets</div>
+        <div class="ef-desc">Webset CRUD, enrichment, monitoring proxy.</div>
+      </div>
+      <div class="ef-card">
+        <div class="ef-name">research-role</div>
+        <div class="ef-desc">AI role research via Parallel deep research.</div>
+      </div>
+      <div class="ef-card">
+        <div class="ef-name">parse-jd</div>
+        <div class="ef-desc">Job description parsing from text or URL.</div>
+      </div>
+      <div class="ef-card">
+        <div class="ef-name">generate-outreach</div>
+        <div class="ef-desc">AI outreach message generation per candidate.</div>
+      </div>
+      <div class="ef-card">
+        <div class="ef-name">bulk-actions</div>
+        <div class="ef-desc">Batch operations: compare, summarize, outreach.</div>
+      </div>
+      <div class="ef-card">
+        <div class="ef-name">enrich-linkedin</div>
+        <div class="ef-desc">LinkedIn profile enrichment via Parallel.</div>
+      </div>
+      <div class="ef-card">
+        <div class="ef-name">create-checkout-session</div>
+        <div class="ef-desc">Stripe checkout for subscription upgrades.</div>
+      </div>
+      <div class="ef-card">
+        <div class="ef-name">check-subscription</div>
+        <div class="ef-desc">Subscription status and feature gating.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
   <!-- ARCHITECTURE + API SURFACE -->
-  <div class="section-tight">
-    <div class="label">ARCHITECTURE + API SURFACE</div>
-    <!-- Architecture: full-width horizontal flow -->
-    <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
-      <!-- Presentation -->
-      <div style="flex:1; min-width:0;">
-        <div class="arch-label" style="margin-bottom:3px;">Presentation</div>
-        <div class="arch-box" style="margin:0;">
+  <div class="section-tight section-muted">
+    <div class="label">System Design</div>
+    <div class="arch-flow">
+      <div class="arch-section">
+        <div class="arch-label">Presentation</div>
+        <div class="arch-box">
           <div class="arch-box-name">React + TypeScript</div>
-          <div class="arch-box-desc">Mobile-first / OAuth / Search / Pipeline / Websets</div>
+          <div class="arch-box-desc">Mobile-first / OAuth / Search / Pipeline / Websets / Builder Score</div>
         </div>
       </div>
-      <div style="color:var(--accent); font-size:14px; opacity:0.5;">&#9654;</div>
-      <!-- AI Intelligence Layer -->
-      <div style="flex:2.5; min-width:0;">
-        <div class="arch-label" style="margin-bottom:3px;">AI Intelligence Layer</div>
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:4px;">
-          <div class="arch-box" style="margin:0;">
+      <div class="arch-arrow-icon">&#9654;</div>
+      <div class="arch-section-wide">
+        <div class="arch-label">AI Intelligence Layer</div>
+        <div class="arch-inner-grid-5">
+          <div class="arch-box">
             <div class="arch-box-name">Claude AI</div>
-            <div class="arch-box-desc">Strategy / Scoring / Builder Score</div>
+            <div class="arch-box-desc">Strategy / Builder Score</div>
           </div>
-          <div class="arch-box" style="margin:0;">
+          <div class="arch-box">
             <div class="arch-box-name">Exa + Websets</div>
-            <div class="arch-box-desc">Neural search / Collections</div>
+            <div class="arch-box-desc">Neural search</div>
           </div>
-          <div class="arch-box" style="margin:0;">
+          <div class="arch-box">
             <div class="arch-box-name">Parallel.ai</div>
             <div class="arch-box-desc">JD extraction</div>
           </div>
-          <div class="arch-box" style="margin:0;">
+          <div class="arch-box">
             <div class="arch-box-name">GitHub API</div>
-            <div class="arch-box-desc">Contributors / Commits / Code Quality</div>
+            <div class="arch-box-desc">Code quality</div>
+          </div>
+          <div class="arch-box">
+            <div class="arch-box-name">LinkedIn</div>
+            <div class="arch-box-desc">Profile enrich</div>
           </div>
         </div>
       </div>
-      <div style="color:var(--accent); font-size:14px; opacity:0.5;">&#9654;</div>
-      <!-- Data + Infrastructure -->
-      <div style="flex:1.8; min-width:0;">
-        <div class="arch-label" style="margin-bottom:3px;">Data + Infrastructure</div>
-        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:4px;">
-          <div class="arch-box" style="margin:0;">
+      <div class="arch-arrow-icon">&#9654;</div>
+      <div class="arch-section-mid">
+        <div class="arch-label">Data + Infrastructure</div>
+        <div class="arch-inner-grid-3">
+          <div class="arch-box">
             <div class="arch-box-name">Supabase</div>
-            <div class="arch-box-desc">Auth / RLS / Pipeline</div>
+            <div class="arch-box-desc">Auth / RLS / Edge Fn</div>
           </div>
-          <div class="arch-box" style="margin:0;">
+          <div class="arch-box">
             <div class="arch-box-name">Vercel</div>
-            <div class="arch-box-desc">Edge</div>
+            <div class="arch-box-desc">Edge CDN</div>
           </div>
-          <div class="arch-box" style="margin:0;">
+          <div class="arch-box">
             <div class="arch-box-name">Stripe</div>
             <div class="arch-box-desc">Billing</div>
           </div>
         </div>
       </div>
     </div>
-    <!-- API Surface: full-width 3-column grid -->
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
-      <div class="api-group-card blue" style="background:rgba(59,130,246,0.04); border:1px solid rgba(59,130,246,0.15); border-radius:6px; padding:8px 10px;">
-        <div style="margin-bottom:4px;"><span class="pill-blue">Exa API</span> <span style="font-size:9px; color:var(--secondary); margin-left:4px;">5 endpoints</span></div>
-        <div class="api-endpoint" style="font-size:10px; line-height:1.6;">
+    <div class="api-grid">
+      <div class="api-group-card blue">
+        <div style="margin-bottom:6px;"><span class="pill-blue">Exa API</span> <span style="font-size:11px; color:var(--secondary); margin-left:4px;">5 endpoints</span></div>
+        <div class="api-endpoint">
           <span class="api-key api-key-blue">Research</span> Deep research on any topic<br>
           <span class="api-key api-key-blue">Search</span> Neural + keyword hybrid search<br>
           <span class="api-key api-key-blue">Answer</span> Direct answers from web data<br>
           <span class="api-key api-key-blue">findSimilar</span> Find pages similar to a URL<br>
-          <span class="api-key api-key-blue">Websets</span> Persistent collections, enrichment, monitoring
+          <span class="api-key api-key-blue">Websets</span> Collections, enrichment, monitoring
         </div>
       </div>
-      <div class="api-group-card purple" style="background:rgba(168,85,247,0.04); border:1px solid rgba(168,85,247,0.15); border-radius:6px; padding:8px 10px;">
-        <div style="margin-bottom:4px;"><span class="pill-purple">Parallel API</span> <span style="font-size:9px; color:var(--secondary); margin-left:4px;">3 endpoints</span></div>
-        <div class="api-endpoint" style="font-size:10px; line-height:1.6;">
+      <div class="api-group-card purple">
+        <div style="margin-bottom:6px;"><span class="pill-purple">Parallel API</span> <span style="font-size:11px; color:var(--secondary); margin-left:4px;">3 endpoints</span></div>
+        <div class="api-endpoint">
           <span class="api-key api-key-purple">Task</span> Single deep-research task with citations<br>
           <span class="api-key api-key-purple">FindAll</span> Batch entity discovery from a query<br>
           <span class="api-key api-key-purple">Search</span> Web search with content extraction
         </div>
       </div>
-      <div class="api-group-card orange" style="background:rgba(249,115,22,0.04); border:1px solid rgba(249,115,22,0.15); border-radius:6px; padding:8px 10px;">
-        <div style="margin-bottom:4px;"><span class="pill-orange">GitHub API + Builder Score</span> <span style="font-size:9px; color:var(--secondary); margin-left:4px;">3 interfaces</span></div>
-        <div class="api-endpoint" style="font-size:10px; line-height:1.6;">
-          <span class="api-key api-key-orange">REST</span> Contributors, commits, profiles, repo metadata<br>
-          <span class="api-key api-key-orange">GraphQL</span> Contribution graphs, org membership, activity<br>
-          <span class="api-key api-key-orange">Builder Score</span> On-demand code quality eval (6 dims, Claude summary)
+      <div class="api-group-card orange">
+        <div style="margin-bottom:6px;"><span class="pill-orange">GitHub + Builder Score</span> <span style="font-size:11px; color:var(--secondary); margin-left:4px;">3 interfaces</span></div>
+        <div class="api-endpoint">
+          <span class="api-key api-key-orange">REST</span> Contributors, commits, profiles, metadata<br>
+          <span class="api-key api-key-orange">GraphQL</span> Contribution graphs, org, activity<br>
+          <span class="api-key api-key-orange">Builder Score</span> 7-dim code eval + Claude summary
         </div>
       </div>
     </div>
   </div>
 
-  <hr class="divider" style="margin:6px 0 10px;">
+  <hr class="divider">
 
-  <!-- PRO TIPS (4x2 grid) -->
+  <!-- FEATURES GRID -->
   <div class="section-tight">
-    <div class="label">PRO TIPS</div>
+    <div class="label">Operator Tools</div>
+    <div class="grid-4">
+      <div class="card-blue">
+        <div class="card-title" style="color:var(--blue);">Candidate Compare</div>
+        <div class="card-body">Side-by-side candidate comparison with AI-generated summaries and Builder Score overlays.</div>
+      </div>
+      <div class="card-purple">
+        <div class="card-title" style="color:var(--purple);">AI Outreach</div>
+        <div class="card-body">Context-aware outreach generation. References specific repos, commits, and contributions.</div>
+      </div>
+      <div class="card-orange">
+        <div class="card-title" style="color:var(--orange);">Bulk Actions</div>
+        <div class="card-body">Select multiple candidates. Batch compare, summarize, generate outreach, or export CSV.</div>
+      </div>
+      <div class="card-cyan">
+        <div class="card-title" style="color:var(--cyan);">Search History</div>
+        <div class="card-body">Every search saved with full strategy context. Re-run, clone, or build new searches from history.</div>
+      </div>
+      <div class="card-blue">
+        <div class="card-title" style="color:var(--blue);">Code Quality Report</div>
+        <div class="card-body">Per-candidate deep dive: repo breakdown, language distribution, contribution timeline, Builder Score.</div>
+      </div>
+      <div class="card-purple">
+        <div class="card-title" style="color:var(--purple);">EEA Signals</div>
+        <div class="card-body">Auto-detected signals: conference talks, papers, patents, maintainer status, high-impact repos.</div>
+      </div>
+      <div class="card-orange">
+        <div class="card-title" style="color:var(--orange);">Outreach Templates</div>
+        <div class="card-body">Customizable templates with merge fields. Save per-role templates. Track which perform best.</div>
+      </div>
+      <div class="card-cyan">
+        <div class="card-title" style="color:var(--cyan);">Watchlist</div>
+        <div class="card-body">Save candidates across searches. Track activity over time. Get notified on profile changes.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRO TIPS -->
+  <div class="section-tight">
+    <div class="label">Best Results</div>
     <div class="tips-grid">
-      <div class="card" style="padding:7px 10px;">
+      <div class="card" style="padding:10px 14px;">
         <div class="card-title">Be Specific With Titles</div>
-        <div class="card-body" style="font-size:10px;">"ML Infrastructure Engineer focused on training pipelines" beats "ML Engineer."</div>
+        <div class="card-body">"ML Infrastructure Engineer focused on training pipelines" beats "ML Engineer."</div>
       </div>
-      <div class="card" style="padding:7px 10px;">
+      <div class="card" style="padding:10px 14px;">
         <div class="card-title">Always Edit the Repo List</div>
-        <div class="card-body" style="font-size:10px;">AI suggestions are a starting point. Editing the repo list is the single biggest lever for result quality.</div>
+        <div class="card-body">AI suggestions are a starting point. Editing the repo list is the single biggest lever for result quality.</div>
       </div>
-      <div class="card" style="padding:7px 10px;">
+      <div class="card" style="padding:10px 14px;">
+        <div class="card-title">Use Builder Score for AI Roles</div>
+        <div class="card-body">AI Mastery dimension and Claude Code detection are strongest signals for AI-native engineering hires.</div>
+      </div>
+      <div class="card" style="padding:10px 14px;">
         <div class="card-title">Target Hidden Gems</div>
-        <div class="card-body" style="font-size:10px;">High contributions, low follower counts. Under-recruited and more responsive to outreach.</div>
+        <div class="card-body">High contributions, low follower counts. Under-recruited and more responsive to outreach.</div>
       </div>
-      <div class="card" style="padding:7px 10px;">
-        <div class="card-title">Run Multiple Searches</div>
-        <div class="card-body" style="font-size:10px;">Same role across different companies surfaces different repo ecosystems and candidate pools.</div>
-      </div>
-      <div class="card" style="padding:7px 10px;">
+      <div class="card" style="padding:10px 14px;">
         <div class="card-title">Use Websets for Ongoing Roles</div>
-        <div class="card-body" style="font-size:10px;">Set up monitoring. New contributors matching your criteria surface automatically.</div>
+        <div class="card-body">Set up monitoring. New contributors matching your criteria surface automatically.</div>
       </div>
-      <div class="card" style="padding:7px 10px;">
+      <div class="card" style="padding:10px 14px;">
         <div class="card-title">Write Criteria Like Filters</div>
-        <div class="card-body" style="font-size:10px;">"Has 50+ commits to a distributed systems project with 1K+ stars" works. "Passionate about backend" does not.</div>
+        <div class="card-body">"Has 50+ commits to a distributed systems project with 1K+ stars" works. "Passionate about backend" does not.</div>
       </div>
-      <div class="card" style="padding:7px 10px;">
+      <div class="card" style="padding:10px 14px;">
         <div class="card-title">Start Narrow, Broaden Later</div>
-        <div class="card-body" style="font-size:10px;">3 tight criteria and 20 verified matches beats 1 loose criterion and 200 unqualified results.</div>
+        <div class="card-body">3 tight criteria and 20 verified matches beats 1 loose criterion and 200 unqualified results.</div>
       </div>
-      <div class="card" style="padding:7px 10px;">
+      <div class="card" style="padding:10px 14px;">
         <div class="card-title">Layer Enrichments After</div>
-        <div class="card-body" style="font-size:10px;">Let the Webset verify matches first, then add contact info and publications to survivors.</div>
+        <div class="card-body">Let the Webset verify matches first, then add Builder Score and contact info to survivors.</div>
       </div>
     </div>
   </div>
 
   <!-- FOOTER -->
   <div class="footer">
-    <span style="color:var(--white); font-weight:600;">SourceKit Beta v2.0</span> &middot;
+    <span style="color:var(--white); font-weight:600;">SourceKit Beta v2.0</span> finds technical talent through shipped work, verified signals, and living search pipelines.<br>
     <a href="https://getsourcekit.vercel.app">getsourcekit.vercel.app</a> &middot;
-    <a href="https://sourcekit-docs.netlify.app">sourcekit-docs.netlify.app</a> &middot;
+    <a href="https://sourcekit-docs.netlify.app">Docs</a> &middot;
     <span>Feedback: michael.f.rubino@gmail.com</span>
   </div>
 
