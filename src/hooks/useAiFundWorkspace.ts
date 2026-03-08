@@ -28,7 +28,43 @@ import {
   fetchDashboardStats,
   createEvidence,
 } from "@/lib/ai-fund";
-import { enrichPersonByLinkedIn } from "@/services/harmonic";
+import { enrichPersonByLinkedIn, checkEnrichmentStatus, getPersonById } from "@/services/harmonic";
+import { toast } from "@/hooks/use-toast";
+
+/** Convert raw HarmonicPerson to our metadata shape. */
+function toHarmonicMeta(hp: Awaited<ReturnType<typeof enrichPersonByLinkedIn>>): HarmonicPersonMetadata {
+  return {
+    entityUrn: hp.entity_urn,
+    profilePictureUrl: hp.profile_picture_url,
+    headline: hp.linkedin_headline,
+    education: (hp.education || []).map((e) => ({
+      school: e.school || "Unknown",
+      degree: e.degree,
+      field: e.field_of_study,
+    })),
+    experience: (hp.experience || []).map((e) => ({
+      title: e.title || "Unknown",
+      company: e.company_name || "Unknown",
+      companyUrn: e.company,
+      startDate: e.start_date,
+      endDate: e.end_date,
+      isCurrent: e.is_current_position,
+    })),
+    highlights: (hp.highlights || []).map((h) => h.text),
+    awards: (hp.awards__beta || []).map((a) => ({
+      title: a.title,
+      description: a.description,
+    })),
+    languages: hp.languages,
+    enrichedAt: new Date().toISOString(),
+  };
+}
+
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Max number of poll attempts for async enrichment. */
+const MAX_POLL_ATTEMPTS = 6;
+const POLL_INTERVAL_MS = 5000;
 
 export function useAiFundWorkspace(): AiFundWorkspace {
   const [concepts, setConcepts] = useState<AiFundConcept[]>([]);
@@ -45,6 +81,86 @@ export function useAiFundWorkspace(): AiFundWorkspace {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Enrich a person via Harmonic. Handles 202 (pending) responses by polling
+   * enrichment_status until complete, then fetching the full person record.
+   */
+  const applyHarmonicEnrichment = useCallback(
+    async (person: AiFundPerson) => {
+      if (!person.linkedinUrl) return;
+
+      let hp: Awaited<ReturnType<typeof enrichPersonByLinkedIn>>;
+      try {
+        const result = await enrichPersonByLinkedIn(person.linkedinUrl);
+
+        // Handle 202 async enrichment pending
+        if (result.enrichment_pending && result.enrichment_id) {
+          toast({ title: "Enrichment queued", description: `${person.fullName} — Harmonic is processing, will update automatically.` });
+
+          // Poll until complete
+          for (let i = 0; i < MAX_POLL_ATTEMPTS; i++) {
+            await delay(POLL_INTERVAL_MS);
+            const statuses = await checkEnrichmentStatus([result.enrichment_id]);
+            const status = Array.isArray(statuses) ? statuses[0] : statuses;
+            if (status?.status === "COMPLETE" && status.enriched_entity_urn) {
+              hp = await getPersonById(status.enriched_entity_urn);
+              break;
+            }
+            if (status?.status === "FAILED" || status?.status === "NOT_FOUND") {
+              toast({ title: "Enrichment failed", description: `${person.fullName} — ${status.message || "Person not found in Harmonic"}`, variant: "destructive" });
+              return;
+            }
+          }
+          if (!hp!) {
+            toast({ title: "Enrichment timeout", description: `${person.fullName} — still processing. Try refreshing later.`, variant: "destructive" });
+            return;
+          }
+        } else {
+          hp = result;
+        }
+      } catch (err) {
+        toast({ title: "Enrichment failed", description: `${person.fullName} — ${err instanceof Error ? err.message : "Unknown error"}`, variant: "destructive" });
+        return;
+      }
+
+      const harmonicMeta = toHarmonicMeta(hp);
+      const updatedMeta = { ...(person.metadata || {}), harmonic: harmonicMeta };
+      await updatePersonDb(person.id, { metadata: updatedMeta });
+      setPeople((prev) =>
+        prev.map((p) => (p.id === person.id ? { ...p, metadata: updatedMeta } : p))
+      );
+
+      // Auto-create evidence records
+      const evidencePromises = [];
+      for (const highlight of harmonicMeta.highlights.slice(0, 5)) {
+        evidencePromises.push(
+          createEvidence({
+            personId: person.id,
+            evidenceType: "media_mention",
+            title: highlight.length > 120 ? highlight.slice(0, 117) + "..." : highlight,
+            description: highlight,
+            signalStrength: 60,
+            metadata: { source: "harmonic", type: "highlight" },
+          })
+        );
+      }
+      for (const award of harmonicMeta.awards.slice(0, 5)) {
+        evidencePromises.push(
+          createEvidence({
+            personId: person.id,
+            evidenceType: "award",
+            title: award.title,
+            description: award.description || null,
+            signalStrength: 80,
+            metadata: { source: "harmonic", type: "award" },
+          })
+        );
+      }
+      await Promise.allSettled(evidencePromises);
+    },
+    []
+  );
 
   const refresh = useCallback(async () => {
     try {
@@ -105,71 +221,9 @@ export function useAiFundWorkspace(): AiFundWorkspace {
 
         // Fire-and-forget Harmonic enrichment if LinkedIn URL is provided
         if (person.linkedinUrl) {
-          enrichPersonByLinkedIn(person.linkedinUrl)
-            .then((hp) => {
-              const harmonicMeta: HarmonicPersonMetadata = {
-                entityUrn: hp.entity_urn,
-                profilePictureUrl: hp.profile_picture_url,
-                headline: hp.linkedin_headline,
-                education: (hp.education || []).map((e) => ({
-                  school: e.school || "Unknown",
-                  degree: e.degree,
-                  field: e.field_of_study,
-                })),
-                experience: (hp.experience || []).map((e) => ({
-                  title: e.title || "Unknown",
-                  company: e.company_name || "Unknown",
-                  companyUrn: e.company,
-                  startDate: e.start_date,
-                  endDate: e.end_date,
-                  isCurrent: e.is_current_position,
-                })),
-                highlights: (hp.highlights || []).map((h) => h.text),
-                awards: (hp.awards__beta || []).map((a) => ({
-                  title: a.title,
-                  description: a.description,
-                })),
-                languages: hp.languages,
-                enrichedAt: new Date().toISOString(),
-              };
-              const updatedMeta = { ...(person.metadata || {}), harmonic: harmonicMeta };
-              updatePersonDb(person.id, { metadata: updatedMeta }).then(() => {
-                setPeople((prev) =>
-                  prev.map((p) =>
-                    p.id === person.id ? { ...p, metadata: updatedMeta } : p
-                  )
-                );
-              });
-
-              // Auto-create evidence records from Harmonic highlights and awards
-              const evidencePromises = [];
-              for (const highlight of harmonicMeta.highlights.slice(0, 5)) {
-                evidencePromises.push(
-                  createEvidence({
-                    personId: person.id,
-                    evidenceType: "media_mention",
-                    title: highlight.length > 120 ? highlight.slice(0, 117) + "..." : highlight,
-                    description: highlight,
-                    signalStrength: 60,
-                    metadata: { source: "harmonic", type: "highlight" },
-                  })
-                );
-              }
-              for (const award of harmonicMeta.awards.slice(0, 5)) {
-                evidencePromises.push(
-                  createEvidence({
-                    personId: person.id,
-                    evidenceType: "award",
-                    title: award.title,
-                    description: award.description || null,
-                    signalStrength: 80,
-                    metadata: { source: "harmonic", type: "award" },
-                  })
-                );
-              }
-              Promise.allSettled(evidencePromises).catch(() => {});
-            })
-            .catch((err) => console.warn("Harmonic person enrichment failed (non-blocking):", err));
+          applyHarmonicEnrichment(person).catch((err) =>
+            console.warn("Harmonic person enrichment failed (non-blocking):", err)
+          );
         }
 
         return person;

@@ -54,7 +54,10 @@ export default function TalentPoolTab({ workspace }: Props) {
     let succeeded = 0;
     let failed = 0;
 
-    for (const person of enrichable) {
+    for (let i = 0; i < enrichable.length; i++) {
+      const person = enrichable[i];
+      // Throttle: 1 second between API calls to avoid rate limits
+      if (i > 0) await new Promise((r) => setTimeout(r, 1000));
       try {
         const hp = await enrichPersonByLinkedIn(person.linkedinUrl!);
         const harmonicMeta: HarmonicPersonMetadata = {

@@ -131,6 +131,25 @@ export default function IntelligenceTab() {
     loadSavedSearches();
   }, []);
 
+  // Auto-poll saved searches every 5 minutes for net-new results
+  useEffect(() => {
+    if (savedSearches.length === 0) return;
+    const interval = setInterval(() => {
+      for (const ss of savedSearches) {
+        getNetNewResults(ss.entity_urn)
+          .then((results) => {
+            const count = results.count || results.results?.length || 0;
+            setNetNewCount((prev) => {
+              if (prev[ss.entity_urn] === count) return prev;
+              return { ...prev, [ss.entity_urn]: count };
+            });
+          })
+          .catch(() => {}); // silent background poll
+      }
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [savedSearches]);
+
   const handlePollSearch = async (searchUrn: string) => {
     setPollingSearch(searchUrn);
     try {

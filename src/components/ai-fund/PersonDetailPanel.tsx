@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Building2,
   Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import type { AiFundPerson, HarmonicPersonMetadata } from "@/types/ai-fund";
 import type { PoachabilityScore } from "@/types/harmonic";
@@ -86,7 +87,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   const companyDomain = person.currentCompany
     ? companyNameToDomain(person.currentCompany)
     : null;
-  const { poachability, isLoading: companyLoading } = useHarmonicCompany(companyDomain);
+  const { poachability, isLoading: companyLoading, refetch: refetchCompany } = useHarmonicCompany(companyDomain);
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end">
@@ -182,9 +183,20 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
           {/* Poachability */}
           {person.currentCompany && (
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Company Poachability
-              </h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Company Poachability
+                </h3>
+                {poachability && !companyLoading && (
+                  <button
+                    onClick={() => refetchCompany()}
+                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                    title="Refresh company data"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
               {companyLoading ? (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground py-3">
                   <Loader2 className="w-3 h-3 animate-spin" />
