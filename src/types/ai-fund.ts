@@ -78,7 +78,47 @@ export type IntelligenceRunStatus =
   | "completed"
   | "failed";
 
-export type IntelligenceProvider = "exa" | "parallel" | "github" | "manual";
+export type IntelligenceProvider = "exa" | "parallel" | "github" | "harmonic" | "manual";
+
+// ---------------------------------------------------------------------------
+// Harmonic Person Enrichment (stored in AiFundPerson.metadata.harmonic)
+// ---------------------------------------------------------------------------
+
+export interface HarmonicPersonMetadata {
+  entityUrn: string;
+  profilePictureUrl?: string;
+  headline?: string;
+  education: { school: string; degree?: string; field?: string }[];
+  experience: {
+    title: string;
+    company: string;
+    companyUrn?: string;
+    startDate?: string;
+    endDate?: string;
+    isCurrent?: boolean;
+  }[];
+  highlights: string[];
+  awards: { title: string; description?: string }[];
+  languages?: string[];
+  enrichedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Harmonic Intelligence Run Summary (stored in AiFundIntelligenceRun.resultsSummary)
+// ---------------------------------------------------------------------------
+
+export interface HarmonicRunSummary {
+  companies: {
+    name: string;
+    domain?: string;
+    fundingStage?: string;
+    headcount?: number;
+    fundingTotal?: number;
+    location?: string;
+    poachabilityScore?: number;
+    harmonicId?: string;
+  }[];
+}
 
 // ---------------------------------------------------------------------------
 // Core Entities

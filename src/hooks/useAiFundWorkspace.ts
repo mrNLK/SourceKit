@@ -13,6 +13,7 @@ import {
   type AiFundEvaluationScore,
   type AiFundDashboardStats,
   type AiFundWorkspace,
+  type HarmonicPersonMetadata,
 } from "@/types/ai-fund";
 import {
   fetchConcepts,
@@ -26,6 +27,7 @@ import {
   createScore,
   fetchDashboardStats,
 } from "@/lib/ai-fund";
+import { enrichPersonByLinkedIn } from "@/services/harmonic";
 
 export function useAiFundWorkspace(): AiFundWorkspace {
   const [concepts, setConcepts] = useState<AiFundConcept[]>([]);
@@ -99,6 +101,48 @@ export function useAiFundWorkspace(): AiFundWorkspace {
       try {
         const person = await createPerson(fields);
         setPeople((prev) => [person, ...prev]);
+
+        // Fire-and-forget Harmonic enrichment if LinkedIn URL is provided
+        if (person.linkedinUrl) {
+          enrichPersonByLinkedIn(person.linkedinUrl)
+            .then((hp) => {
+              const harmonicMeta: HarmonicPersonMetadata = {
+                entityUrn: hp.entity_urn,
+                profilePictureUrl: hp.profile_picture_url,
+                headline: hp.linkedin_headline,
+                education: (hp.education || []).map((e) => ({
+                  school: e.school || "Unknown",
+                  degree: e.degree,
+                  field: e.field_of_study,
+                })),
+                experience: (hp.experience || []).map((e) => ({
+                  title: e.title || "Unknown",
+                  company: e.company_name || "Unknown",
+                  companyUrn: e.company,
+                  startDate: e.start_date,
+                  endDate: e.end_date,
+                  isCurrent: e.is_current_position,
+                })),
+                highlights: (hp.highlights || []).map((h) => h.text),
+                awards: (hp.awards__beta || []).map((a) => ({
+                  title: a.title,
+                  description: a.description,
+                })),
+                languages: hp.languages,
+                enrichedAt: new Date().toISOString(),
+              };
+              const updatedMeta = { ...(person.metadata || {}), harmonic: harmonicMeta };
+              updatePersonDb(person.id, { metadata: updatedMeta }).then(() => {
+                setPeople((prev) =>
+                  prev.map((p) =>
+                    p.id === person.id ? { ...p, metadata: updatedMeta } : p
+                  )
+                );
+              });
+            })
+            .catch((err) => console.warn("Harmonic person enrichment failed (non-blocking):", err));
+        }
+
         return person;
       } catch (err) {
         console.error("addPerson error:", err);

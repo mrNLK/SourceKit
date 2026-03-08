@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Plus, ExternalLink, Filter } from "lucide-react";
-import type { AiFundWorkspace, AiFundPerson, ProcessStage, PersonType } from "@/types/ai-fund";
+import { useState, useEffect } from "react";
+import { Plus, ExternalLink, Filter, Sparkles } from "lucide-react";
+import type { AiFundWorkspace, AiFundPerson, ProcessStage, PersonType, HarmonicPersonMetadata } from "@/types/ai-fund";
 import { scoreColor, scoreLabel } from "@/lib/aifund-scoring";
 import { fetchScoresForPerson } from "@/lib/ai-fund";
-import { useEffect } from "react";
+import PersonDetailPanel from "./PersonDetailPanel";
 
 interface Props {
   workspace: AiFundWorkspace;
@@ -30,6 +30,7 @@ export default function TalentPoolTab({ workspace }: Props) {
   const [filterType, setFilterType] = useState<PersonType | "all">("all");
   const [filterStage, setFilterStage] = useState<ProcessStage | "all">("all");
   const [scores, setScores] = useState<Record<string, number | null>>({});
+  const [selectedPerson, setSelectedPerson] = useState<AiFundPerson | null>(null);
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -208,46 +209,64 @@ export default function TalentPoolTab({ workspace }: Props) {
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((person) => (
-            <div
-              key={person.id}
-              className="flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-lg hover:border-primary/30 transition-colors"
-            >
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold shrink-0">
-                {person.fullName.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-foreground truncate">{person.fullName}</p>
-                  {person.linkedinUrl && (
-                    <a
-                      href={person.linkedinUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-primary"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
+          {filtered.map((person) => {
+            const harmonicMeta = (person.metadata as Record<string, unknown> | null)?.harmonic as
+              | HarmonicPersonMetadata
+              | undefined;
+            return (
+              <button
+                key={person.id}
+                onClick={() => setSelectedPerson(person)}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-lg hover:border-primary/30 transition-colors text-left"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold shrink-0">
+                  {person.fullName.charAt(0).toUpperCase()}
                 </div>
-                <p className="text-xs text-muted-foreground truncate">
-                  {[person.currentRole, person.currentCompany].filter(Boolean).join(" @ ") || "No role info"}
-                </p>
-              </div>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 uppercase shrink-0">
-                {person.personType}
-              </span>
-              <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded shrink-0">
-                {PROCESS_STAGE_LABELS[person.processStage]}
-              </span>
-              {scores[person.id] !== undefined && (
-                <span className={`text-xs font-semibold shrink-0 ${scoreColor(scores[person.id])}`}>
-                  {scores[person.id] !== null ? `${scores[person.id]?.toFixed(1)} - ${scoreLabel(scores[person.id])}` : "Unscored"}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-foreground truncate">{person.fullName}</p>
+                    {harmonicMeta && (
+                      <Sparkles className="w-3 h-3 text-primary shrink-0" title="Harmonic enriched" />
+                    )}
+                    {person.linkedinUrl && (
+                      <a
+                        href={person.linkedinUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-primary"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {[person.currentRole, person.currentCompany].filter(Boolean).join(" @ ") || "No role info"}
+                  </p>
+                </div>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 uppercase shrink-0">
+                  {person.personType}
                 </span>
-              )}
-            </div>
-          ))}
+                <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded shrink-0">
+                  {PROCESS_STAGE_LABELS[person.processStage]}
+                </span>
+                {scores[person.id] !== undefined && (
+                  <span className={`text-xs font-semibold shrink-0 ${scoreColor(scores[person.id])}`}>
+                    {scores[person.id] !== null ? `${scores[person.id]?.toFixed(1)} - ${scoreLabel(scores[person.id])}` : "Unscored"}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
+      )}
+
+      {/* Person detail panel */}
+      {selectedPerson && (
+        <PersonDetailPanel
+          person={selectedPerson}
+          onClose={() => setSelectedPerson(null)}
+        />
       )}
     </div>
   );
