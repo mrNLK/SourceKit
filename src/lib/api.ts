@@ -165,6 +165,8 @@ export async function loadSearchResults(searchId: string): Promise<SearchRespons
     .select(`
       rank,
       score,
+      summary,
+      about,
       candidate:candidate_id (
         id, github_username, name, avatar_url, bio, about, location,
         followers, public_repos, stars, top_languages, highlights,
@@ -188,8 +190,8 @@ export async function loadSearchResults(searchId: string): Promise<SearchRespons
       username: c.github_username,
       name: c.name,
       avatarUrl: c.avatar_url,
-      bio: c.summary || c.bio,
-      about: c.about || '',
+      bio: row.summary || c.summary || c.bio,
+      about: row.about || c.about || '',
       location: c.location,
       totalContributions: Object.values(c.contributed_repos || {}).reduce((a: number, b: any) => a + (b as number), 0) as number,
       publicRepos: c.public_repos,

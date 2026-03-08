@@ -1,748 +1,1188 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg-page: #0a0a0f;
-    --bg-card: #1c1c22;
-    --border-card: #2a2a32;
-    --accent: #00E5A0;
-    --accent-start: #00E5C3;
-    --accent-end: #00BFA5;
-    --text-heading: #FFFFFF;
-    --text-body: #E0E0E0;
-    --text-secondary: #9E9E9E;
-    --text-muted: #6B7280;
-    --radius: 14px;
-  }
-  @page { size: letter; margin: 0; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: var(--bg-page);
-    color: var(--text-body);
-    font-family: 'DM Sans', 'Inter', sans-serif;
-    font-size: 12px;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-  }
-  .page {
-    width: 8.5in;
-    height: 11in;
-    padding: 0.5in 0.6in;
-    position: relative;
-    overflow: hidden;
-    break-after: page;
-    page-break-after: always;
-  }
-  .page:last-child { break-after: auto; page-break-after: auto; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SourceKit Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-2: #0d1220;
+      --panel: rgba(16, 22, 36, 0.92);
+      --panel-2: rgba(12, 17, 29, 0.9);
+      --panel-3: rgba(9, 13, 22, 0.78);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(0, 229, 160, 0.22);
+      --text: #eef4f7;
+      --muted: #9aa8b6;
+      --accent: #00e5a0;
+      --accent-2: #5cf0ca;
+      --blue: #3b82f6;
+      --orange: #f47a4d;
+      --purple: #9b5cf6;
+      --shadow: 0 28px 90px rgba(0,0,0,0.42);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --max: 1260px;
+    }
 
-  /* Typography */
-  .section-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--accent);
-    margin-bottom: 6px;
-  }
-  .section-heading {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin-bottom: 8px;
-    line-height: 1.3;
-  }
-  .section-heading-sm {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin-bottom: 6px;
-    line-height: 1.3;
-  }
-  .section { margin-bottom: 20px; }
-  .section-tight { margin-bottom: 14px; }
+    * {
+      box-sizing: border-box;
+    }
 
-  /* Cards */
-  .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-card);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-  }
-  .card-title {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin-bottom: 4px;
-  }
-  .card-body {
-    font-size: 11px;
-    line-height: 1.5;
-    color: var(--text-body);
-  }
-  .card-row {
-    display: flex;
-    gap: 12px;
-  }
-  .card-row .card { flex: 1; }
+    html {
+      scroll-behavior: smooth;
+    }
 
-  /* Teal left-border cards */
-  .card-accent {
-    background: var(--bg-card);
-    border: 1px solid var(--border-card);
-    border-left: 3px solid var(--accent);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-  }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 18% 0%, rgba(0,229,160,0.12), transparent 30%),
+        radial-gradient(circle at 100% 0%, rgba(59,130,246,0.12), transparent 28%),
+        linear-gradient(180deg, #081019 0%, #08111d 26%, #0a0a0f 100%);
+      font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
 
-  /* Badge */
-  .badge {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    color: var(--accent);
-    border: 1px solid var(--accent);
-    border-radius: 100px;
-    padding: 3px 10px;
-  }
-  .badge-new {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 8px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--bg-page);
-    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-    border-radius: 100px;
-    padding: 2px 8px;
-    margin-left: 8px;
-    vertical-align: middle;
-  }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 100% 28px, 28px 100%;
+      mask-image: linear-gradient(180deg, rgba(255,255,255,0.55), transparent 88%);
+      opacity: .18;
+    }
 
-  /* Workflow steps */
-  .workflow {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-  }
-  .workflow-step {
-    flex: 1;
-    background: var(--bg-card);
-    border: 1px solid var(--border-card);
-    padding: 10px 10px;
-    text-align: center;
-    position: relative;
-  }
-  .workflow-step:first-child { border-radius: var(--radius) 0 0 var(--radius); }
-  .workflow-step:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
-  .workflow-step-title {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--accent);
-    margin-bottom: 3px;
-  }
-  .workflow-step-desc {
-    font-size: 9px;
-    color: var(--text-secondary);
-    line-height: 1.35;
-  }
-  .workflow-arrow {
-    width: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--accent);
-    font-size: 16px;
-    flex-shrink: 0;
-  }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
 
-  /* Score bar */
-  .score-bar {
-    display: flex;
-    border-radius: 8px;
-    overflow: hidden;
-    height: 28px;
-    margin: 8px 0;
-  }
-  .score-segment {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    color: #000;
-  }
+    .container {
+      width: min(var(--max), calc(100vw - 40px));
+      margin: 0 auto;
+    }
 
-  /* Pipeline stages */
-  .stages {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    margin: 8px 0 12px;
-  }
-  .stage-pill {
-    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-    color: var(--bg-page);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    padding: 6px 14px;
-    border-radius: 100px;
-    white-space: nowrap;
-  }
-  .stage-arrow {
-    color: var(--accent);
-    font-size: 14px;
-    margin: 0 4px;
-  }
+    .mono {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
 
-  /* Table */
-  .table-wrap {
-    border: 1px solid var(--border-card);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-  .table-wrap table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 10px;
-  }
-  .table-wrap th {
-    background: var(--bg-card);
-    color: var(--accent);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    padding: 8px 10px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-card);
-  }
-  .table-wrap td {
-    padding: 7px 10px;
-    border-bottom: 1px solid var(--border-card);
-    color: var(--text-body);
-    font-size: 10px;
-    line-height: 1.4;
-    vertical-align: top;
-  }
-  .table-wrap tr:last-child td { border-bottom: none; }
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(18px);
+      background: rgba(8, 12, 20, 0.68);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
 
-  /* Checklist */
-  .checklist-item {
-    margin-bottom: 5px;
-    font-size: 11px;
-    line-height: 1.45;
-  }
-  .checklist-num {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 600;
-    color: var(--accent);
-    margin-right: 6px;
-    font-size: 11px;
-  }
-  .checklist-title {
-    font-weight: 700;
-    color: var(--text-heading);
-  }
+    .site-nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 16px 0;
+    }
 
-  /* Tips */
-  .tip { margin-bottom: 8px; }
-  .tip-title {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin-bottom: 2px;
-  }
-  .tip-body {
-    font-size: 11px;
-    color: var(--text-body);
-    line-height: 1.45;
-  }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
 
-  /* Architecture diagram */
-  .arch-layer {
-    margin-bottom: 6px;
-  }
-  .arch-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 8px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--accent);
-    margin-bottom: 4px;
-  }
-  .arch-boxes {
-    display: flex;
-    gap: 6px;
-  }
-  .arch-box {
-    flex: 1;
-    background: var(--bg-card);
-    border: 1px solid var(--border-card);
-    border-radius: 8px;
-    padding: 7px 8px;
-  }
-  .arch-box-name {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin-bottom: 2px;
-  }
-  .arch-box-desc {
-    font-size: 8.5px;
-    color: var(--text-secondary);
-    line-height: 1.35;
-  }
-  .arch-box-full {
-    background: var(--bg-card);
-    border: 1px solid var(--border-card);
-    border-radius: 8px;
-    padding: 7px 10px;
-  }
-  .arch-arrow {
-    text-align: center;
-    color: var(--accent);
-    font-size: 12px;
-    margin: 2px 0;
-    opacity: 0.6;
-  }
+    .brand svg {
+      width: 38px;
+      height: 38px;
+      flex-shrink: 0;
+    }
 
-  /* Utility */
-  .text-secondary { color: var(--text-secondary); }
-  .text-muted { color: var(--text-muted); }
-  .text-accent { color: var(--accent); }
-  .text-white { color: var(--text-heading); }
-  .mb-4 { margin-bottom: 4px; }
-  .mb-6 { margin-bottom: 6px; }
-  .mb-8 { margin-bottom: 8px; }
-  .mb-10 { margin-bottom: 10px; }
-  .mb-12 { margin-bottom: 12px; }
-  .mb-16 { margin-bottom: 16px; }
-  .mt-6 { margin-top: 6px; }
-  .mt-8 { margin-top: 8px; }
-  .body-text { font-size: 12px; color: var(--text-body); line-height: 1.55; }
-  .body-text-sm { font-size: 11px; color: var(--text-body); line-height: 1.5; }
+    .brand-title {
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
 
-  /* Hero */
-  .hero {
-    text-align: center;
-    padding: 16px 0 12px;
-  }
-  .hero-headline {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 26px;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin: 10px 0 4px;
-    line-height: 1.2;
-  }
-  .hero-subhead {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
-  }
-  .hero-url {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--accent);
-  }
+    .brand-url {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+    }
 
-  /* Feedback box */
-  .feedback-box {
-    background: var(--bg-card);
-    border: 1px solid var(--border-card);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    margin-top: 10px;
-  }
-</style>
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .nav-link {
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-size: 13px;
+      transition: 160ms ease;
+    }
+
+    .nav-link:hover,
+    .nav-link.is-active {
+      color: var(--text);
+      border-color: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .hero {
+      padding: 54px 0 26px;
+    }
+
+    .hero-panel {
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(0,229,160,0.18), transparent 28%),
+        radial-gradient(circle at 100% 0%, rgba(59,130,246,0.16), transparent 30%),
+        linear-gradient(180deg, rgba(13,22,36,0.98), rgba(8,12,20,0.96));
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    .hero-panel::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+      margin-bottom: 26px;
+    }
+
+    .hero-copy h1 {
+      font-size: clamp(34px, 5vw, 62px);
+      line-height: 0.96;
+      letter-spacing: -0.05em;
+      margin: 0 0 14px;
+    }
+
+    .hero-copy p {
+      margin: 0;
+      max-width: 720px;
+      color: #c8d3dd;
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    .hero-badge {
+      flex: 0 0 auto;
+      align-self: flex-start;
+      text-align: right;
+      color: var(--accent-2);
+      font-size: 14px;
+    }
+
+    .hero-flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .flow-card {
+      position: relative;
+      padding: 16px 16px 18px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(255,255,255,0.06);
+      min-height: 126px;
+    }
+
+    .flow-card:not(:last-child)::after {
+      content: "›";
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent);
+      font-size: 30px;
+      font-weight: 600;
+      z-index: 2;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    .flow-card h3 {
+      margin: 0 0 10px;
+      font-size: 17px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    .flow-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .tabs {
+      margin-top: 26px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tab-button {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.035);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font: inherit;
+      cursor: pointer;
+      transition: 150ms ease;
+    }
+
+    .tab-button:hover,
+    .tab-button.is-active {
+      color: var(--text);
+      border-color: rgba(0,229,160,0.22);
+      box-shadow: inset 0 0 0 1px rgba(0,229,160,0.15);
+      background: rgba(0,229,160,0.08);
+    }
+
+    .tab-panel {
+      display: none;
+      margin-top: 24px;
+      animation: fadeUp 320ms ease forwards;
+    }
+
+    .tab-panel.is-active {
+      display: block;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    section {
+      padding: 22px 0 0;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: clamp(22px, 2vw, 30px);
+      letter-spacing: -0.03em;
+    }
+
+    .section-header p {
+      max-width: 700px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 15px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(16,22,36,0.86), rgba(11,15,24,0.84));
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 22px;
+      box-shadow: 0 18px 60px rgba(0,0,0,0.24);
+      padding: 22px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 18px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .mini-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.025));
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px;
+      padding: 18px;
+      min-height: 140px;
+    }
+
+    .mini-card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .mini-card p,
+    .mini-card li {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .mini-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .highlight {
+      color: var(--accent);
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .score-band {
+      border-radius: 14px;
+      padding: 14px 12px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.09);
+      background: rgba(255,255,255,0.035);
+    }
+
+    .score-band strong {
+      display: block;
+      font-size: 24px;
+      margin-bottom: 4px;
+      letter-spacing: -0.03em;
+    }
+
+    .score-band span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .score-band.ai { border-color: rgba(59,130,246,0.28); box-shadow: inset 0 0 0 1px rgba(59,130,246,0.12); }
+    .score-band.velocity { border-color: rgba(155,92,246,0.28); box-shadow: inset 0 0 0 1px rgba(155,92,246,0.12); }
+    .score-band.tooling { border-color: rgba(0,229,160,0.24); box-shadow: inset 0 0 0 1px rgba(0,229,160,0.12); }
+    .score-band.quality { border-color: rgba(0,229,160,0.24); box-shadow: inset 0 0 0 1px rgba(0,229,160,0.12); }
+    .score-band.docs { border-color: rgba(244,122,77,0.24); box-shadow: inset 0 0 0 1px rgba(244,122,77,0.12); }
+
+    .pill-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .timeline-step {
+      position: relative;
+      border-radius: 999px;
+      background: rgba(0,229,160,0.12);
+      border: 1px solid rgba(0,229,160,0.18);
+      color: var(--accent-2);
+      font-weight: 700;
+      text-align: center;
+      padding: 12px 10px;
+      font-size: 13px;
+    }
+
+    .timeline-step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      right: -13px;
+      top: 50%;
+      width: 14px;
+      height: 1px;
+      background: rgba(255,255,255,0.14);
+    }
+
+    .integration-layer {
+      position: relative;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: linear-gradient(180deg, rgba(14,20,31,0.88), rgba(10,14,23,0.9));
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .integration-layer::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(0,229,160,0.08), transparent 25%),
+        radial-gradient(circle at 100% 0%, rgba(59,130,246,0.08), transparent 28%);
+      pointer-events: none;
+    }
+
+    .integration-layer h3 {
+      margin: 0 0 18px;
+      font-size: 24px;
+      letter-spacing: -0.03em;
+    }
+
+    .integration-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .api-card {
+      position: relative;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.04);
+      padding: 22px;
+      min-height: 154px;
+    }
+
+    .api-card .title-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .api-card h4 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: -0.02em;
+    }
+
+    .api-card .api-label {
+      color: var(--muted);
+      font-size: 17px;
+      font-weight: 500;
+    }
+
+    .api-card p {
+      margin: 0;
+      color: #c7d0d8;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .api-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: white;
+      flex: 0 0 auto;
+    }
+
+    .api-icon.exa {
+      background: rgba(59,130,246,0.15);
+      box-shadow: inset 0 0 0 1px rgba(59,130,246,0.18);
+      color: #81b3ff;
+    }
+    .api-icon.parallel {
+      background: rgba(255,255,255,0.06);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+    .api-icon.github {
+      background: rgba(0,229,160,0.14);
+      box-shadow: inset 0 0 0 1px rgba(0,229,160,0.18);
+    }
+    .api-icon.harmonic {
+      background: rgba(244,122,77,0.14);
+      box-shadow: inset 0 0 0 1px rgba(244,122,77,0.22);
+      color: #ff9a70;
+    }
+
+    .api-icon svg {
+      width: 24px;
+      height: 24px;
+      display: block;
+    }
+
+    .architecture-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 16px;
+    }
+
+    .code-panel {
+      background: linear-gradient(180deg, rgba(8,12,20,0.92), rgba(7,10,16,0.96));
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    .code-panel pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #b7c6d3;
+    }
+
+    .legend-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .legend-item {
+      display: grid;
+      gap: 4px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .legend-item strong {
+      font-size: 14px;
+    }
+
+    .legend-item span {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .section-spacer {
+      height: 16px;
+    }
+
+    footer {
+      padding: 36px 0 50px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 18px;
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity .5s ease, transform .5s ease;
+    }
+
+    .fade-in.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 1120px) {
+      .hero-top,
+      .section-header,
+      .grid-2,
+      .architecture-grid {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+
+      .hero-flow {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .flow-card:nth-child(2n)::after {
+        display: none;
+      }
+
+      .grid-4,
+      .score-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .timeline {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .container {
+        width: min(var(--max), calc(100vw - 24px));
+      }
+
+      .site-nav-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .nav-links {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .hero-panel {
+        padding: 20px;
+      }
+
+      .hero-flow,
+      .grid-3,
+      .grid-4,
+      .integration-grid,
+      .score-grid,
+      .timeline {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-card::after,
+      .timeline-step::after {
+        display: none !important;
+      }
+
+      .brand-title {
+        font-size: 24px;
+      }
+
+      .hero-copy p,
+      .section-header p {
+        font-size: 14px;
+      }
+    }
+  </style>
 </head>
 <body>
-
-<!-- ==================== PAGE 1: HERO + OVERVIEW + WHY SOURCEKIT ==================== -->
-<div class="page">
-
-  <!-- HERO -->
-  <div class="hero">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 180" width="280" height="74">
-      <defs>
-        <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1c1c22"/><stop offset="100%" stop-color="#151519"/></linearGradient>
-        <linearGradient id="ac1" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#00E5C3"/><stop offset="100%" stop-color="#00BFA5"/></linearGradient>
-      </defs>
-      <rect x="12" y="12" width="156" height="156" rx="34" fill="url(#bg1)"/>
-      <rect x="12" y="12" width="156" height="156" rx="34" fill="none" stroke="#2a2a32" stroke-width="1"/>
-      <g transform="translate(90,90)">
-        <path d="M-22,-30 L-48,0 L-22,30" fill="none" stroke="url(#ac1)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <line x1="-5" y1="25" x2="5" y2="-25" stroke="url(#ac1)" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
-        <path d="M22,-30 L48,0 L22,30" fill="none" stroke="url(#ac1)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </g>
-      <text x="196" y="105" font-family="'JetBrains Mono','SF Mono',monospace" font-size="50" font-weight="600" letter-spacing="-1">
-        <tspan fill="#9E9E9E">Source</tspan><tspan fill="#00BFA5">Kit</tspan>
-      </text>
-    </svg>
-    <div class="mb-8"><span class="badge">BETA V2.0 / EARLY ACCESS</span></div>
-    <div class="hero-headline">Find engineers by what they build.</div>
-    <div class="hero-subhead">AI-powered technical sourcing, grounded in real GitHub data.</div>
-    <div class="hero-url">getsourcekit.vercel.app</div>
-  </div>
-
-  <!-- OVERVIEW -->
-  <div class="section-tight">
-    <div class="section-label">OVERVIEW</div>
-    <div class="section-heading-sm">What is SourceKit?</div>
-    <p class="body-text-sm mb-10">SourceKit is a technical sourcing tool that finds software engineers based on their actual code contributions on GitHub, not self-reported LinkedIn keywords. You enter a role and company. SourceKit builds a sourcing strategy, searches real repositories, and returns a scored pipeline of candidates in minutes. v2.0 expands the API surface across three providers: Exa (search, enrichment, synthesis, expansion, persistent collections), Parallel (company intelligence, employee mapping, JD parsing), and the GitHub API (contributor mining, commit-level EEA scoring).</p>
-    <div class="card-row">
-      <div class="card">
-        <div class="card-title">Signal Over Noise</div>
-        <div class="card-body">Candidates are scored on real GitHub activity: commits, pull requests, and repo contributions. Ground-truth engineering signal that resumes can't replicate.</div>
-      </div>
-      <div class="card">
-        <div class="card-title">AI-Built Strategy</div>
-        <div class="card-body">Claude orchestrates Exa Research for strategy generation and Parallel Task for company intelligence. Parallel Search extracts JDs from any URL automatically.</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Minutes, Not Days</div>
-        <div class="card-body">Job description to scored candidate pipeline in under two minutes. No boolean strings. No manual sourcing. No tool switching.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- WHY SOURCEKIT -->
-  <div class="section-tight">
-    <div class="section-label">WHY SOURCEKIT</div>
-    <div class="section-heading-sm">How is this different?</div>
-    <div class="card-row">
-      <div class="card">
-        <div class="card-title">Traditional Sourcing</div>
-        <div class="card-body">Search LinkedIn by keywords. Filter by title and company. Hope the resume matches reality. High noise, profile-optimized results, limited engineering signal.</div>
-      </div>
-      <div class="card">
-        <div class="card-title">SourceKit Sourcing</div>
-        <div class="card-body">AI identifies key repos, Exa Search + findSimilar surface candidates, Exa Answer synthesizes per-candidate evidence, Parallel FindAll maps target company employees, and Websets build living candidate lists. Evidence-based, not keyword-based.</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Best Use Cases</div>
-        <div class="card-body">Niche and senior technical roles. Passive candidates not actively job-seeking. Engineers at early-stage startups. Anyone with a meaningful open-source presence.</div>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ==================== PAGE 2: ARCHITECTURE + WORKFLOW + GETTING STARTED ==================== -->
-<div class="page">
-
-  <!-- UNDER THE HOOD -->
-  <div class="section">
-    <div class="section-label">UNDER THE HOOD</div>
-    <div class="section-heading">Architecture and Technology</div>
-    <p class="body-text-sm mb-8">SourceKit orchestrates three API providers through Claude AI, backed by Supabase for data persistence. Exa powers search, enrichment, synthesis, candidate expansion, and persistent collections. Parallel handles company intelligence, employee mapping, and JD extraction. GitHub provides contributor mining and commit-level scoring.</p>
-
-    <!-- Architecture Diagram -->
-    <div class="arch-layer">
-      <div class="arch-label">Presentation Layer</div>
-      <div class="arch-box-full">
-        <div class="arch-box-name">React + TypeScript Web App</div>
-        <div class="arch-box-desc">Mobile-first UI / Google OAuth / Settings / Search / Pipeline / Websets</div>
-      </div>
-    </div>
-    <div class="arch-arrow">&#9660;</div>
-    <div class="arch-layer">
-      <div class="arch-label">AI Intelligence Layer</div>
-      <div class="arch-boxes">
-        <div class="arch-box">
-          <div class="arch-box-name">Claude AI (Anthropic)</div>
-          <div class="arch-box-desc">Strategy / Scoring / Outreach / Orchestration</div>
-        </div>
-        <div class="arch-box">
-          <div class="arch-box-name">Exa API (5 endpoints)</div>
-          <div class="arch-box-desc">Research / Search / Answer / findSimilar / Websets</div>
-        </div>
-        <div class="arch-box">
-          <div class="arch-box-name">Parallel API (3 endpoints)</div>
-          <div class="arch-box-desc">Task (company intel) / FindAll (employee map) / Search (JD parse)</div>
-        </div>
-        <div class="arch-box">
-          <div class="arch-box-name">GitHub REST + GraphQL</div>
-          <div class="arch-box-desc">Contributor mining / Commit data / EEA scoring</div>
+  <nav class="site-nav">
+    <div class="container site-nav-inner">
+      <div class="brand">
+        <svg width="38" height="38" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+              <path d="M88 72 L56 128 L88 184" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" fill="none"/>
+              <path d="M168 72 L200 128 L168 184" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" fill="none"/>
+              <line x1="128" y1="88" x2="128" y2="64" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
+              <line x1="128" y1="192" x2="128" y2="168" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
+              <circle cx="128" cy="128" r="10" fill="#00E5A0"/>
+            </svg>
+        <div>
+          <div class="brand-title">SourceKit</div>
+          <div class="brand-url mono">getsourcekit.vercel.app</div>
         </div>
       </div>
+      <div class="nav-links">
+        <a class="nav-link is-active" href="#overview">Overview</a>
+        <a class="nav-link" href="#workflow">Workflow</a>
+        <a class="nav-link" href="#integrations">Integrations</a>
+        <a class="nav-link" href="#eea">EEA</a>
+        <a class="nav-link" href="#architecture">Architecture</a>
+        <a class="nav-link" href="#recipes">Recipes</a>
+      </div>
     </div>
-    <div class="arch-arrow">&#9660;</div>
-    <div class="arch-layer">
-      <div class="arch-label">Data Layer</div>
-      <div class="arch-boxes">
-        <div class="arch-box" style="flex:2;">
-          <div class="arch-box-name">Supabase (PostgreSQL)</div>
-          <div class="arch-box-desc">Auth / Row-level Security / User Data / Pipeline State / Webset Mappings</div>
+  </nav>
+
+  <main class="container">
+    <section class="hero fade-in" id="overview">
+      <div class="hero-panel">
+        <div class="hero-top">
+          <div class="hero-copy">
+            <h1>Find engineers by what they build.</h1>
+            <p>SourceKit ranks talent on commits, repositories, publications, technical artifacts, maintainership, and ecosystem proof. No self-reported resumes. No keyword-first sourcing.</p>
+          </div>
+          <div class="hero-badge mono">Guide • updated for Harmonic</div>
         </div>
-        <div class="arch-box" style="flex:1;">
-          <div class="arch-box-name">Enrichment APIs</div>
-          <div class="arch-box-desc">LinkedIn matching / Email discovery / Profile enrichment</div>
+
+        <div class="hero-flow">
+          <article class="flow-card">
+            <div class="eyebrow mono">Input</div>
+            <h3>Your role</h3>
+            <p>Role + company, pasted job description, or hiring URL.</p>
+          </article>
+          <article class="flow-card">
+            <div class="eyebrow mono">Claude + Parallel</div>
+            <h3>AI strategy</h3>
+            <p>Builds target repos, ecosystem map, and signal criteria.</p>
+          </article>
+          <article class="flow-card">
+            <div class="eyebrow mono">You</div>
+            <h3>Refine</h3>
+            <p>Edit repo lists, adjust targets, and tighten evidence filters.</p>
+          </article>
+          <article class="flow-card">
+            <div class="eyebrow mono">Exa + GitHub + Harmonic</div>
+            <h3>Discovery</h3>
+            <p>Scans repositories, contribution histories, and company intelligence.</p>
+          </article>
+          <article class="flow-card">
+            <div class="eyebrow mono">Websets</div>
+            <h3>Scored pipeline</h3>
+            <p>Candidates ranked on verified proof and ready for enrichment or outreach.</p>
+          </article>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Guide tabs">
+          <button class="tab-button is-active" data-tab="how" role="tab" aria-selected="true">How it works</button>
+          <button class="tab-button" data-tab="start" role="tab" aria-selected="false">Ways to start</button>
+          <button class="tab-button" data-tab="score" role="tab" aria-selected="false">Scoring</button>
+        </div>
+
+        <div class="tab-panel is-active" id="tab-how">
+          <div class="grid-3">
+            <div class="mini-card">
+              <h3>One search surface</h3>
+              <p>SourceKit blends role strategy, artifact discovery, and candidate evaluation into one loop. Search, score, enrich, and export from the same working surface.</p>
+            </div>
+            <div class="mini-card">
+              <h3>Proof over polish</h3>
+              <p>Commits, repo activity, maintainership, talks, papers, and ecosystem evidence all matter more than a polished keyword resume.</p>
+            </div>
+            <div class="mini-card">
+              <h3>Continuous pipelines</h3>
+              <p>Websets persist. New evidence-bearing candidates flow in automatically as repos, publications, and ecosystems evolve.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-start">
+          <div class="grid-3">
+            <div class="mini-card">
+              <h3>Role + company</h3>
+              <p>Type a title and company. SourceKit infers stack, identifies repo targets, and builds a search strategy.</p>
+            </div>
+            <div class="mini-card">
+              <h3>Paste a JD</h3>
+              <p>Paste the full job description. SourceKit extracts requirements, seniority, stack, and evidence criteria.</p>
+            </div>
+            <div class="mini-card">
+              <h3>Paste a job URL</h3>
+              <p>Drop in a Lever, Greenhouse, or Ashby link. Relevant job content is parsed into the strategy layer.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-score">
+          <div class="mini-card panel">
+            <div class="section-header" style="margin-bottom: 0;">
+              <div>
+                <h2 style="font-size:22px; margin-bottom:8px;">Builder score</h2>
+                <p>AI-weighted GitHub evaluation returns a 0–100 score with dimension-level breakdowns. GitHub activity is weighted by role relevance. No self-reported data.</p>
+              </div>
+            </div>
+            <div class="score-grid">
+              <div class="score-band ai"><strong>30%</strong><span>AI mastery</span></div>
+              <div class="score-band velocity"><strong>20%</strong><span>Build velocity</span></div>
+              <div class="score-band tooling"><strong>15%</strong><span>Tooling</span></div>
+              <div class="score-band quality"><strong>15%</strong><span>Commit quality</span></div>
+              <div class="score-band docs"><strong>20%</strong><span>Docs + testing</span></div>
+            </div>
+            <div class="pill-row">
+              <span class="pill">Claude Code</span>
+              <span class="pill">AI keywords</span>
+              <span class="pill">Framework files</span>
+              <span class="pill">Coding tools</span>
+              <span class="pill">Recent activity</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="arch-arrow">&#9660;</div>
-    <div class="arch-layer">
-      <div class="arch-label">Infrastructure</div>
-      <div class="arch-boxes">
-        <div class="arch-box" style="flex:2;">
-          <div class="arch-box-name">Vercel</div>
-          <div class="arch-box-desc">Hosting / Serverless Functions / Edge Network</div>
-        </div>
-        <div class="arch-box" style="flex:1;">
-          <div class="arch-box-name">Stripe</div>
-          <div class="arch-box-desc">Billing / Usage Tracking / Tier Management</div>
+    </section>
+
+    <section id="workflow" class="fade-in">
+      <div class="section-header">
+        <div>
+          <h2>Workflow</h2>
+          <p>SourceKit starts with role intent, turns it into an explicit technical strategy, then moves through artifact discovery, evidence scoring, and auto-updating candidate collections.</p>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- HOW IT WORKS -->
-  <div class="section">
-    <div class="section-label">HOW IT WORKS</div>
-    <div class="section-heading-sm">Workflow: From Role to Pipeline</div>
-    <div class="workflow">
-      <div class="workflow-step">
-        <div class="workflow-step-title">You Input</div>
-        <div class="workflow-step-desc">Role + company, job description, or job URL</div>
-      </div>
-      <div class="workflow-arrow">&#9654;</div>
-      <div class="workflow-step">
-        <div class="workflow-step-title">AI Strategy</div>
-        <div class="workflow-step-desc">Claude builds target repos, poach list, skills matrix</div>
-      </div>
-      <div class="workflow-arrow">&#9654;</div>
-      <div class="workflow-step">
-        <div class="workflow-step-title">You Refine</div>
-        <div class="workflow-step-desc">Edit repos, add or remove targets, adjust criteria</div>
-      </div>
-      <div class="workflow-arrow">&#9654;</div>
-      <div class="workflow-step">
-        <div class="workflow-step-title">Multi-API Search</div>
-        <div class="workflow-step-desc">Exa + Parallel + GitHub APIs scan for top contributors</div>
-      </div>
-      <div class="workflow-arrow">&#9654;</div>
-      <div class="workflow-step">
-        <div class="workflow-step-title">Scored Pipeline</div>
-        <div class="workflow-step-desc">Candidates ranked by code signal, ready for outreach</div>
-      </div>
-    </div>
-  </div>
+      <div class="grid-2">
+        <div class="panel stack">
+          <div class="mini-card">
+            <h3>Strategy layer</h3>
+            <ul>
+              <li>Decompose the role into concrete technical markers.</li>
+              <li>Define target repositories, companies, and evidence thresholds.</li>
+              <li>Use role-specific criteria instead of generic keyword matching.</li>
+            </ul>
+          </div>
+          <div class="mini-card">
+            <h3>Search layer</h3>
+            <ul>
+              <li>Exa surfaces relevant repos, artifacts, and ecosystem signals.</li>
+              <li>Parallel maps engineers to companies and surrounding talent graphs.</li>
+              <li>GitHub pulls repository activity and contribution proof.</li>
+              <li>Harmonic enriches startup and company intelligence.</li>
+            </ul>
+          </div>
+        </div>
 
-  <!-- GETTING STARTED -->
-  <div class="section-tight">
-    <div class="section-label">GETTING STARTED</div>
-    <div class="section-heading-sm">Three Ways to Start a Search</div>
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <div class="card-accent">
-        <div class="card-title">1. Role + Company</div>
-        <div class="card-body">Type a job title and target company. Claude infers the technical stack, identifies relevant repos, and builds your strategy from scratch. Example: "Staff ML Engineer" at "Anthropic"</div>
+        <div class="panel">
+          <div class="section-header" style="margin-bottom: 10px;">
+            <div>
+              <h2 style="font-size:22px;">Pipeline stages</h2>
+              <p>Persistent, sortable, and built for bulk compare, export, and outreach.</p>
+            </div>
+          </div>
+          <div class="timeline">
+            <div class="timeline-step">Sourced</div>
+            <div class="timeline-step">Contacted</div>
+            <div class="timeline-step">Responded</div>
+            <div class="timeline-step">Screen</div>
+            <div class="timeline-step">In process</div>
+            <div class="timeline-step">Close</div>
+          </div>
+        </div>
       </div>
-      <div class="card-accent">
-        <div class="card-title">2. Paste a Job Description</div>
-        <div class="card-body">Copy and paste the full JD text. The AI parses requirements, technologies, and seniority level to generate a targeted strategy.</div>
+    </section>
+
+    <section id="integrations" class="fade-in">
+      <div class="section-header">
+        <div>
+          <h2>Integrations</h2>
+          <p>The external intelligence layer combines semantic artifact discovery, engineer-to-company mapping, contribution analysis, and startup intelligence enrichment.</p>
+        </div>
       </div>
-      <div class="card-accent">
-        <div class="card-title">3. Paste a Job URL</div>
-        <div class="card-body">Drop in a link from Lever, Greenhouse, or Ashby. Parallel.ai extracts the JD content and builds the strategy automatically. Works with JS-rendered pages.</div>
+
+      <div class="integration-layer panel">
+        <h3>Integrations Layer</h3>
+        <div class="integration-grid">
+          <article class="api-card">
+            <div class="title-row">
+              <div class="api-icon exa">
+                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.2">
+                  <path d="M6 4h20M6 28h20M6 4v24M6 4l20 24M6 28L26 4"/>
+                </svg>
+              </div>
+              <div>
+                <h4>Exa Research <span class="api-label">API</span></h4>
+              </div>
+            </div>
+            <p>Semantic discovery of repositories, papers, and technical artifacts used to define and expand candidate search surfaces.</p>
+          </article>
+
+          <article class="api-card">
+            <div class="title-row">
+              <div class="api-icon parallel">
+                <svg viewBox="0 0 48 48" fill="currentColor">
+                  <rect x="2" y="6" width="22" height="5" rx="2"></rect>
+                  <rect x="2" y="14" width="26" height="5" rx="2"></rect>
+                  <rect x="2" y="22" width="30" height="5" rx="2"></rect>
+                  <rect x="2" y="30" width="26" height="5" rx="2"></rect>
+                  <rect x="2" y="38" width="22" height="5" rx="2"></rect>
+                  <rect x="18" y="6" width="28" height="37" rx="4"></rect>
+                </svg>
+              </div>
+              <div>
+                <h4>Parallel <span class="api-label">API</span></h4>
+              </div>
+            </div>
+            <p>Engineer-to-company mapping plus ecosystem discovery used to connect individuals, organizations, and adjacent talent clusters.</p>
+          </article>
+
+          <article class="api-card">
+            <div class="title-row">
+              <div class="api-icon github">
+                <svg viewBox="0 0 48 48" fill="currentColor">
+                  <circle cx="24" cy="24" r="13"></circle>
+                  <polygon points="17,16 20,8 23,16"></polygon>
+                  <polygon points="31,16 28,8 25,16"></polygon>
+                  <rect x="19" y="30" width="10" height="10" fill="#9df3dc"></rect>
+                </svg>
+              </div>
+              <div>
+                <h4>GitHub <span class="api-label">API</span></h4>
+              </div>
+            </div>
+            <p>Repository mining, commit history, and contribution signal extraction used to score builders on real technical output.</p>
+          </article>
+
+          <article class="api-card">
+            <div class="title-row">
+              <div class="api-icon harmonic">
+                <svg viewBox="0 0 48 48" fill="currentColor">
+                  <polygon points="16,7 28,14 28,28 16,35 4,28 4,14"></polygon>
+                  <polygon points="16,30 28,37 28,51 16,58 4,51 4,37" transform="translate(0,-10)"></polygon>
+                  <polygon points="32,18 44,25 44,39 32,46 20,39 20,25"></polygon>
+                </svg>
+              </div>
+              <div>
+                <h4>Harmonic <span class="api-label">API</span></h4>
+              </div>
+            </div>
+            <p>Startup, founder, and company intelligence enrichment used to add market context and organization-level signal to candidate sets.</p>
+          </article>
+        </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-</div>
-
-<!-- ==================== PAGE 3: SCORING + PIPELINE + EXA WEBSETS ==================== -->
-<div class="page">
-
-  <!-- SCORING -->
-  <div class="section">
-    <div class="section-label">SCORING</div>
-    <div class="section-heading">How Candidates Are Scored</div>
-    <p class="body-text-sm mb-6">Every candidate receives a composite score from 0 to 100 based on actual GitHub activity, weighted by relevance to the target role. No self-reported data. Just code signal.</p>
-    <div class="score-bar">
-      <div class="score-segment" style="flex:2; background: linear-gradient(90deg, #22c55e, #4ade80);">Strong Match 80-100</div>
-      <div class="score-segment" style="flex:2; background: linear-gradient(90deg, #eab308, #facc15);">Worth Reviewing 60-79</div>
-      <div class="score-segment" style="flex:2; background: linear-gradient(90deg, #ef4444, #f87171);">Lower Signal 0-59</div>
-    </div>
-    <div class="card-row mt-6">
-      <div class="card">
-        <div class="card-title">Commit Volume and Recency</div>
-        <div class="card-body">How actively and recently the candidate has contributed to relevant repos. Recent activity is weighted more heavily because it indicates current working knowledge.</div>
+    <section id="eea" class="fade-in">
+      <div class="section-header">
+        <div>
+          <h2>Evidence of Exceptional Ability</h2>
+          <p>Build Websets around explicit proof of elite performance instead of loose title matching or keyword spray.</p>
+        </div>
       </div>
-      <div class="card">
-        <div class="card-title">Language and Stack Match</div>
-        <div class="card-body">How well the candidate's primary languages align with what the role requires. Python for ML roles, Rust for systems work, and so on.</div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <div class="grid-3">
+            <div class="mini-card">
+              <h3>Published research</h3>
+              <p>NeurIPS, ICML, ICLR, CVPR, ACL papers, citations, and notable publication venues.</p>
+            </div>
+            <div class="mini-card">
+              <h3>Open source impact</h3>
+              <p>Top contributors, maintainers, starred projects, and long-lived repository ownership.</p>
+            </div>
+            <div class="mini-card">
+              <h3>Conference signals</h3>
+              <p>KubeCon, QCon, Strange Loop, DEF CON, and technical teaching at respected venues.</p>
+            </div>
+            <div class="mini-card">
+              <h3>Industry recognition</h3>
+              <p>Patents, major technical press, field-specific awards, and externally validated technical leadership.</p>
+            </div>
+            <div class="mini-card">
+              <h3>Technical leadership</h3>
+              <p>Architectural decisions, RFC ownership, system design authorship, and org-defining engineering work.</p>
+            </div>
+            <div class="mini-card">
+              <h3>Scale + impact</h3>
+              <p>Production ML, distributed training, infra serving 10k+ QPS, or code shipped at true system scale.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel stack">
+          <div class="mini-card">
+            <h3>Build EEA-driven Websets</h3>
+            <p>Decompose the role into 3–5 concrete and verifiable signals, then build your collection around those signals directly.</p>
+          </div>
+          <div class="mini-card">
+            <h3>Add enrichments</h3>
+            <p>Surface the evidence itself: talk links, publication venues, contact data, stars, citations, commits, and company context.</p>
+          </div>
+          <div class="mini-card">
+            <h3>Monitor continuously</h3>
+            <p>New engineers who publish, ship OSS, or appear in the right ecosystems automatically re-enter the pipeline.</p>
+          </div>
+        </div>
       </div>
-      <div class="card">
-        <div class="card-title">Repo Relevance and Impact</div>
-        <div class="card-body">Contributions to high-signal repos (well-starred, actively maintained) are weighted more heavily than activity in personal or low-visibility projects.</div>
+    </section>
+
+    <section id="architecture" class="fade-in">
+      <div class="section-header">
+        <div>
+          <h2>Architecture</h2>
+          <p>SourceKit is designed as a role-driven orchestration layer sitting on top of external intelligence APIs and a GitHub-based builder score.</p>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <!-- PIPELINE -->
-  <div class="section">
-    <div class="section-label">PIPELINE</div>
-    <div class="section-heading-sm">5-Stage Candidate Pipeline</div>
-    <div class="stages">
-      <span class="stage-pill">Contacted</span>
-      <span class="stage-arrow">&#9654;</span>
-      <span class="stage-pill">Not Interested</span>
-      <span class="stage-arrow">&#9654;</span>
-      <span class="stage-pill">Recruiter Screen</span>
-      <span class="stage-arrow">&#9654;</span>
-      <span class="stage-pill">Rejected</span>
-      <span class="stage-arrow">&#9654;</span>
-      <span class="stage-pill">Moved to ATS</span>
-    </div>
-    <div class="card-row">
-      <div class="card">
-        <div class="card-title">Bulk Actions</div>
-        <div class="card-body">Select multiple candidates to compare side-by-side, generate a summary report, or batch-draft personalized outreach messages.</div>
+      <div class="architecture-grid">
+        <div class="code-panel">
+<pre>Presentation
+  React + TypeScript
+  Mobile-first / OAuth / Search / Pipeline / Websets
+
+AI intelligence layer
+  Claude AI
+  Exa + Websets
+  Parallel.ai
+  GitHub API
+  Harmonic API
+
+Data + infrastructure
+  Supabase
+  Auth / RLS / Pipeline
+  Vercel
+  Stripe
+
+Builder score
+  Commit history
+  Repository quality
+  Contribution graphs
+  Role-weighted evaluation</pre>
+        </div>
+
+        <div class="legend-list">
+          <div class="legend-item">
+            <strong>Exa API</strong>
+            <span>Research, search, answer, findSimilar, and Websets for persistent collections and enrichment.</span>
+          </div>
+          <div class="legend-item">
+            <strong>Parallel API</strong>
+            <span>Task execution, FindAll discovery, and content-aware search across companies and engineering ecosystems.</span>
+          </div>
+          <div class="legend-item">
+            <strong>GitHub API + Builder Score</strong>
+            <span>Commits, contributors, graphs, and code quality analysis translated into role-relevant scoring.</span>
+          </div>
+          <div class="legend-item">
+            <strong>Harmonic API</strong>
+            <span>Company metadata, founder context, startup relationships, and enrichment for target-market mapping.</span>
+          </div>
+        </div>
       </div>
-      <div class="card">
-        <div class="card-title">CSV Export</div>
-        <div class="card-body">Export your results or pipeline at any time. Take your candidate data into your ATS, spreadsheets, or any other tool.</div>
+    </section>
+
+    <section id="recipes" class="fade-in">
+      <div class="section-header">
+        <div>
+          <h2>Webset recipes + operating notes</h2>
+          <p>Use tightly scoped criteria and then broaden only after the evidence framework is correct.</p>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <!-- EXA WEBSETS -->
-  <div class="section-tight">
-    <div class="section-label">EXA WEBSETS <span class="badge-new">NEW IN V2.0</span></div>
-    <div class="section-heading">Exa Websets: Persistent Candidate Collections</div>
-    <p class="body-text-sm mb-8">Websets are persistent, auto-updating candidate collections powered by Exa's neural search. Define your criteria once and get new matches continuously as new contributors emerge. v2.0 adds Import (bulk ingest from external lists) and webhook Notify (real-time pipeline sync).</p>
-    <div class="card-row">
-      <div class="card">
-        <div class="card-title">Create + Search + Enrich</div>
-        <div class="card-body">Build a Webset from any search or scratch. Define entity type, query, and criteria. Auto-enrich with company, role, LinkedIn, GitHub, and languages.</div>
+      <div class="grid-4">
+        <div class="mini-card">
+          <h3>ML infra engineer</h3>
+          <p>Top PyTorch, JAX, DeepSpeed, and systems contributors. Enrich with talks, stars, and company context.</p>
+        </div>
+        <div class="mini-card">
+          <h3>Robotics software</h3>
+          <p>ROS maintainers, Isaac contributors, and applied robotics OSS builders with verified shipped systems.</p>
+        </div>
+        <div class="mini-card">
+          <h3>Staff frontend</h3>
+          <p>Core React, Vue, and design-system contributors with production ownership and architectural depth.</p>
+        </div>
+        <div class="mini-card">
+          <h3>Security engineer</h3>
+          <p>DEF CON, Black Hat, bug bounty, CVE, and respected advisory signals with strong technical writing.</p>
+        </div>
       </div>
-      <div class="card">
-        <div class="card-title">Monitor + Import</div>
-        <div class="card-body">Schedule auto-updates for new matches. Import bulk candidates from external CSV/lists. Both paths feed the same verified collection.</div>
+
+      <div class="section-spacer"></div>
+
+      <div class="grid-4">
+        <div class="mini-card">
+          <h3>Be specific with titles</h3>
+          <p>“ML infrastructure engineer focused on training pipelines” beats “ML engineer.”</p>
+        </div>
+        <div class="mini-card">
+          <h3>Edit the repo list</h3>
+          <p>The repo list is the single biggest lever for result quality. Tighten it first.</p>
+        </div>
+        <div class="mini-card">
+          <h3>Target hidden gems</h3>
+          <p>High contributions with lower follower counts often surface stronger and less recruited talent.</p>
+        </div>
+        <div class="mini-card">
+          <h3>Layer enrichments later</h3>
+          <p>Let the Webset verify matches first, then add contact data, publications, and company context.</p>
+        </div>
       </div>
-      <div class="card">
-        <div class="card-title">Notify (Webhooks)</div>
-        <div class="card-body">Real-time webhook events fire when new candidates enter a Webset. Push matches directly to your pipeline or external ATS without polling.</div>
+    </section>
+
+    <footer>
+      <div class="footer-bar">
+        <div>SourceKit guide • updated with Harmonic integration</div>
+        <div>getsourcekit.vercel.app</div>
       </div>
-    </div>
-  </div>
+    </footer>
+  </main>
 
-</div>
+  <script>
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const panels = document.querySelectorAll('.tab-panel');
 
-<!-- ==================== PAGE 4: BETA TESTING + PRO TIPS + LIMITATIONS ==================== -->
-<div class="page">
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => {
+          b.classList.remove('is-active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        panels.forEach(p => p.classList.remove('is-active'));
 
-  <!-- BETA TESTING -->
-  <div class="section">
-    <div class="section-label">BETA TESTING</div>
-    <div class="section-heading-sm">What to Test</div>
-    <div>
-      <div class="checklist-item"><span class="checklist-num">1.</span> <span class="checklist-title">Sign In</span> — Log in with Google at getsourcekit.vercel.app</div>
-      <div class="checklist-item"><span class="checklist-num">2.</span> <span class="checklist-title">Build a Strategy</span> — Try all three input paths: role + company, pasted JD, or job URL</div>
-      <div class="checklist-item"><span class="checklist-num">3.</span> <span class="checklist-title">Edit and Run the Search</span> — Review the AI-generated repo list. Add, remove, or rearrange, then run the search.</div>
-      <div class="checklist-item"><span class="checklist-num">4.</span> <span class="checklist-title">Filter Results</span> — Narrow by language, minimum commits, star count, and location</div>
-      <div class="checklist-item"><span class="checklist-num">5.</span> <span class="checklist-title">Review Candidates</span> — Check candidate cards and scores. Click into profiles. Try "Find LinkedIn" and "Enrich" on your top matches.</div>
-      <div class="checklist-item"><span class="checklist-num">6.</span> <span class="checklist-title">Test Exa Websets</span> — Create a Webset from search results. Add criteria. Check enrichment data. Set up monitoring.</div>
-      <div class="checklist-item"><span class="checklist-num">7.</span> <span class="checklist-title">Pipeline and Bulk Actions</span> — Add candidates to the pipeline. Drag between stages. Select multiple for compare, summarize, and outreach.</div>
-      <div class="checklist-item"><span class="checklist-num">8.</span> <span class="checklist-title">Export to CSV</span> — Export and verify that the data looks clean and complete</div>
-    </div>
-  </div>
+        btn.classList.add('is-active');
+        btn.setAttribute('aria-selected', 'true');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('is-active');
+      });
+    });
 
-  <!-- PRO TIPS -->
-  <div class="section">
-    <div class="section-label">PRO TIPS</div>
-    <div class="section-heading-sm">Best Practices</div>
-    <div class="tip">
-      <div class="tip-title">1. Be Specific With Titles</div>
-      <div class="tip-body">Use "ML Infrastructure Engineer focused on training pipelines" instead of just "ML Engineer." Specificity dramatically improves repo targeting and result quality.</div>
-    </div>
-    <div class="tip">
-      <div class="tip-title">2. Always Edit the Repo List</div>
-      <div class="tip-body">The AI-generated suggestions are a starting point. Editing the repo list is the single biggest lever you have for improving result quality.</div>
-    </div>
-    <div class="tip">
-      <div class="tip-title">3. Target Hidden Gems</div>
-      <div class="tip-body">Candidates with high contributions but low follower counts tend to be under-recruited and more responsive to outreach. Prioritize them.</div>
-    </div>
-    <div class="tip">
-      <div class="tip-title">4. Run Multiple Searches</div>
-      <div class="tip-body">Search the same role across different companies to widen your net. Different target companies surface different repo ecosystems and candidate pools.</div>
-    </div>
-    <div class="tip">
-      <div class="tip-title">5. Use Websets for Ongoing Roles</div>
-      <div class="tip-body">For roles you hire repeatedly, set up a Webset with monitoring. New contributors matching your criteria surface automatically.</div>
-    </div>
-  </div>
+    const links = document.querySelectorAll('.nav-link');
+    const sections = [...document.querySelectorAll('main section')];
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          links.forEach(link => link.classList.toggle('is-active', link.getAttribute('href') === '#' + id));
+        }
+      });
+    }, { rootMargin: '-40% 0px -45% 0px', threshold: 0 });
 
-  <!-- GOOD TO KNOW -->
-  <div class="section-tight">
-    <div class="section-label">GOOD TO KNOW</div>
-    <div class="section-heading-sm">Known Limitations</div>
-    <div class="table-wrap mb-10">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:25%;">Limitation</th>
-            <th style="width:30%;">Impact</th>
-            <th style="width:45%;">Workaround</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="text-white" style="font-weight:600;">GitHub-only sourcing</td>
-            <td>Misses engineers not active on GitHub</td>
-            <td>Use alongside LinkedIn Recruiter for full coverage</td>
-          </tr>
-          <tr>
-            <td class="text-white" style="font-weight:600;">Strategy build time (15-20s)</td>
-            <td>Brief wait while AI generates the plan</td>
-            <td>Expected behavior. Full search takes 30-60s.</td>
-          </tr>
-          <tr>
-            <td class="text-white" style="font-weight:600;">JS-rendered job pages</td>
-            <td>Some job URLs may still fail to parse</td>
-            <td>Paste the JD text directly instead of the URL</td>
-          </tr>
-          <tr>
-            <td class="text-white" style="font-weight:600;">LinkedIn URL accuracy</td>
-            <td>Links are AI-matched, not guaranteed</td>
-            <td>Always verify the LinkedIn profile before outreach</td>
-          </tr>
-          <tr>
-            <td class="text-white" style="font-weight:600;">Websets sync latency</td>
-            <td>New monitored matches may take minutes</td>
-            <td>Check back periodically or set monitoring cadence</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="feedback-box">
-      <div class="card-title" style="margin-bottom:4px;">Feedback Welcome</div>
-      <div class="card-body">Bugs, bad searches, confusing UX, missing features, AI quality issues. All fair game. Screenshots help.</div>
-      <div class="card-body mt-6" style="color:var(--text-secondary);">Mike Rubino / michael.f.rubino@gmail.com</div>
-      <div class="card-body mt-6" style="font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--accent);">github.com/mrNLK/SourceProof</div>
-    </div>
-  </div>
+    sections.forEach(section => observer.observe(section));
 
-</div>
+    const fadeObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        }
+      });
+    }, { threshold: 0.12 });
 
+    document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
+  </script>
 </body>
 </html>

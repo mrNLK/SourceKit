@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Zap, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import type { AiFundIntelligenceRun, IntelligenceProvider, IntelligenceRunStatus } from "@/types/ai-fund";
-import { fetchIntelligenceRuns, createIntelligenceRun } from "@/lib/ai-fund";
+import { fetchIntelligenceRuns, createIntelligenceRun, dispatchHarmonicIntelligence } from "@/lib/ai-fund";
 
 interface Props {}
 
@@ -17,6 +17,7 @@ const PROVIDER_LABELS: Record<IntelligenceProvider, string> = {
   parallel: "Parallel Deep Research",
   github: "GitHub API",
   manual: "Manual Import",
+  harmonic: "Harmonic",
 };
 
 export default function IntelligenceTab({}: Props) {
@@ -51,6 +52,24 @@ export default function IntelligenceTab({}: Props) {
     setRuns((prev) => [run, ...prev]);
     setFormQuery("");
     setShowForm(false);
+
+    // Dispatch to harmonic-intelligence edge function
+    if (formProvider === "harmonic") {
+      try {
+        const result = await dispatchHarmonicIntelligence(run.id, formQuery.trim());
+        const updatedRun = result.run as AiFundIntelligenceRun | undefined;
+        if (updatedRun) {
+          setRuns((prev) =>
+            prev.map((r) => (r.id === run.id ? { ...r, status: "completed" as const, resultsCount: (updatedRun as Record<string, unknown>).results_count as number ?? 0 } : r))
+          );
+        }
+      } catch (err) {
+        console.error("Harmonic intelligence dispatch failed:", err);
+        setRuns((prev) =>
+          prev.map((r) => (r.id === run.id ? { ...r, status: "failed" as const } : r))
+        );
+      }
+    }
   };
 
   if (loading) {
@@ -67,7 +86,7 @@ export default function IntelligenceTab({}: Props) {
         <div>
           <h1 className="text-xl font-semibold text-foreground">Intelligence</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            External sourcing runs via Exa, Parallel, and GitHub
+            External sourcing runs via Exa, Parallel, GitHub, and Harmonic
           </p>
         </div>
         <button
@@ -92,6 +111,7 @@ export default function IntelligenceTab({}: Props) {
               <option value="parallel">Parallel Deep Research</option>
               <option value="github">GitHub API</option>
               <option value="manual">Manual Import</option>
+              <option value="harmonic">Harmonic</option>
             </select>
             <input
               type="text"

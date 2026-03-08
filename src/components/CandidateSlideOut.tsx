@@ -143,7 +143,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
         avatar_url: dev.avatarUrl,
         stage: "contacted",
         ...(prePipelineNotes ? { notes: prePipelineNotes } : {}),
-      }, { onConflict: "github_username" });
+      }, { onConflict: "user_id,github_username" });
       // Clean up localStorage notes after migration
       localStorage.removeItem(`sourcekit-notes:${dev.username}`);
       setAddedToPipeline(true);

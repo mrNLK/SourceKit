@@ -255,7 +255,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
       try {
         const { error } = await supabase.from('pipeline').upsert(
           { github_username: dev.username, name: dev.name, avatar_url: dev.avatarUrl, stage: 'contacted' },
-          { onConflict: 'github_username' },
+          { onConflict: 'user_id,github_username' },
         );
         if (!error) { added++; } else { failed++; failedNames.push(dev.username); }
       } catch {

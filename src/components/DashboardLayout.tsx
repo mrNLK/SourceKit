@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Menu, X, Users, Sparkles, Crown, Layers, Sun, Moon, BookOpen, Rocket } from "lucide-react";
+import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Menu, X, Users, Sparkles, Crown, Layers, Sun, Moon, BookOpen } from "lucide-react";
 import { SourceKitMark } from "@/components/brand/SourceKitMark";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWatchlist } from "@/hooks/useWatchlist";
@@ -7,7 +7,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 
-export type ActiveTab = "search" | "research" | "history" | "pipeline" | "watchlist" | "bulk" | "websets" | "ai-fund" | "settings" | "guide";
+export type ActiveTab = "search" | "research" | "history" | "pipeline" | "watchlist" | "bulk" | "websets" | "settings" | "guide";
 
 interface DashboardLayoutProps {
   activeTab: ActiveTab;
@@ -23,7 +23,6 @@ const NAV_ITEMS: { id: ActiveTab; label: string; icon: React.ElementType; tip: s
   { id: "watchlist", label: "Watchlist", icon: Bookmark, tip: "Tracking list for candidates to revisit later" },
   { id: "bulk", label: "Bulk Actions", icon: Users, tip: "AI-powered batch operations on pipeline candidates" },
   { id: "websets", label: "Websets", icon: Layers, tip: "Exa AI-powered candidate websets with verification" },
-  { id: "ai-fund", label: "AI Fund", icon: Rocket, tip: "AI Fund venture creation pipeline" },
   { id: "settings", label: "Settings", icon: Settings, tip: "Configure API keys, webhooks, and integrations" },
   { id: "guide", label: "Guide", icon: BookOpen, tip: "Quick reference for workflows, tips, and features" },
 ];

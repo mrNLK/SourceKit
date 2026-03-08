@@ -41,7 +41,7 @@ const WebsetsTab = () => {
         name: item.title || username,
         avatar_url: '',
         stage: 'contacted',
-      }, { onConflict: 'github_username' })
+      }, { onConflict: 'user_id,github_username' })
       if (error) throw error
       setAddedItems(prev => new Set(prev).add(item.id))
       toast({ title: `${item.title || 'Item'} added to pipeline`, description: 'Added to Contacted stage.' })
@@ -67,7 +67,7 @@ const WebsetsTab = () => {
             name: item.title || username,
             avatar_url: '',
             stage: 'contacted',
-          }, { onConflict: 'github_username' })
+          }, { onConflict: 'user_id,github_username' })
           if (error) throw error
           setAddedItems(prev => new Set(prev).add(item.id))
           added++

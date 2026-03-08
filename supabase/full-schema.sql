@@ -55,53 +55,60 @@ CREATE TRIGGER update_candidates_updated_at
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 
--- 2. Pipeline (kanban board)
+-- 2. Pipeline (kanban board) — user-scoped
 CREATE TABLE public.pipeline (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  github_username TEXT NOT NULL UNIQUE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
+  github_username TEXT NOT NULL,
   name TEXT,
   avatar_url TEXT,
   stage TEXT NOT NULL DEFAULT 'contacted' CHECK (stage IN ('contacted', 'not_interested', 'recruiter_screen', 'rejected', 'moved_to_ats')),
   notes TEXT,
   tags TEXT[] DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  UNIQUE (user_id, github_username)
 );
 
 CREATE INDEX idx_pipeline_github_username ON public.pipeline(github_username);
 CREATE INDEX idx_pipeline_stage ON public.pipeline(stage);
 CREATE INDEX idx_pipeline_tags ON public.pipeline USING GIN (tags);
 CREATE INDEX idx_pipeline_created_at ON public.pipeline(created_at DESC);
+CREATE INDEX idx_pipeline_user_id ON public.pipeline(user_id);
 
 ALTER TABLE public.pipeline ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read pipeline" ON public.pipeline FOR SELECT USING (true);
-CREATE POLICY "Allow public insert pipeline" ON public.pipeline FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update pipeline" ON public.pipeline FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete pipeline" ON public.pipeline FOR DELETE USING (true);
+CREATE POLICY "Users read own pipeline" ON public.pipeline FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own pipeline" ON public.pipeline FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users update own pipeline" ON public.pipeline FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users delete own pipeline" ON public.pipeline FOR DELETE USING (auth.uid() = user_id);
 
 CREATE TRIGGER update_pipeline_updated_at
   BEFORE UPDATE ON public.pipeline
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 
--- 3. Outreach history
+-- 3. Outreach history — user-scoped
 CREATE TABLE public.outreach_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
   candidate_id UUID REFERENCES public.candidates(id) ON DELETE CASCADE,
   pipeline_id UUID REFERENCES public.pipeline(id) ON DELETE CASCADE,
   message TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE INDEX idx_outreach_history_user_id ON public.outreach_history(user_id);
+
 ALTER TABLE public.outreach_history ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read outreach_history" ON public.outreach_history FOR SELECT USING (true);
-CREATE POLICY "Allow public insert outreach_history" ON public.outreach_history FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public delete outreach_history" ON public.outreach_history FOR DELETE USING (true);
+CREATE POLICY "Users read own outreach" ON public.outreach_history FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own outreach" ON public.outreach_history FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users delete own outreach" ON public.outreach_history FOR DELETE USING (auth.uid() = user_id);
 
 
--- 4. Search history
+-- 4. Search history — user-scoped
 CREATE TABLE public.search_history (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
   query TEXT NOT NULL,
   action_type TEXT NOT NULL DEFAULT 'search',
   result_count INTEGER DEFAULT 0,
@@ -110,38 +117,107 @@ CREATE TABLE public.search_history (
 );
 
 CREATE INDEX idx_search_history_created_at ON public.search_history(created_at DESC);
+CREATE INDEX idx_search_history_user_id ON public.search_history(user_id);
 
 ALTER TABLE public.search_history ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read search_history" ON public.search_history FOR SELECT USING (true);
-CREATE POLICY "Allow public insert search_history" ON public.search_history FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public delete search_history" ON public.search_history FOR DELETE USING (true);
+CREATE POLICY "Users read own search_history" ON public.search_history FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own search_history" ON public.search_history FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users delete own search_history" ON public.search_history FOR DELETE USING (auth.uid() = user_id);
 
 
--- 5. Watchlist items
+-- 5. Search results junction table — user-scoped
+CREATE TABLE public.search_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  search_id UUID NOT NULL,
+  candidate_id UUID NOT NULL REFERENCES public.candidates(id) ON DELETE CASCADE,
+  rank INTEGER NOT NULL DEFAULT 0,
+  score INTEGER,
+  summary TEXT,
+  about TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(search_id, candidate_id)
+);
+
+CREATE INDEX idx_search_results_user_id ON public.search_results(user_id);
+CREATE INDEX idx_search_results_search_id ON public.search_results(search_id);
+
+ALTER TABLE public.search_results ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users read own search_results" ON public.search_results FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Service role insert search_results" ON public.search_results FOR INSERT WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Service role update search_results" ON public.search_results FOR UPDATE USING (auth.role() = 'service_role');
+CREATE POLICY "Service role delete search_results" ON public.search_results FOR DELETE USING (auth.role() = 'service_role');
+
+
+-- 6. Watchlist items — user-scoped
 CREATE TABLE public.watchlist_items (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
   candidate_username TEXT NOT NULL,
   candidate_name TEXT,
   candidate_avatar_url TEXT,
   list_name TEXT NOT NULL DEFAULT 'Default',
   notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (candidate_username, list_name)
+  UNIQUE (user_id, candidate_username, list_name)
 );
 
 CREATE INDEX idx_watchlist_items_candidate_username ON public.watchlist_items(candidate_username);
+CREATE INDEX idx_watchlist_items_user_id ON public.watchlist_items(user_id);
 
 ALTER TABLE public.watchlist_items ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read watchlist_items" ON public.watchlist_items FOR SELECT USING (true);
-CREATE POLICY "Allow public insert watchlist_items" ON public.watchlist_items FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public delete watchlist_items" ON public.watchlist_items FOR DELETE USING (true);
-CREATE POLICY "Allow public update watchlist_items" ON public.watchlist_items FOR UPDATE USING (true);
+CREATE POLICY "Users read own watchlist" ON public.watchlist_items FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own watchlist" ON public.watchlist_items FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users delete own watchlist" ON public.watchlist_items FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users update own watchlist" ON public.watchlist_items FOR UPDATE USING (auth.uid() = user_id);
 
 
--- 6. Settings (key-value store)
+-- 7. Saved searches — user-scoped
+CREATE TABLE public.saved_searches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
+  name TEXT NOT NULL,
+  query TEXT NOT NULL,
+  expanded_query TEXT,
+  filters JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_saved_searches_user_id ON public.saved_searches(user_id);
+
+ALTER TABLE public.saved_searches ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users read own saved_searches" ON public.saved_searches FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own saved_searches" ON public.saved_searches FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users delete own saved_searches" ON public.saved_searches FOR DELETE USING (auth.uid() = user_id);
+
+
+-- 8. Pipeline events — user-scoped
+CREATE TABLE public.pipeline_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
+  pipeline_id UUID REFERENCES public.pipeline(id) ON DELETE CASCADE,
+  github_username TEXT NOT NULL,
+  candidate_name TEXT,
+  from_stage TEXT,
+  to_stage TEXT NOT NULL,
+  event_type TEXT NOT NULL DEFAULT 'stage_change',
+  webhook_status TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_pipeline_events_user_id ON public.pipeline_events(user_id);
+
+ALTER TABLE public.pipeline_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users read own pipeline_events" ON public.pipeline_events FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own pipeline_events" ON public.pipeline_events FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Service role all pipeline_events" ON public.pipeline_events FOR ALL USING (auth.role() = 'service_role');
+
+
+-- 9. Settings (key-value store) — already user-scoped via user_id
 CREATE TABLE public.settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL DEFAULT '',
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -158,7 +234,7 @@ CREATE TRIGGER update_settings_updated_at
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 
--- 7. User subscriptions (for Stripe gating)
+-- 10. User subscriptions (for Stripe gating)
 CREATE TABLE public.user_subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID UNIQUE NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -192,7 +268,7 @@ CREATE TRIGGER on_auth_user_created_subscription
   FOR EACH ROW EXECUTE FUNCTION handle_new_user_subscription();
 
 
--- 8. Atomic search increment RPC
+-- 11. Atomic search increment RPC
 CREATE OR REPLACE FUNCTION increment_searches_used(p_user_id UUID)
 RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN

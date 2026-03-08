@@ -78,7 +78,7 @@ export type IntelligenceRunStatus =
   | "completed"
   | "failed";
 
-export type IntelligenceProvider = "exa" | "parallel" | "github" | "manual";
+export type IntelligenceProvider = "exa" | "parallel" | "github" | "manual" | "harmonic";
 
 // ---------------------------------------------------------------------------
 // Core Entities

@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { anthropicCall } from "../_shared/anthropic.ts";
 import { checkSearchGate, incrementSearchCount } from "../_shared/gate.ts";
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { githubFetch, getTokenCount } from '../_shared/github.ts';
 
 const GITHUB_API = "https://api.github.com";
 const EXA_API = "https://api.exa.ai/search";
@@ -13,56 +14,6 @@ function getSupabase() {
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
-}
-
-const MAX_RETRIES = 3;
-
-async function githubFetch(url: string, attempt = 0): Promise<any> {
-  const headers: Record<string, string> = {
-    'Accept': 'application/vnd.github.v3+json',
-    'User-Agent': 'SourceKit-App',
-  };
-  const token = Deno.env.get('GITHUB_TOKEN');
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  const res = await fetch(url, { headers });
-
-  if (res.status === 403 || res.status === 429) {
-    const remaining = res.headers.get('x-ratelimit-remaining');
-    if (remaining === '0' || res.status === 429) {
-      if (attempt >= MAX_RETRIES) {
-        const resetHeader = res.headers.get('x-ratelimit-reset');
-        const retryAfter = resetHeader ? Math.max(Math.ceil((parseInt(resetHeader, 10) * 1000 - Date.now()) / 1000), 10) : 60;
-        const err = new Error('RATE_LIMITED');
-        (err as any).retryAfterSeconds = retryAfter;
-        throw err;
-      }
-
-      // Calculate wait: use reset header if available, else exponential backoff
-      const resetHeader = res.headers.get('x-ratelimit-reset');
-      let waitMs: number;
-      if (resetHeader) {
-        const resetTime = parseInt(resetHeader, 10) * 1000;
-        waitMs = Math.max(resetTime - Date.now(), 1000);
-        // Cap at 60s to avoid absurdly long waits
-        waitMs = Math.min(waitMs, 60000);
-      } else {
-        waitMs = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
-      }
-      // Add jitter (0-500ms)
-      waitMs += Math.random() * 500;
-
-      console.log(`GitHub rate limited, retry ${attempt + 1}/${MAX_RETRIES} in ${Math.round(waitMs)}ms`);
-      await new Promise(r => setTimeout(r, waitMs));
-      return githubFetch(url, attempt + 1);
-    }
-  }
-
-  if (!res.ok) {
-    console.error(`GitHub API error: ${res.status} for ${url}`);
-    return null;
-  }
-  return res.json();
 }
 
 async function hashQuery(query: string): Promise<string> {
@@ -598,6 +549,7 @@ serve(async (req) => {
     const t0 = Date.now();
     const searchId = crypto.randomUUID();
     const queryHash = await hashQuery(query);
+    console.log(`[github-search] GitHub token pool: ${getTokenCount()} token(s)`);
 
     // FEAT-008: SSE streaming helper
     let sseController: ReadableStreamDefaultController<Uint8Array> | null = null;
@@ -764,6 +716,9 @@ serve(async (req) => {
                 candidate_id: candidateId,
                 rank: idx,
                 score: c.score || 0,
+                user_id: gate.userId,
+                summary: c.summary || null,
+                about: c.about || null,
               };
             })
             .filter(Boolean);

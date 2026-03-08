@@ -1,24 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { githubFetch } from '../_shared/github.ts';
 
 const GITHUB_API = "https://api.github.com";
-
-async function githubFetch(url: string) {
-  const headers: Record<string, string> = {
-    'Accept': 'application/vnd.github.v3+json',
-    'User-Agent': 'SourceKit-App',
-  };
-  const token = Deno.env.get('GITHUB_TOKEN');
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  const res = await fetch(url, { headers });
-  if (!res.ok) {
-    console.error(`GitHub API error: ${res.status} for ${url}`);
-    return null;
-  }
-  return res.json();
-}
 
 const langColors: Record<string, string> = {
   JavaScript: "hsl(50, 90%, 50%)",

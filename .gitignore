@@ -36,3 +36,6 @@ supabase/.temp/
 *.sln
 *.sw?
 SourceProof.zip
+
+# Local Netlify folder
+.netlify

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+
+  <!-- left bracket -->
+  <path d="M88 72 L56 128 L88 184" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" fill="none"></path>
+
+  <!-- right bracket -->
+  <path d="M168 72 L200 128 L168 184" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" fill="none"></path>
+
+  <!-- focus marks -->
+  <line x1="128" y1="88" x2="128" y2="64" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"></line>
+
+  <line x1="128" y1="192" x2="128" y2="168" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"></line>
+
+  <!-- center node -->
+  <circle cx="128" cy="128" r="10" fill="#00E5A0"></circle>
+
+</svg>

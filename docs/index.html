@@ -3,1474 +3,1078 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SourceKit - Find engineers by what they build</title>
+<title>SourceKit Docs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --accent: #00E5A0;
-    --accent-strong: #00C896;
-    --accent-subtle: rgba(0,229,160,0.08);
-    --accent-bg: rgba(0,229,160,0.06);
-    --accent-border: rgba(0,229,160,0.22);
-    --accent-warm: #00E5A0;
-    --bg: #0A0A0F;
-    --bg-elevated: #111116;
-    --bg-card: #15151B;
-    --white: #FFFFFF;
-    --body: #E0E0E0;
-    --secondary: #A1A1AA;
-    --muted: #6B7280;
-    --border: #1F1F26;
-    --border-focus: #00E5A0;
-    --blue: #3b82f6;
-    --blue-bg: rgba(59,130,246,0.06);
-    --blue-border: rgba(59,130,246,0.22);
-    --purple: #a855f7;
-    --purple-bg: rgba(168,85,247,0.06);
-    --purple-border: rgba(168,85,247,0.22);
-    --orange: #f59e0b;
-    --orange-bg: rgba(245,158,11,0.06);
-    --orange-border: rgba(245,158,11,0.22);
-    --red: #ef4444;
-    --red-bg: rgba(239,68,68,0.06);
-    --red-border: rgba(239,68,68,0.22);
-    --cyan: #06b6d4;
-    --cyan-bg: rgba(6,182,212,0.06);
-    --cyan-border: rgba(6,182,212,0.22);
-    --pink: #ec4899;
-    --pink-bg: rgba(236,72,153,0.06);
-    --pink-border: rgba(236,72,153,0.22);
-    --radius: 10px;
-    --radius-lg: 22px;
-    --shadow-soft: 0 26px 80px rgba(0, 0, 0, 0.34);
-    --shadow-card: 0 18px 38px rgba(0, 0, 0, 0.22);
-    --surface-top: rgba(18, 18, 24, 0.94);
-    --surface-bottom: rgba(10, 10, 15, 0.96);
+    --bg: #f4efe7;
+    --bg-cream: #fbf8f2;
+    --ink: #10212b;
+    --ink-soft: #50636e;
+    --line: rgba(16, 33, 43, 0.12);
+    --line-strong: rgba(16, 33, 43, 0.22);
+    --teal: #1ec9b1;
+    --teal-deep: #0e6f65;
+    --navy: #17374a;
+    --gold: #d7b36a;
+    --rose: #da8f7b;
+    --coral: #ff6b57;
+    --card: rgba(255, 255, 255, 0.72);
+    --card-strong: rgba(255, 255, 255, 0.9);
+    --shadow: 0 28px 70px rgba(44, 38, 29, 0.12);
+    --radius-xl: 34px;
+    --radius-lg: 24px;
+    --radius-md: 18px;
+    --radius-sm: 14px;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html {
-    scroll-behavior: smooth;
-  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
   body {
     min-height: 100vh;
     background:
-      radial-gradient(circle at 10% 0%, rgba(0,229,160,0.10), transparent 24%),
-      radial-gradient(circle at 100% 10%, rgba(59,130,246,0.08), transparent 22%),
-      radial-gradient(circle at 50% 100%, rgba(0,229,160,0.04), transparent 26%),
-      linear-gradient(180deg, #0A0A0F 0%, #0E0E14 48%, #08080D 100%);
-    color: var(--body);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
+      radial-gradient(circle at top left, rgba(30, 201, 177, 0.12), transparent 26%),
+      radial-gradient(circle at 100% 10%, rgba(215, 179, 106, 0.14), transparent 24%),
+      linear-gradient(180deg, #f8f3ea 0%, #f2ece4 100%);
+    color: var(--ink);
+    font-family: "Sora", sans-serif;
     line-height: 1.55;
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-    overflow-x: hidden;
-    padding: max(18px, env(safe-area-inset-top)) 0 max(24px, env(safe-area-inset-bottom));
+    padding: 16px 0 26px;
   }
+
+  img { display: block; max-width: 100%; }
+  a { color: inherit; }
+
   .page {
-    position: relative;
-    max-width: 1180px;
-    width: 100%;
+    width: min(1380px, calc(100% - 28px));
     margin: 0 auto;
-    padding: clamp(18px, 3vw, 32px) clamp(16px, 4vw, 44px) clamp(28px, 4vw, 40px);
-    background: linear-gradient(180deg, rgba(18, 18, 24, 0.82) 0%, rgba(12, 12, 17, 0.92) 100%);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: clamp(20px, 3vw, 30px);
-    box-shadow: var(--shadow-soft);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .sidebar,
+  .panel {
     backdrop-filter: blur(14px);
-  }
-  .page::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background:
-      linear-gradient(135deg, rgba(255,255,255,0.05), transparent 28%),
-      linear-gradient(180deg, rgba(0,229,160,0.04), transparent 45%);
-  }
-  .page > * {
-    position: relative;
-    z-index: 1;
-  }
-  svg, img {
-    max-width: 100%;
-    height: auto;
+    box-shadow: var(--shadow);
   }
 
-  /* Typography */
-  .label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--accent-strong);
-    margin-bottom: 12px;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .label::after {
-    content: '';
-    width: 48px;
-    height: 1px;
-    background: linear-gradient(90deg, rgba(0,229,160,0.8), rgba(0,229,160,0));
-  }
-  .heading {
-    font-family: 'DM Sans', sans-serif;
-    font-size: clamp(18px, 2vw, 24px);
-    font-weight: 700;
-    color: var(--white);
-    margin-bottom: 8px;
-    line-height: 1.3;
-  }
-  .section { margin-bottom: 28px; }
-  .section-tight {
-    margin-bottom: clamp(22px, 3vw, 30px);
-    padding: clamp(18px, 2.6vw, 24px);
-    border-radius: 24px;
-    border: 1px solid rgba(255,255,255,0.06);
-    background:
-      linear-gradient(180deg, rgba(20, 31, 42, 0.84) 0%, rgba(12, 20, 29, 0.9) 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
-  }
-  .body-sm { font-size: 14px; color: var(--body); line-height: 1.65; max-width: 66ch; }
-
-  /* Standard card */
-  .card {
-    background: linear-gradient(180deg, rgba(24, 37, 49, 0.92) 0%, rgba(15, 24, 34, 0.96) 100%);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 16px;
-    padding: 14px 16px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
-    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-  }
-  .card-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--accent);
-    margin-bottom: 4px;
-  }
-  .card-body {
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--body);
-  }
-  .card:hover,
-  .card-hl:hover,
-  .card-blue:hover,
-  .card-purple:hover,
-  .card-orange:hover,
-  .card-cyan:hover,
-  .ef-card:hover,
-  .api-group-card:hover,
-  .arch-box:hover {
-    transform: translateY(-2px);
-    border-color: rgba(0,229,160,0.22);
-    box-shadow: var(--shadow-card);
+  .sidebar {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    padding: 24px 20px;
+    border-radius: var(--radius-xl);
+    background: linear-gradient(180deg, rgba(255,255,255,0.76), rgba(255,255,255,0.58));
+    border: 1px solid rgba(255,255,255,0.58);
   }
 
-  /* Highlighted card */
-  .card-hl {
-    background: linear-gradient(180deg, rgba(0,229,160,0.12) 0%, rgba(0,229,160,0.04) 100%);
-    border: 1px solid var(--accent-border);
-    border-radius: 16px;
-    padding: 14px 16px;
-    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-  }
-  .card-hl .card-title { color: var(--accent); }
-
-  /* Color-coded cards */
-  .card-blue { background: linear-gradient(180deg, rgba(59,130,246,0.1) 0%, rgba(59,130,246,0.03) 100%); border: 1px solid var(--blue-border); border-radius: 16px; padding: 14px 16px; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
-  .card-blue .card-title { color: var(--blue); }
-  .card-purple { background: linear-gradient(180deg, rgba(168,85,247,0.1) 0%, rgba(168,85,247,0.03) 100%); border: 1px solid var(--purple-border); border-radius: 16px; padding: 14px 16px; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
-  .card-purple .card-title { color: var(--purple); }
-  .card-orange { background: linear-gradient(180deg, rgba(245,158,11,0.1) 0%, rgba(245,158,11,0.03) 100%); border: 1px solid var(--orange-border); border-radius: 16px; padding: 14px 16px; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
-  .card-orange .card-title { color: var(--orange); }
-  .card-cyan { background: linear-gradient(180deg, rgba(6,182,212,0.1) 0%, rgba(6,182,212,0.03) 100%); border: 1px solid var(--cyan-border); border-radius: 16px; padding: 14px 16px; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
-  .card-cyan .card-title { color: var(--cyan); }
-
-  /* Workflow */
-  .workflow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: stretch;
-    gap: 8px;
-  }
-  .wf-step {
-    flex: 1;
-    background: linear-gradient(180deg, rgba(24, 37, 49, 0.96) 0%, rgba(15, 24, 34, 0.98) 100%);
-    border: 1px solid rgba(255,255,255,0.06);
-    padding: 14px 16px;
-    text-align: center;
-    min-width: 0;
-    border-radius: 18px !important;
-  }
-  .wf-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--accent);
-    margin-bottom: 3px;
-    opacity: 0.7;
-  }
-  .wf-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--white);
-    margin-bottom: 3px;
-  }
-  .wf-desc {
-    font-size: 12px;
-    color: var(--secondary);
-    line-height: 1.4;
-  }
-  .wf-arrow {
-    width: 20px;
+  .brand {
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: var(--accent-warm);
-    font-size: 14px;
-    flex-shrink: 0;
-    opacity: 0.75;
+    gap: 14px;
+    margin-bottom: 26px;
   }
 
-  /* Badges / Pills */
-  .badge {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    color: var(--accent);
-    border: 1px solid var(--accent);
-    border-radius: 100px;
-    padding: 3px 10px;
-  }
-  .pill-accent {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    color: #082019;
-    background: linear-gradient(135deg, var(--accent-strong), var(--accent));
-    border-radius: 100px;
-    padding: 2px 10px;
-  }
-  .pill-blue {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    color: var(--blue);
-    background: var(--blue-bg);
-    border: 1px solid var(--blue-border);
-    border-radius: 100px;
-    padding: 3px 10px;
-  }
-  .pill-purple {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    color: var(--purple);
-    background: var(--purple-bg);
-    border: 1px solid var(--purple-border);
-    border-radius: 100px;
-    padding: 3px 10px;
-  }
-  .pill-orange {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    color: var(--orange);
-    background: var(--orange-bg);
-    border: 1px solid var(--orange-border);
-    border-radius: 100px;
-    padding: 3px 10px;
+  .brand img {
+    width: 44px;
+    height: 44px;
   }
 
-  /* Architecture */
-  .arch-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--accent);
-    margin-bottom: 6px;
-  }
-  .arch-box {
-    flex: 1;
-    background: linear-gradient(180deg, rgba(0,229,160,0.08) 0%, rgba(255,255,255,0.03) 100%);
-    border: 1px solid var(--accent-border);
-    border-radius: 14px;
-    padding: 10px 12px;
-    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-  }
-  .arch-box-name {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--white);
-    margin-bottom: 2px;
-  }
-  .arch-box-desc {
-    font-size: 11px;
-    color: var(--secondary);
-    line-height: 1.35;
-  }
-
-  /* API cards */
-  .api-endpoint {
-    font-size: 12px;
-    line-height: 1.7;
-    color: var(--body);
-  }
-  .api-key {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 600;
-  }
-  .api-key-blue { color: var(--blue); }
-  .api-key-purple { color: var(--purple); }
-  .api-key-orange { color: var(--orange); }
-
-  /* Pipeline track */
-  .pipeline-track {
-    display: flex;
-    align-items: center;
-    position: relative;
-    padding: 12px 8px;
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(15, 24, 34, 0.72), rgba(15, 24, 34, 0.35));
-    border: 1px solid rgba(255,255,255,0.05);
-  }
-  .pipeline-track::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, rgba(0,229,160,0.95), rgba(0,229,160,0.2));
-    transform: translateY(-50%);
-    z-index: 0;
-  }
-  .stage-node {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-  }
-  .stage-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--accent);
-    border: 2px solid var(--bg);
-    box-shadow: 0 0 0 2px var(--accent);
-    margin-bottom: 8px;
-  }
-  .stage-node:first-child .stage-dot {
-    width: 14px;
-    height: 14px;
-    box-shadow: 0 0 0 2px var(--accent), 0 0 12px rgba(0,229,160,0.3);
-  }
-  .stage-name {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--white);
-    white-space: nowrap;
-    letter-spacing: 0.02em;
-  }
-  .pipeline-note {
-    font-size: 13px;
-    color: var(--secondary);
-    margin-top: 10px;
-  }
-
-  /* Divider */
-  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
-  .section-muted {
-    background: linear-gradient(180deg, rgba(16, 24, 33, 0.6) 0%, rgba(10, 16, 23, 0.72) 100%);
-    border-color: rgba(255,255,255,0.04);
-  }
-  .lede-grid {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr;
-    gap: 12px;
-  }
-  .lede-card {
-    padding: 16px 18px;
-    border-radius: 18px;
-    border: 1px solid rgba(255,255,255,0.06);
-    background: linear-gradient(180deg, rgba(24, 37, 49, 0.9), rgba(14, 22, 31, 0.96));
-  }
-  .lede-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--white);
-    margin-bottom: 6px;
-  }
-  .lede-copy {
-    font-size: 13px;
-    color: var(--secondary);
-    line-height: 1.6;
-  }
-  .lede-eyebrow {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--accent-warm);
-    margin-bottom: 10px;
-  }
-
-  /* Grid helpers */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
-  .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-  .eea-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .tips-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-
-  /* Builder Score bars */
-  .builder-bars { display: flex; gap: 5px; align-items: stretch; height: 56px; }
-  .builder-bar {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    border-radius: 12px;
-  }
-  .builder-bar-pct {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
-    font-weight: 700;
+  .brand-title {
+    font-size: 21px;
+    font-weight: 800;
     line-height: 1;
   }
-  .builder-bar-label {
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
 
-  /* Signal pills row */
-  .signal-pills { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
-  .signal-pill {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    padding: 5px 10px;
-    border-radius: 100px;
-  }
-
-  /* EEA split layout */
-  .eea-split { display: flex; gap: 20px; align-items: flex-start; }
-  .eea-left { flex: 1; min-width: 0; }
-  .eea-right { flex: 1; min-width: 0; }
-
-  /* Webset split */
-  .webset-split { display: flex; gap: 20px; align-items: flex-start; }
-  .webset-intro { flex: 1; min-width: 0; }
-  .webset-cards { flex: 2; min-width: 0; }
-
-  /* Architecture flow */
-  .arch-flow { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-  .arch-section { flex: 1; min-width: 0; }
-  .arch-section-wide { flex: 2.5; min-width: 0; }
-  .arch-section-mid { flex: 1.8; min-width: 0; }
-  .arch-arrow-icon { color: var(--accent); font-size: 14px; opacity: 0.5; flex-shrink: 0; }
-  .arch-inner-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-  .arch-inner-grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
-  .arch-inner-grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 5px; }
-
-  /* API grid */
-  .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .api-group-card {
-    border-radius: 16px;
-    padding: 14px 16px;
-    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-  }
-  .api-group-card.blue { background: linear-gradient(180deg, rgba(59,130,246,0.08), rgba(59,130,246,0.03)); border: 1px solid rgba(59,130,246,0.18); }
-  .api-group-card.purple { background: linear-gradient(180deg, rgba(168,85,247,0.08), rgba(168,85,247,0.03)); border: 1px solid rgba(168,85,247,0.18); }
-  .api-group-card.orange { background: linear-gradient(180deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03)); border: 1px solid rgba(245,158,11,0.18); }
-
-  /* Hero */
-  .hero {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 28px;
-    margin-bottom: 22px;
-    padding: clamp(22px, 3vw, 32px);
-    border-radius: 28px;
-    border: 1px solid rgba(255,255,255,0.08);
-    background:
-      radial-gradient(circle at top right, rgba(0,229,160,0.12), transparent 24%),
-      radial-gradient(circle at top left, rgba(0,229,160,0.12), transparent 24%),
-      linear-gradient(180deg, rgba(20, 20, 28, 0.96) 0%, rgba(12, 12, 17, 0.96) 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 44px rgba(0,0,0,0.2);
-  }
-  .hero-left { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
-  .hero-wordmark { font-family: 'DM Sans', sans-serif; font-size: clamp(32px, 5vw, 48px); line-height: 0.95; letter-spacing: -1px; }
-  .hero-url { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); margin-top: 6px; letter-spacing: 0.5px; word-break: break-word; }
-  .hero-copy {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 10px;
-  }
-  .hero-kicker {
-    font-family: 'JetBrains Mono', monospace;
+  .brand-subtitle {
+    margin-top: 5px;
+    font-family: "IBM Plex Mono", monospace;
     font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: 0.08em;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--accent-warm);
+    color: var(--teal-deep);
   }
-  .hero-tagline { text-align: right; font-family: 'DM Sans', sans-serif; font-size: clamp(24px, 3.2vw, 38px); font-weight: 600; color: var(--white); line-height: 1.05; max-width: 13ch; }
-  .hero-subtitle {
-    text-align: right;
-    max-width: 48ch;
-    font-size: 14px;
-    color: var(--secondary);
-    line-height: 1.65;
+
+  .sidebar-block + .sidebar-block {
+    margin-top: 22px;
   }
-  .hero-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 4px;
-  }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 42px;
-    padding: 0 16px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.1);
-    color: var(--white);
-    text-decoration: none;
-    font-size: 13px;
+
+  .sidebar-label {
+    margin-bottom: 12px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.02em;
-    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--teal-deep);
   }
-  .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-card);
-  }
-  .btn-primary {
-    color: #082019;
-    background: linear-gradient(135deg, var(--accent-strong), var(--accent));
-    border-color: rgba(0,229,160,0.35);
-  }
-  .btn-secondary {
-    background: rgba(255,255,255,0.03);
-  }
-  .hero-proof {
+
+  .nav {
     display: flex;
-    justify-content: flex-end;
+    flex-direction: column;
     gap: 8px;
-    flex-wrap: wrap;
   }
-  .hero-proof-item {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--secondary);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 999px;
-    padding: 5px 10px;
-    background: rgba(255,255,255,0.02);
+
+  .nav a {
+    text-decoration: none;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: var(--ink-soft);
+    transition: transform 160ms ease, background 160ms ease, color 160ms ease;
   }
-  .process-shell {
+
+  .nav a:hover {
+    transform: translateX(2px);
+    background: rgba(255,255,255,0.72);
+    color: var(--ink);
+  }
+
+  .sidebar-card {
+    padding: 16px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(255,255,255,0.64);
+  }
+
+  .sidebar-card strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .sidebar-card p {
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  .content {
     display: flex;
     flex-direction: column;
     gap: 18px;
   }
-  .process-head {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
+
+  .panel {
+    padding: 26px;
+    border-radius: var(--radius-xl);
+    background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.62));
+    border: 1px solid rgba(255,255,255,0.62);
   }
-  .process-title {
-    font-size: clamp(24px, 3vw, 34px);
-    line-height: 1.05;
-    color: var(--white);
-    max-width: 14ch;
-  }
-  .process-copy {
-    max-width: 56ch;
-    font-size: 14px;
-    color: var(--secondary);
-    line-height: 1.65;
-  }
-  .process-map {
+
+  .hero {
+    overflow: hidden;
     position: relative;
+    padding: 30px;
+    background:
+      radial-gradient(circle at top right, rgba(30, 201, 177, 0.18), transparent 22%),
+      radial-gradient(circle at 10% 10%, rgba(215, 179, 106, 0.18), transparent 22%),
+      linear-gradient(135deg, #163548 0%, #102734 52%, #0f2028 100%);
+    color: #f7fbfb;
+  }
+
+  .hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,0.04), transparent 30%),
+      linear-gradient(180deg, transparent 72%, rgba(255,255,255,0.04));
+    pointer-events: none;
+  }
+
+  .hero-top,
+  .section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+  }
+
+  .hero h1 {
+    margin-top: 14px;
+    font-size: clamp(38px, 6vw, 72px);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+    max-width: 9ch;
+  }
+
+  .hero p {
+    max-width: 52ch;
+    margin-top: 18px;
+    color: rgba(247, 251, 251, 0.76);
+    font-size: 15px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 22px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.16);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+    transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #b9ffeb, #69e6cc);
+    color: #0d2a2c;
+    border-color: transparent;
+  }
+
+  .btn-secondary {
+    background: rgba(255,255,255,0.06);
+    color: #f7fbfb;
+  }
+
+  .hero-note {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(320px, 100%);
+    padding: 18px;
+    border-radius: 22px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+
+  .hero-note strong {
+    font-size: 14px;
+  }
+
+  .hero-note p {
+    margin: 0;
+    color: rgba(247, 251, 251, 0.72);
+    font-size: 13px;
+  }
+
+  .hero-stats {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  .hero-stat {
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .hero-stat strong {
+    display: block;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 28px;
+    line-height: 1;
+    color: #aef9ea;
+  }
+
+  .hero-stat span {
+    display: block;
+    margin-top: 8px;
+    font-size: 11px;
+    color: rgba(247, 251, 251, 0.68);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .section-head {
+    margin-bottom: 18px;
+  }
+
+  .section-title {
+    margin-top: 10px;
+    font-size: clamp(26px, 4vw, 44px);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    max-width: 10ch;
+  }
+
+  .section-copy {
+    max-width: 52ch;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  .editorial-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 12px;
+  }
+
+  .editorial-card {
+    padding: 18px;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.62);
+    background: rgba(255,255,255,0.66);
+  }
+
+  .editorial-card h3 {
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+
+  .editorial-card p {
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  .process-board {
+    padding: 18px;
+    border-radius: 28px;
+    background: linear-gradient(180deg, #102632, #0c1f29);
+    color: #f2f8f7;
+    overflow: hidden;
+  }
+
+  .process-board .section-head {
+    margin-bottom: 20px;
+  }
+
+  .process-board .section-title {
+    color: #f2f8f7;
+  }
+
+  .process-board .section-copy {
+    color: rgba(242,248,247,0.7);
+  }
+
+  .process-grid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 14px;
+    gap: 12px;
+    position: relative;
   }
-  .process-map::before {
-    content: '';
+
+  .process-grid::before {
+    content: "";
     position: absolute;
-    top: 88px;
-    left: 11%;
-    right: 11%;
+    top: 108px;
+    left: 8%;
+    right: 8%;
     height: 1px;
-    background: linear-gradient(90deg, rgba(0,229,160,0.2), rgba(0,229,160,0.35), rgba(0,229,160,0.2));
-    z-index: 0;
+    background: linear-gradient(90deg, rgba(105,230,204,0.18), rgba(215,179,106,0.3), rgba(105,230,204,0.18));
   }
-  .process-step {
+
+  .process-step-card {
     position: relative;
     z-index: 1;
     min-width: 0;
     padding: 18px;
-    border-radius: 22px;
-    border: 1px solid rgba(255,255,255,0.07);
-    background: linear-gradient(180deg, rgba(23, 36, 47, 0.96), rgba(13, 20, 29, 0.98));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
   }
-  .process-step::before {
-    display: none;
-  }
-  .process-stage {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--accent-warm);
-    margin-bottom: 8px;
-  }
-  .process-step-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--white);
-    margin-bottom: 14px;
-    min-height: 40px;
-  }
-  .process-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 18px;
-  }
-  .process-list li {
-    position: relative;
-    padding-left: 14px;
-    color: var(--body);
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  .process-list li::before {
-    content: '';
+
+  .process-step-card::after {
+    content: "";
     position: absolute;
-    left: 0;
-    top: 8px;
-    width: 5px;
-    height: 5px;
+    top: 97px;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    transform: translateX(-50%);
     border-radius: 50%;
-    background: var(--accent);
+    background: linear-gradient(135deg, #b9ffeb, #69e6cc);
+    box-shadow: 0 0 0 5px rgba(105,230,204,0.08);
   }
-  .process-brand {
+
+  .step-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #d5b56f;
+    margin-bottom: 10px;
+  }
+
+  .step-product {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    margin-bottom: 12px;
     font-size: 13px;
     font-weight: 700;
-    color: var(--white);
-    margin-bottom: 12px;
   }
-  .process-brand-mark {
+
+  .step-dot {
     width: 28px;
     height: 28px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: var(--accent);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-  }
-
-  /* Scoring header */
-  .scoring-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
-  .scoring-composite { font-size: 14px; font-weight: 700; color: var(--white); }
-  .scoring-note { font-size: 13px; color: var(--secondary); }
-
-  /* Builder Score header */
-  .builder-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
-
-  /* Edge function grid */
-  .ef-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .ef-card {
-    background: linear-gradient(180deg, rgba(24, 37, 49, 0.92) 0%, rgba(15, 24, 34, 0.96) 100%);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 14px;
-    padding: 10px 12px;
-    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-  }
-  .ef-name {
-    font-family: 'JetBrains Mono', monospace;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #8ef5e2;
+    font-family: "IBM Plex Mono", monospace;
     font-size: 11px;
-    font-weight: 600;
-    color: var(--accent);
-    margin-bottom: 2px;
-  }
-  .ef-desc {
-    font-size: 11px;
-    color: var(--secondary);
-    line-height: 1.35;
   }
 
+  .step-title {
+    min-height: 42px;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
 
-  /* Footer */
-  .footer {
-    text-align: center;
-    padding: 20px 0 0;
-    border-top: 1px solid var(--border);
+  .step-desc {
+    margin-top: 12px;
+    color: rgba(242,248,247,0.72);
     font-size: 13px;
-    color: var(--muted);
-    line-height: 1.7;
   }
-  .footer a { color: var(--accent); text-decoration: none; }
 
-  /* ===== RESPONSIVE ===== */
-  @media (max-width: 900px) {
-    body {
-      padding-top: 12px;
-    }
-    .page {
-      border-radius: 0;
-      border-left: none;
-      border-right: none;
-      padding: 24px 24px 32px;
-    }
-    .workflow {
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    display: grid;
+    gap: 12px;
+  }
+
+  .grid-2 { grid-template-columns: 1.15fr 1fr; }
+  .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+  .soft-card {
+    padding: 18px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.66);
+    border: 1px solid rgba(255,255,255,0.62);
+  }
+
+  .soft-card h3 {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  .soft-card p,
+  .soft-card li {
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  .score-shell {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 12px;
+  }
+
+  .score-panel {
+    padding: 20px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(22,54,72,0.96), rgba(16,36,48,0.98));
+    color: #f4fbfb;
+  }
+
+  .score-panel p {
+    color: rgba(244,251,251,0.74);
+    font-size: 14px;
+  }
+
+  .architecture-board {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr 1fr;
+    gap: 12px;
+  }
+
+  .harmonic-shell {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 12px;
+  }
+
+  .harmonic-card {
+    padding: 22px;
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,255,255,0.64));
+    border: 1px solid rgba(255,255,255,0.66);
+  }
+
+  .harmonic-card.accent {
+    background: linear-gradient(180deg, rgba(255,107,87,0.12), rgba(255,255,255,0.68));
+    border-color: rgba(255,107,87,0.22);
+  }
+
+  .harmonic-card h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+
+  .harmonic-card p {
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  .harmonic-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .harmonic-node {
+    padding: 16px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.66);
+    border: 1px solid rgba(16,33,43,0.08);
+  }
+
+  .harmonic-node h4 {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .harmonic-node p {
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+
+  .arch-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .arch-group {
+    padding: 18px;
+    border-radius: 22px;
+    background: rgba(255,255,255,0.66);
+    border: 1px solid rgba(255,255,255,0.62);
+  }
+
+  .arch-group.presentation {
+    background: linear-gradient(180deg, rgba(30,201,177,0.12), rgba(255,255,255,0.72));
+  }
+
+  .arch-group.intelligence {
+    background: linear-gradient(180deg, rgba(23,55,74,0.12), rgba(255,255,255,0.72));
+  }
+
+  .arch-group.data {
+    background: linear-gradient(180deg, rgba(215,179,106,0.14), rgba(255,255,255,0.72));
+  }
+
+  .arch-title {
+    margin-bottom: 12px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--teal-deep);
+  }
+
+  .arch-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .arch-node {
+    padding: 16px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(16,33,43,0.08);
+  }
+
+  .arch-node h3 {
+    margin-bottom: 6px;
+    font-size: 15px;
+  }
+
+  .arch-node p {
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 2px 6px 4px;
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .footer a {
+    color: var(--teal-deep);
+    text-decoration: none;
+  }
+
+  @media (max-width: 1180px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .hero-top,
+    .section-head,
+    .editorial-grid,
+    .score-shell,
+    .harmonic-shell,
+    .architecture-board,
+    .grid-2 {
       grid-template-columns: 1fr;
-      gap: 8px;
+      display: grid;
     }
-    .wf-step {
-      text-align: left;
-      border-radius: 16px !important;
+    .process-grid {
+      grid-template-columns: 1fr;
     }
-    .wf-arrow {
-      display: none;
+    .process-grid::before { display: none; }
+    .process-step-card::after {
+      top: auto;
+      bottom: -8px;
     }
-    .grid-4, .grid-5, .tips-grid { grid-template-columns: 1fr 1fr; }
-    .api-grid, .ef-grid { grid-template-columns: 1fr; }
-    .lede-grid { grid-template-columns: 1fr; }
-    .process-map { grid-template-columns: 1fr; }
-    .process-map::before { display: none; }
-    .arch-flow { flex-direction: column; align-items: stretch; gap: 6px; }
-    .arch-arrow-icon { display: none; }
-    .arch-inner-grid-4, .arch-inner-grid-5 { grid-template-columns: 1fr 1fr; }
-    .arch-inner-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-    .eea-split { flex-direction: column; gap: 16px; }
-    .webset-split { flex-direction: column; gap: 12px; }
+    .grid-3,
+    .grid-4,
+    .hero-stats,
+    .harmonic-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 
-  @media (max-width: 640px) {
-    .page { padding: 18px 16px 28px; }
-    body { font-size: 14px; }
+  @media (max-width: 720px) {
+    .page {
+      width: min(100% - 16px, 1380px);
+    }
+    .panel,
+    .sidebar,
     .hero {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 14px;
-      margin-bottom: 16px;
+      padding: 18px;
+      border-radius: 22px;
     }
-    .hero-left { width: 100%; }
-    .hero-copy {
-      align-items: flex-start;
-      width: 100%;
+    .hero h1,
+    .section-title {
+      max-width: 100%;
     }
-    .hero-kicker,
-    .hero-tagline,
-    .hero-subtitle { text-align: left; }
-    .hero-tagline { font-size: 18px; max-width: 100%; }
-    .hero-wordmark { font-size: 32px; }
-    .hero-actions,
-    .hero-proof { justify-content: flex-start; }
+    .hero-stats,
+    .grid-3,
+    .grid-4,
+    .metric-grid,
+    .harmonic-grid {
+      grid-template-columns: 1fr;
+    }
     .btn {
       width: 100%;
-    }
-    .process-head {
-      align-items: flex-start;
-    }
-    .process-title {
-      max-width: 100%;
-      font-size: 22px;
-    }
-
-    .label {
-      margin-bottom: 8px;
-    }
-
-    .section-tight {
-      padding: 16px;
-      border-radius: 20px;
-    }
-
-    .grid-3, .eea-grid { grid-template-columns: 1fr; }
-    .grid-4, .grid-5, .tips-grid { grid-template-columns: 1fr; }
-    .grid-2 { grid-template-columns: 1fr; }
-    .lede-card { padding: 14px 16px; }
-
-    .builder-bars { flex-wrap: wrap; height: auto; }
-    .builder-bar { min-width: calc(50% - 4px); height: 56px; flex-basis: calc(50% - 4px); }
-
-    .pipeline-track {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0;
-      padding-left: 20px;
-    }
-    .pipeline-track::before {
-      top: 0; bottom: 0; left: 6px; right: auto;
-      width: 2px; height: 100%;
-      background: linear-gradient(180deg, var(--accent), rgba(0,229,160,0.15));
-      transform: none;
-    }
-    .stage-node { flex-direction: row; align-items: center; gap: 10px; padding: 6px 0; }
-    .stage-dot { margin-bottom: 0; margin-left: -20px; }
-    .stage-node:first-child .stage-dot { margin-left: -22px; }
-
-    .arch-inner-grid-4, .arch-inner-grid-5 { grid-template-columns: 1fr; }
-    .arch-inner-grid-3 { grid-template-columns: 1fr; }
-    .ef-grid { grid-template-columns: 1fr; }
-
-    .scoring-header { flex-direction: column; gap: 4px; }
-    .builder-header { flex-direction: column; gap: 4px; }
-    .signal-pills {
-      gap: 8px;
-    }
-    .signal-pills > span:last-child {
-      margin-left: 0 !important;
-    }
-    .footer {
-      text-align: left;
     }
   }
 </style>
 </head>
 <body>
-<div class="page">
+  <div class="page">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="./SourceKit Logo.svg" alt="SourceKit logo">
+          <div>
+            <div class="brand-title">SourceKit Docs</div>
+            <div class="brand-subtitle">Operator Guide · vNext</div>
+          </div>
+        </div>
 
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-left">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="52" height="52">
-        <path d="M88 72 L56 128 L88 184" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" fill="none"/>
-        <path d="M168 72 L200 128 L168 184" stroke="#00E5A0" stroke-width="20" stroke-linecap="round" fill="none"/>
-        <line x1="128" y1="88" x2="128" y2="64" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
-        <line x1="128" y1="192" x2="128" y2="168" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
-        <circle cx="128" cy="128" r="10" fill="#00E5A0"/>
-      </svg>
-      <div>
-        <div class="hero-wordmark"><span style="color:#FFFFFF; font-weight:600;">Source </span><span style="color:#9E9E9E; font-weight:500;">Kit</span></div>
-        <div class="hero-url">getsourcekit.vercel.app</div>
-      </div>
-    </div>
-    <div class="hero-copy">
-      <div class="hero-kicker">Technical Sourcing Platform</div>
-      <div class="hero-tagline">Find engineers by what they actually build.</div>
-      <div class="hero-subtitle">Research the role, surface high-signal contributors, score real GitHub output, and turn searches into living candidate pipelines.</div>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="https://getsourcekit.vercel.app">Open SourceKit</a>
-        <a class="btn btn-secondary" href="https://sourcekit-docs.netlify.app">View Docs</a>
-      </div>
-      <div class="hero-proof">
-        <span class="hero-proof-item">Evidence-based sourcing</span>
-        <span class="hero-proof-item">GitHub-native ranking</span>
-        <span class="hero-proof-item">Living Websets</span>
-      </div>
-    </div>
-  </div>
+        <div class="sidebar-block">
+          <div class="sidebar-label">Sections</div>
+          <nav class="nav">
+            <a href="#overview">Overview</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#harmonic">Harmonic</a>
+            <a href="#builder-score">Builder Score</a>
+            <a href="#websets">Websets</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#playbook">Playbook</a>
+          </nav>
+        </div>
 
+        <div class="sidebar-block">
+          <div class="sidebar-card">
+            <strong>Design direction</strong>
+            <p>More editorial, more premium, less internal-spec-sheet. This version is built to explain the product fast and look credible in front of customers or investors.</p>
+          </div>
+        </div>
+      </aside>
 
-  <div class="section-tight">
-    <div class="process-shell">
-      <div class="process-head">
-        <div>
-          <div class="label">How SourceKit Works</div>
-          <div class="process-title">One search becomes strategy, discovery, and a live talent pipeline.</div>
-        </div>
-        <div class="process-copy">Start from a role, job description, or URL. SourceKit maps the market, ranks technical fit using public evidence, and keeps strong searches running as living candidate sets.</div>
-      </div>
-      <div class="process-map">
-        <div class="process-step">
-          <div class="process-stage">Role Input</div>
-          <div class="process-step-title">Start with the hiring brief</div>
-          <ul class="process-list">
-            <li>Job description</li>
-            <li>Role specification</li>
-            <li>Lever, Greenhouse, or Ashby URL</li>
-          </ul>
-        </div>
-        <div class="process-step">
-          <div class="process-stage">Strategy Generation</div>
-          <div class="process-brand"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><circle cx="12" cy="12" r="10" stroke="var(--blue)" stroke-width="2" fill="none"/><path d="M8 8h8M8 12h5M8 16h8" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round"/></svg>Exa Research</div>
-          <div class="process-step-title">Translate the role into sourcing logic</div>
-          <ul class="process-list">
-            <li>Target repos</li>
-            <li>Target companies</li>
-            <li>Ability criteria</li>
-          </ul>
-        </div>
-        <div class="process-step">
-          <div class="process-stage">Ecosystem Mapping</div>
-          <div class="process-brand"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><rect x="3" y="3" width="18" height="18" rx="4" stroke="var(--purple)" stroke-width="2" fill="none"/><line x1="8" y1="7" x2="8" y2="17" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="7" x2="12" y2="17" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="7" x2="16" y2="17" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"/></svg>Parallel</div>
-          <div class="process-step-title">Map the company and talent landscape</div>
-          <ul class="process-list">
-            <li>Company intelligence</li>
-            <li>Engineer mapping</li>
-            <li>Search expansion</li>
-          </ul>
-        </div>
-        <div class="process-step">
-          <div class="process-stage">Candidate Discovery</div>
-          <div class="process-brand"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z" fill="var(--orange)"/></svg>GitHub</div>
-          <div class="process-step-title">Find builders with visible technical proof</div>
-          <ul class="process-list">
-            <li>Repo mining</li>
-            <li>Contribution signals</li>
-            <li>Code quality scoring</li>
-          </ul>
-        </div>
-        <div class="process-step">
-          <div class="process-stage">Candidate Pipeline</div>
-          <div class="process-step-title">Move from shortlist to outreach</div>
-          <ul class="process-list">
-            <li>Ranked candidates</li>
-            <li>Similar profile discovery</li>
-            <li>Source citations and pipeline stages</li>
-          </ul>
-        </div>
-      </div>
-      <div class="lede-grid">
-        <div class="lede-card">
-          <div class="lede-eyebrow">Signal Over Keywords</div>
-          <div class="lede-title">Source on evidence, not resumes.</div>
-          <div class="lede-copy">SourceKit starts from shipped work: commits, repos, activity, talks, papers, and technical proof that can actually be verified.</div>
-        </div>
-        <div class="lede-card">
-          <div class="lede-eyebrow">Research Built In</div>
-          <div class="lede-title">Turn vague roles into precise search logic.</div>
-          <div class="lede-copy">Instead of searching blind, use AI-assisted role decomposition and market mapping to define what strong looks like.</div>
-        </div>
-        <div class="lede-card">
-          <div class="lede-eyebrow">Persistent Pipelines</div>
-          <div class="lede-title">Keep great searches alive.</div>
-          <div class="lede-copy">Promote strong criteria into monitored Websets so the right candidates keep appearing over time.</div>
-        </div>
-      </div>
-    </div>
-  </div>
+      <main class="content">
+        <section class="panel hero" id="overview">
+          <div class="hero-top">
+            <div class="hero-copy">
+              <div class="eyebrow">Evidence-Based Technical Talent Discovery</div>
+              <h1>Find engineers by what they actually build.</h1>
+              <p>SourceKit converts a role, job description, or hiring link into a sourcing strategy, maps the engineering ecosystem, evaluates visible GitHub signal, and turns strong searches into live candidate pipelines.</p>
+              <div class="hero-actions">
+                <a class="btn btn-primary" href="https://getsourcekit.vercel.app">Open SourceKit</a>
+                <a class="btn btn-secondary" href="https://sourcekit-docs.netlify.app">Open Docs URL</a>
+              </div>
+            </div>
+            <div class="hero-note">
+              <div class="eyebrow" style="color:#aef9ea;">What makes it different</div>
+              <strong>Source on proof, not self-reporting.</strong>
+              <p>Commits, repos, activity, talks, publications, maintainership, and ecosystem evidence all matter more than polished keyword resumes.</p>
+            </div>
+          </div>
 
-  <hr class="divider">
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <strong>0</strong>
+              <span>Self-reported data</span>
+            </div>
+            <div class="hero-stat">
+              <strong>6</strong>
+              <span>External sources</span>
+            </div>
+            <div class="hero-stat">
+              <strong>7</strong>
+              <span>Signal dimensions</span>
+            </div>
+            <div class="hero-stat">
+              <strong>15</strong>
+              <span>Edge functions</span>
+            </div>
+            <div class="hero-stat">
+              <strong>6</strong>
+              <span>Pipeline stages</span>
+            </div>
+            <div class="hero-stat">
+              <strong>Live</strong>
+              <span>Harmonic integration</span>
+            </div>
+          </div>
+        </section>
 
-  <!-- BUILDER SCORE -->
-  <div class="section-tight">
-    <div class="builder-header">
-      <div class="label" style="margin-bottom:0;">Builder Score <span class="pill-accent" style="margin-left:6px;">Core Signal</span></div>
-      <div style="font-size:14px; font-weight:700; color:var(--white);">A premium read on real engineering output</div>
-      <div style="font-size:13px; color:var(--secondary);">Evaluate public GitHub work with a weighted 0-100 score, dimension breakdowns, and an AI-written narrative recruiters can actually use.</div>
-    </div>
-    <div class="builder-bars">
-      <div class="builder-bar" style="flex:30; background:linear-gradient(180deg,rgba(59,130,246,0.18) 0%,rgba(59,130,246,0.06) 100%); border:1px solid rgba(59,130,246,0.3);">
-        <div class="builder-bar-pct" style="color:#3b82f6;">30%</div>
-        <div class="builder-bar-label" style="color:rgba(59,130,246,0.8);">AI Mastery</div>
-      </div>
-      <div class="builder-bar" style="flex:20; background:linear-gradient(180deg,rgba(168,85,247,0.18) 0%,rgba(168,85,247,0.06) 100%); border:1px solid rgba(168,85,247,0.3);">
-        <div class="builder-bar-pct" style="color:#a855f7;">20%</div>
-        <div class="builder-bar-label" style="color:rgba(168,85,247,0.8);">Build Velocity</div>
-      </div>
-      <div class="builder-bar" style="flex:15; background:linear-gradient(180deg,rgba(6,182,212,0.18) 0%,rgba(6,182,212,0.06) 100%); border:1px solid rgba(6,182,212,0.3);">
-        <div class="builder-bar-pct" style="color:#06b6d4;">15%</div>
-        <div class="builder-bar-label" style="color:rgba(6,182,212,0.8);">Tooling</div>
-      </div>
-      <div class="builder-bar" style="flex:15; background:linear-gradient(180deg,rgba(0,229,160,0.18) 0%,rgba(0,229,160,0.06) 100%); border:1px solid rgba(0,229,160,0.3);">
-        <div class="builder-bar-pct" style="color:#00e5a0;">15%</div>
-        <div class="builder-bar-label" style="color:rgba(0,229,160,0.8);">Commit Bonus</div>
-      </div>
-      <div class="builder-bar" style="flex:10; background:linear-gradient(180deg,rgba(245,158,11,0.18) 0%,rgba(245,158,11,0.06) 100%); border:1px solid rgba(245,158,11,0.3);">
-        <div class="builder-bar-pct" style="color:#f59e0b;">10%</div>
-        <div class="builder-bar-label" style="color:rgba(245,158,11,0.8);">Testing</div>
-      </div>
-      <div class="builder-bar" style="flex:8; background:linear-gradient(180deg,rgba(236,72,153,0.18) 0%,rgba(236,72,153,0.06) 100%); border:1px solid rgba(236,72,153,0.3);">
-        <div class="builder-bar-pct" style="color:#ec4899;">8%</div>
-        <div class="builder-bar-label" style="color:rgba(236,72,153,0.8);">Docs</div>
-      </div>
-      <div class="builder-bar" style="flex:7; background:linear-gradient(180deg,rgba(161,161,170,0.18) 0%,rgba(161,161,170,0.06) 100%); border:1px solid rgba(161,161,170,0.3);">
-        <div class="builder-bar-pct" style="color:#a1a1aa;">7%</div>
-        <div class="builder-bar-label" style="color:rgba(161,161,170,0.8);">Community</div>
-      </div>
-    </div>
-    <div class="signal-pills">
-      <span class="signal-pill" style="background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);">Claude Code 3x</span>
-      <span class="signal-pill" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);">46 AI Keywords</span>
-      <span class="signal-pill" style="background:rgba(6,182,212,0.1);color:#06b6d4;border:1px solid rgba(6,182,212,0.25);">28 Framework Files</span>
-      <span class="signal-pill" style="background:rgba(0,229,160,0.1);color:#00e5a0;border:1px solid rgba(0,229,160,0.25);">7 Coding Tools</span>
-      <span class="signal-pill" style="background:rgba(236,72,153,0.1);color:#ec4899;border:1px solid rgba(236,72,153,0.25);">Claude Narrative</span>
-      <span style="font-size:11px; color:var(--secondary); margin-left:4px;">GitHub activity only. No self-reported data.</span>
-    </div>
-    <div class="grid-3" style="margin-top:12px;">
-      <div class="card" style="padding:10px 12px;">
-        <div class="card-title">AI Mastery (30%)</div>
-        <div class="card-body">GenAI repo count, AI framework detection (LangChain, OpenAI, HuggingFace), Claude Code usage weighted 3x.</div>
-      </div>
-      <div class="card" style="padding:10px 12px;">
-        <div class="card-title">Build Velocity (20%)</div>
-        <div class="card-body">Recent commit frequency, repo activity patterns, push cadence across top repos.</div>
-      </div>
-      <div class="card" style="padding:10px 12px;">
-        <div class="card-title">Tooling + Testing + Docs</div>
-        <div class="card-body">CI/CD configs, linting, dependency management, test frameworks, README quality, inline docs.</div>
-      </div>
-    </div>
-  </div>
+        <section class="panel" id="workflow">
+          <div class="editorial-grid">
+            <article class="editorial-card">
+              <div class="eyebrow">Signal Over Keywords</div>
+              <h3>Source on evidence, not resumes.</h3>
+              <p>Start from shipped work, ecosystem position, and visible technical output rather than title matching alone.</p>
+            </article>
+            <article class="editorial-card">
+              <div class="eyebrow">Research Built In</div>
+              <h3>Turn vague roles into search logic.</h3>
+              <p>Translate technical hiring briefs into target repos, target companies, and ability criteria.</p>
+            </article>
+            <article class="editorial-card">
+              <div class="eyebrow">Persistent Pipelines</div>
+              <h3>Keep strong searches alive.</h3>
+              <p>Promote successful criteria into monitored Websets that continue surfacing the right talent.</p>
+            </article>
+          </div>
+        </section>
 
-  <!-- SCORING (legacy composite) -->
-  <div class="section-tight">
-    <div class="scoring-header">
-      <div class="label" style="margin-bottom:0;">Why The Ranking Works</div>
-      <div class="scoring-composite">Search Score: <span style="color:var(--accent);">0 to 100</span></div>
-      <div class="scoring-note">Per-search relevance blends current activity, stack fit, and repo quality before Builder Score adds code depth.</div>
-    </div>
-    <div class="grid-3">
-      <div class="card-hl">
-        <div class="card-title">Commit Volume + Recency</div>
-        <div class="card-body">How actively and recently the candidate has contributed. Recent activity weighted higher.</div>
-      </div>
-      <div class="card-hl">
-        <div class="card-title">Language + Stack Match</div>
-        <div class="card-body">How well primary languages align with role requirements. Python for ML, Rust for systems, TypeScript for frontend.</div>
-      </div>
-      <div class="card-hl">
-        <div class="card-title">Repo Relevance + Impact</div>
-        <div class="card-body">High-signal repos (well-starred, actively maintained) weighted over personal or tutorial projects.</div>
-      </div>
-    </div>
-  </div>
+        <section class="panel process-board">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow" style="color:#92f3e1;">How SourceKit Works</div>
+              <h2 class="section-title">One search becomes strategy, discovery, and a live talent pipeline.</h2>
+            </div>
+            <p class="section-copy">This is the core system story: define the brief, generate search logic, map the ecosystem, identify visible proof, then move ranked candidates into a pipeline that can actually be worked.</p>
+          </div>
 
-  <!-- PIPELINE -->
-  <div class="section-tight">
-    <div class="label">From Search To Outreach</div>
-    <div class="pipeline-track">
-      <div class="stage-node">
-        <div class="stage-dot"></div>
-        <div class="stage-name">Sourced</div>
-      </div>
-      <div class="stage-node">
-        <div class="stage-dot"></div>
-        <div class="stage-name">Contacted</div>
-      </div>
-      <div class="stage-node">
-        <div class="stage-dot"></div>
-        <div class="stage-name">Responded</div>
-      </div>
-      <div class="stage-node">
-        <div class="stage-dot"></div>
-        <div class="stage-name">Screen</div>
-      </div>
-      <div class="stage-node">
-        <div class="stage-dot"></div>
-        <div class="stage-name">In Process</div>
-      </div>
-      <div class="stage-node">
-        <div class="stage-dot"></div>
-        <div class="stage-name">Offer</div>
-      </div>
-    </div>
-    <div class="pipeline-note">Turn discovery into action with stage-based workflow, candidate comparison, outreach generation, and export when needed.</div>
-  </div>
+          <div class="process-grid">
+            <article class="process-step-card">
+              <div class="step-label">Role Input</div>
+              <div class="step-title">Start with the hiring brief</div>
+              <p class="step-desc">Paste a JD, enter a role spec, or drop in a Lever, Greenhouse, or Ashby link.</p>
+            </article>
 
-  <hr class="divider">
+            <article class="process-step-card">
+              <div class="step-label">Strategy Generation</div>
+              <div class="step-product"><span class="step-dot">E</span>Exa Research</div>
+              <div class="step-title">Translate the role into sourcing logic</div>
+              <p class="step-desc">Exa identifies target repos, peer companies, and ability criteria from the brief.</p>
+            </article>
 
-  <!-- EXA WEBSETS -->
-  <div class="section-tight">
-    <div class="label">Living Talent Maps <span class="pill-accent" style="margin-left:6px;">Websets</span></div>
-    <div class="webset-split">
-      <div class="webset-intro">
-        <div class="heading" style="font-size:16px;">Persistent, auto-updating candidate sets</div>
-        <div class="body-sm" style="margin-bottom:8px;">When a search works, save it as a living market map. New verified matches can appear automatically as the ecosystem changes.</div>
-      </div>
-      <div class="webset-cards">
-        <div class="grid-4">
-          <div class="card-hl">
-            <div class="card-title">Create</div>
-            <div class="card-body">Define query + criteria. Exa's neural search finds matches. Each verified before admission.</div>
-          </div>
-          <div class="card-hl">
-            <div class="card-title">Enrich</div>
-            <div class="card-body">Auto-extract: contact email, company, publications, talks, GitHub username, Builder Score.</div>
-          </div>
-          <div class="card-hl">
-            <div class="card-title">Monitor</div>
-            <div class="card-body">Daily or weekly schedule. New matches appended automatically. Override replaces stale data.</div>
-          </div>
-          <div class="card-hl">
-            <div class="card-title">Export</div>
-            <div class="card-body">API, CSV, or feed into Clay and Parallel for enrichment and outreach sequencing.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+            <article class="process-step-card">
+              <div class="step-label">Ecosystem Mapping</div>
+              <div class="step-product"><span class="step-dot">P</span>Parallel</div>
+              <div class="step-title">Map the company and talent landscape</div>
+              <p class="step-desc">Parallel maps company intelligence, engineers at targets, and adjacent search surfaces.</p>
+            </article>
 
-  <!-- EEA FRAMEWORK -->
-  <div class="section-tight">
-    <div class="label">What Elite Looks Like</div>
-    <div class="eea-split">
-      <div class="eea-left">
-        <div class="heading" style="font-size:16px;">Evidence of exceptional ability</div>
-        <div class="body-sm" style="margin-bottom:10px;">For hard technical roles, titles are weak proxies. SourceKit helps define the <span style="color:var(--accent); font-weight:600;">top 5-10%</span> using proof you can verify.</div>
-        <div class="eea-grid">
-          <div class="card" style="padding:10px 12px;">
-            <div class="card-title">Published Research</div>
-            <div class="card-body">NeurIPS, ICML, ICLR, CVPR, ACL papers. H-index. Citation count.</div>
-          </div>
-          <div class="card" style="padding:10px 12px;">
-            <div class="card-title">Open Source Impact</div>
-            <div class="card-body">Top-10 contributor to repos with 1K+ stars. Maintainer status. Builder Score 70+.</div>
-          </div>
-          <div class="card" style="padding:10px 12px;">
-            <div class="card-title">Conference + Teaching</div>
-            <div class="card-body">KubeCon, QCon, Strange Loop, DEF CON talks. Course instructor.</div>
-          </div>
-          <div class="card" style="padding:10px 12px;">
-            <div class="card-title">Industry Recognition</div>
-            <div class="card-body">Patents filed. CVE author. Awards. Press coverage.</div>
-          </div>
-          <div class="card" style="padding:10px 12px;">
-            <div class="card-title">Technical Leadership</div>
-            <div class="card-body">RFCs adopted. Design docs merged. Architecture decisions at scale.</div>
-          </div>
-          <div class="card" style="padding:10px 12px;">
-            <div class="card-title">Scale + Impact</div>
-            <div class="card-body">Shipped to 1M+ users. Infra serving 10K+ QPS. Production ML at scale.</div>
-          </div>
-        </div>
-      </div>
-      <div class="eea-right">
-        <div style="font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; font-family:'JetBrains Mono',monospace;">Turning elite signals into repeatable search logic</div>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <div class="card-hl" style="border-left:3px solid var(--accent);">
-            <div class="card-title" style="font-size:13px;">Decompose the Role</div>
-            <div class="card-body">Identify 3-5 concrete, verifiable markers of exceptional ability. These become your Webset criteria.</div>
-          </div>
-          <div class="card-hl" style="border-left:3px solid var(--accent);">
-            <div class="card-title" style="font-size:13px;">Build the Webset</div>
-            <div class="card-body">Pass EEA signals as criteria. Exa's verification agent checks each candidate before admission.</div>
-          </div>
-          <div class="card-hl" style="border-left:3px solid var(--accent);">
-            <div class="card-title" style="font-size:13px;">Enrich + Score</div>
-            <div class="card-body">Surface evidence: talks, star count, publications. Run Builder Score on GitHub usernames for code quality signal.</div>
-          </div>
-          <div class="card-hl" style="border-left:3px solid var(--accent);">
-            <div class="card-title" style="font-size:13px;">Monitor</div>
-            <div class="card-body">Weekly monitoring. New people who publish, ship OSS, or give talks auto-enter the pipeline.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+            <article class="process-step-card">
+              <div class="step-label">Candidate Discovery</div>
+              <div class="step-product"><span class="step-dot">GH</span>GitHub + Harmonic</div>
+              <div class="step-title">Find builders with visible technical and company proof</div>
+              <p class="step-desc">GitHub commits, repo quality, Harmonic enrichment, and code scoring produce ranked candidates with citations.</p>
+            </article>
 
-  <hr class="divider">
+            <article class="process-step-card">
+              <div class="step-label">Candidate Pipeline</div>
+              <div class="step-title">Move from shortlist to outreach</div>
+              <p class="step-desc">Ranked shortlist with similar-profile expansion, source citations, and stage movement.</p>
+            </article>
+          </div>
+        </section>
 
-  <!-- WEBSET RECIPES -->
-  <div class="section-tight">
-    <div class="label">Search Blueprints</div>
-    <div class="grid-4">
-      <div class="card-hl" style="padding:12px 14px;">
-        <div class="card-title">ML Infra Engineer</div>
-        <div class="card-body">
-          Top contributor to PyTorch, JAX, DeepSpeed (500+ stars)<br>
-          Shipped distributed training at scale<br>
-          <span style="color:var(--secondary); font-size:11px;">Enrich: talks, star count, email, Builder Score</span>
-        </div>
-      </div>
-      <div class="card-hl" style="padding:12px 14px;">
-        <div class="card-title">Robotics Software</div>
-        <div class="card-body">
-          ROS/ROS2 maintainer or MoveIt, Drake, Isaac contributor<br>
-          Published at ICRA, RSS, or CoRL<br>
-          <span style="color:var(--secondary); font-size:11px;">Enrich: patents, lab, H-index, email</span>
-        </div>
-      </div>
-      <div class="card-hl" style="padding:12px 14px;">
-        <div class="card-title">Staff Frontend</div>
-        <div class="card-body">
-          Core contributor to React, Vue, Svelte (2K+ stars)<br>
-          Speaker at React Conf, VueConf, JSConf<br>
-          <span style="color:var(--secondary); font-size:11px;">Enrich: blog posts, npm packages, email</span>
-        </div>
-      </div>
-      <div class="card-hl" style="padding:12px 14px;">
-        <div class="card-title">AI-Native Engineer</div>
-        <div class="card-body">
-          Claude Code or Cursor power user (detected via commits)<br>
-          Builder Score 70+ with AI Mastery top quartile<br>
-          <span style="color:var(--secondary); font-size:11px;">Enrich: Builder Score, AI repos, email</span>
-        </div>
-      </div>
-    </div>
-  </div>
+        <section class="panel" id="harmonic">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Harmonic Integration</div>
+              <h2 class="section-title">Company graph intelligence is now part of the guide spec.</h2>
+            </div>
+            <p class="section-copy">Harmonic is live in SourceKit and expands the product beyond repo and web signal. It adds structured company intelligence, people enrichment, and a stronger bridge between technical proof and company context.</p>
+          </div>
 
-  <!-- EDGE FUNCTIONS -->
-  <div class="section-tight section-muted">
-    <div class="label">Platform Depth <span style="font-size:10px; color:var(--secondary); font-weight:400; letter-spacing:0.05em; text-transform:none; margin-left:6px;">15 deployed functions</span></div>
-    <div class="ef-grid">
-      <div class="ef-card">
-        <div class="ef-name">github-code-quality</div>
-        <div class="ef-desc">Builder Score engine. Scans repos, scores 7 dimensions, returns Claude narrative.</div>
-      </div>
-      <div class="ef-card">
-        <div class="ef-name">search-candidates</div>
-        <div class="ef-desc">Multi-source candidate search across GitHub + Exa.</div>
-      </div>
-      <div class="ef-card">
-        <div class="ef-name">github-search</div>
-        <div class="ef-desc">GitHub contributor discovery by repo, language, activity.</div>
-      </div>
-      <div class="ef-card">
-        <div class="ef-name">github-profile</div>
-        <div class="ef-desc">Full GitHub profile enrichment with activity graphs.</div>
-      </div>
-      <div class="ef-card">
-        <div class="ef-name">exa-websets</div>
-        <div class="ef-desc">Webset CRUD, enrichment, monitoring proxy.</div>
-      </div>
-      <div class="ef-card">
-        <div class="ef-name">research-role</div>
-        <div class="ef-desc">AI role research via Parallel deep research.</div>
-      </div>
-      <div class="ef-card">
-        <div class="ef-name">parse-jd</div>
-        <div class="ef-desc">Job description parsing from text or URL.</div>
-      </div>
-      <div class="ef-card">
-        <div class="ef-name">generate-outreach</div>
-        <div class="ef-desc">AI outreach message generation per candidate.</div>
-      </div>
-      <div class="ef-card">
-        <div class="ef-name">bulk-actions</div>
-        <div class="ef-desc">Batch operations: compare, summarize, outreach.</div>
-      </div>
-      <div class="ef-card">
-        <div class="ef-name">enrich-linkedin</div>
-        <div class="ef-desc">LinkedIn profile enrichment via Parallel.</div>
-      </div>
-      <div class="ef-card">
-        <div class="ef-name">create-checkout-session</div>
-        <div class="ef-desc">Stripe checkout for subscription upgrades.</div>
-      </div>
-      <div class="ef-card">
-        <div class="ef-name">check-subscription</div>
-        <div class="ef-desc">Subscription status and feature gating.</div>
-      </div>
+          <div class="harmonic-shell">
+            <article class="harmonic-card accent">
+              <div class="eyebrow" style="color: var(--coral);">Live Activation</div>
+              <h3>What is live now</h3>
+              <p>The Harmonic API key is set in Supabase secrets, the cache migration is pushed, and the `harmonic-search`, `harmonic-enrich`, and `research-role` edge functions are deployed to production.</p>
+              <div class="harmonic-grid">
+                <div class="harmonic-node">
+                  <h4>`harmonic-search`</h4>
+                  <p>Search companies and related entities to widen the sourcing universe around a role.</p>
+                </div>
+                <div class="harmonic-node">
+                  <h4>`harmonic-enrich`</h4>
+                  <p>Enrich discovered targets with structured company and people graph data.</p>
+                </div>
+                <div class="harmonic-node">
+                  <h4>`research-role`</h4>
+                  <p>Use live research inputs to sharpen the target company map and talent landscape.</p>
+                </div>
+                <div class="harmonic-node">
+                  <h4>`harmonic_cache`</h4>
+                  <p>Cache structured responses to reduce duplicate fetches and stabilize repeated research flows.</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="harmonic-card">
+              <div class="eyebrow">What this adds to SourceKit</div>
+              <h3>Harmonic makes SourceKit better at company-aware sourcing.</h3>
+              <p>GitHub and Exa help identify builders and technical proof. Harmonic adds structured business context so SourceKit can reason about company targets, startup ecosystems, adjacent employers, and candidate-company relationships with more precision.</p>
+              <p style="margin-top:14px; color:var(--ink-soft); font-size:14px;">Target company discovery for ecosystem mapping. Structured enrichment connecting engineers to startups and adjacent company graphs. Stronger research loops inside role strategy and outreach logic.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="builder-score">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Builder Score</div>
+              <h2 class="section-title">A premium read on public engineering output.</h2>
+            </div>
+            <p class="section-copy">Builder Score is how SourceKit goes deeper than search. It evaluates visible GitHub work with weighted dimensions and returns an AI summary recruiters can use immediately.</p>
+          </div>
+
+          <div class="score-shell">
+            <div class="score-panel">
+              <div class="eyebrow" style="color:#92f3e1;">What It Does</div>
+              <p>Scan a candidate’s strongest public repos, score code signal from 0-100, and surface evidence around AI usage, build velocity, tooling, testing, documentation, and activity patterns.</p>
+              <p style="margin-top:14px; color:rgba(244,251,251,0.74); font-size:13px;">Weighted dimensions: AI mastery 30%, build velocity 20%, tooling 15%, commit bonus 15%, testing and docs signal.</p>
+            </div>
+
+            <div class="soft-card">
+              <h3>Why the ranking works</h3>
+              <p>Search relevance handles stack fit and recency. Builder Score adds deeper technical diligence so rankings feel more defensible and less like heuristics.</p>
+              <p>Compare shortlisted candidates, write smarter outreach, and reduce manual GitHub review.</p>
+            </div>
+          </div>
+
+        </section>
+
+        <section class="panel" id="websets">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Websets + EEA</div>
+              <h2 class="section-title">Build living market maps around what elite talent looks like.</h2>
+            </div>
+            <p class="section-copy">For hard technical roles, titles are weak proxies. SourceKit helps define evidence of exceptional ability, then packages that logic into persistent, monitorable talent sets.</p>
+          </div>
+
+          <div class="grid-2">
+            <article class="soft-card">
+              <h3>Persistent candidate sets</h3>
+              <p>Define criteria once, enrich survivors, and monitor over time as new contributors emerge across the ecosystem.</p>
+              <p>Create a Webset from proven criteria. Enrich with contact, company, and talk signal. Monitor on a recurring schedule.</p>
+            </article>
+            <article class="soft-card">
+              <h3>Evidence of exceptional ability</h3>
+              <p>Model the top 5-10% using research output, open-source impact, conference visibility, technical leadership, and scale.</p>
+              <p>Published research and citations, open-source impact and maintainership, technical leadership and shipped scale.</p>
+            </article>
+          </div>
+
+          <div class="grid-4" style="margin-top: 12px;">
+            <article class="soft-card">
+              <h3>ML Infra Engineer</h3>
+              <p>PyTorch, JAX, or DeepSpeed contribution with distributed training signal and technical depth.</p>
+            </article>
+            <article class="soft-card">
+              <h3>Robotics Software</h3>
+              <p>ROS / MoveIt / Drake contribution plus visible robotics research or ecosystem presence.</p>
+            </article>
+            <article class="soft-card">
+              <h3>Staff Frontend</h3>
+              <p>Core UI systems work, OSS contribution, and conference or thought-leadership signal.</p>
+            </article>
+            <article class="soft-card">
+              <h3>AI-Native Engineer</h3>
+              <p>High Builder Score with visible AI-native coding and framework usage patterns in public repos.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="architecture">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Architecture</div>
+              <h2 class="section-title">A layered system built for sourcing, scoring, and orchestration.</h2>
+            </div>
+            <p class="section-copy">This stack is intentionally simple to explain: an operator-facing product layer, an intelligence layer for research and scoring, and an infrastructure layer for auth, data, and billing.</p>
+          </div>
+
+          <div class="architecture-board">
+            <div class="arch-column">
+              <div class="arch-group presentation">
+                <div class="arch-title">Presentation Layer</div>
+                <div class="arch-stack">
+                  <article class="arch-node">
+                    <h3>React + TypeScript</h3>
+                    <p>Role input, search UI, compare, outreach, search history, pipeline, and Websets workflow.</p>
+                  </article>
+                  <article class="arch-node">
+                    <h3>Candidate Pipeline</h3>
+                    <p>Ranked profiles, source citations, stage movement, notes, and export paths for operators.</p>
+                  </article>
+                </div>
+              </div>
+            </div>
+
+            <div class="arch-column">
+              <div class="arch-group intelligence">
+                <div class="arch-title">Intelligence Layer</div>
+                <div class="arch-stack">
+                  <article class="arch-node">
+                    <h3>Claude AI</h3>
+                    <p>Role strategy, ability criteria, summaries, and Builder Score narrative.</p>
+                  </article>
+                  <article class="arch-node">
+                    <h3>Exa + Websets</h3>
+                    <p>Research, neural search, collections, enrichment, and persistent monitoring.</p>
+                  </article>
+                  <article class="arch-node">
+                    <h3>Parallel.ai</h3>
+                    <p>JD extraction, company intelligence, and ecosystem mapping.</p>
+                  </article>
+                  <article class="arch-node">
+                    <h3>Harmonic</h3>
+                    <p>Structured company graph search, company enrichment, and startup ecosystem intelligence.</p>
+                  </article>
+                  <article class="arch-node">
+                    <h3>GitHub API</h3>
+                    <p>Contributors, commits, repo mining, language patterns, and code quality signals.</p>
+                  </article>
+                </div>
+              </div>
+            </div>
+
+            <div class="arch-column">
+              <div class="arch-group data">
+                <div class="arch-title">Data + Infrastructure</div>
+                <div class="arch-stack">
+                  <article class="arch-node">
+                    <h3>Supabase</h3>
+                    <p>Auth, PostgreSQL, RLS, search history, Websets data, and pipeline state.</p>
+                  </article>
+                  <article class="arch-node">
+                    <h3>Vercel</h3>
+                    <p>Frontend delivery, edge deployment, and serverless execution.</p>
+                  </article>
+                  <article class="arch-node">
+                    <h3>Stripe</h3>
+                    <p>Plans, billing, checkout flow, and entitlement enforcement.</p>
+                  </article>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="playbook">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Operator Playbook</div>
+              <h2 class="section-title">Use the product like an operator, not a keyword searcher.</h2>
+            </div>
+            <p class="section-copy">The strongest SourceKit workflows come from narrowing evidence, curating the repo set, and layering enrichments after candidate quality is already established.</p>
+          </div>
+
+          <div class="grid-4">
+            <article class="soft-card">
+              <h3>Be specific with titles</h3>
+              <p>Technical specificity sharpens the repo universe and improves search relevance immediately.</p>
+            </article>
+            <article class="soft-card">
+              <h3>Edit the repo set</h3>
+              <p>The repo list is often the highest-leverage quality control surface in the entire workflow.</p>
+            </article>
+            <article class="soft-card">
+              <h3>Start narrow</h3>
+              <p>Three tight criteria and twenty excellent matches beats one loose criterion and hundreds of noisy profiles.</p>
+            </article>
+            <article class="soft-card">
+              <h3>Layer enrichments later</h3>
+              <p>Verify quality first, then add Builder Score, contact data, publications, or outreach context.</p>
+            </article>
+          </div>
+        </section>
+
+        <footer class="footer">
+          <div>SourceKit Docs · Evidence-based technical talent discovery</div>
+          <div class="footer-links">
+            <a href="https://getsourcekit.vercel.app">getsourcekit.vercel.app</a>
+            <a href="https://sourcekit-docs.netlify.app">sourcekit-docs.netlify.app</a>
+          </div>
+        </footer>
+      </main>
     </div>
   </div>
-
-  <hr class="divider">
-
-  <!-- ARCHITECTURE + API SURFACE -->
-  <div class="section-tight section-muted">
-    <div class="label">System Design</div>
-    <div class="arch-flow">
-      <div class="arch-section">
-        <div class="arch-label">Presentation</div>
-        <div class="arch-box">
-          <div class="arch-box-name">React + TypeScript</div>
-          <div class="arch-box-desc">Mobile-first / OAuth / Search / Pipeline / Websets / Builder Score</div>
-        </div>
-      </div>
-      <div class="arch-arrow-icon">&#9654;</div>
-      <div class="arch-section-wide">
-        <div class="arch-label">AI Intelligence Layer</div>
-        <div class="arch-inner-grid-5">
-          <div class="arch-box">
-            <div class="arch-box-name">Claude AI</div>
-            <div class="arch-box-desc">Strategy / Builder Score</div>
-          </div>
-          <div class="arch-box">
-            <div class="arch-box-name">Exa + Websets</div>
-            <div class="arch-box-desc">Neural search</div>
-          </div>
-          <div class="arch-box">
-            <div class="arch-box-name">Parallel.ai</div>
-            <div class="arch-box-desc">JD extraction</div>
-          </div>
-          <div class="arch-box">
-            <div class="arch-box-name">GitHub API</div>
-            <div class="arch-box-desc">Code quality</div>
-          </div>
-          <div class="arch-box">
-            <div class="arch-box-name">LinkedIn</div>
-            <div class="arch-box-desc">Profile enrich</div>
-          </div>
-        </div>
-      </div>
-      <div class="arch-arrow-icon">&#9654;</div>
-      <div class="arch-section-mid">
-        <div class="arch-label">Data + Infrastructure</div>
-        <div class="arch-inner-grid-3">
-          <div class="arch-box">
-            <div class="arch-box-name">Supabase</div>
-            <div class="arch-box-desc">Auth / RLS / Edge Fn</div>
-          </div>
-          <div class="arch-box">
-            <div class="arch-box-name">Vercel</div>
-            <div class="arch-box-desc">Edge CDN</div>
-          </div>
-          <div class="arch-box">
-            <div class="arch-box-name">Stripe</div>
-            <div class="arch-box-desc">Billing</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="api-grid">
-      <div class="api-group-card blue">
-        <div style="margin-bottom:6px;"><span class="pill-blue">Exa API</span> <span style="font-size:11px; color:var(--secondary); margin-left:4px;">5 endpoints</span></div>
-        <div class="api-endpoint">
-          <span class="api-key api-key-blue">Research</span> Deep research on any topic<br>
-          <span class="api-key api-key-blue">Search</span> Neural + keyword hybrid search<br>
-          <span class="api-key api-key-blue">Answer</span> Direct answers from web data<br>
-          <span class="api-key api-key-blue">findSimilar</span> Find pages similar to a URL<br>
-          <span class="api-key api-key-blue">Websets</span> Collections, enrichment, monitoring
-        </div>
-      </div>
-      <div class="api-group-card purple">
-        <div style="margin-bottom:6px;"><span class="pill-purple">Parallel API</span> <span style="font-size:11px; color:var(--secondary); margin-left:4px;">3 endpoints</span></div>
-        <div class="api-endpoint">
-          <span class="api-key api-key-purple">Task</span> Single deep-research task with citations<br>
-          <span class="api-key api-key-purple">FindAll</span> Batch entity discovery from a query<br>
-          <span class="api-key api-key-purple">Search</span> Web search with content extraction
-        </div>
-      </div>
-      <div class="api-group-card orange">
-        <div style="margin-bottom:6px;"><span class="pill-orange">GitHub + Builder Score</span> <span style="font-size:11px; color:var(--secondary); margin-left:4px;">3 interfaces</span></div>
-        <div class="api-endpoint">
-          <span class="api-key api-key-orange">REST</span> Contributors, commits, profiles, metadata<br>
-          <span class="api-key api-key-orange">GraphQL</span> Contribution graphs, org, activity<br>
-          <span class="api-key api-key-orange">Builder Score</span> 7-dim code eval + Claude summary
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <hr class="divider">
-
-  <!-- FEATURES GRID -->
-  <div class="section-tight">
-    <div class="label">Operator Tools</div>
-    <div class="grid-4">
-      <div class="card-blue">
-        <div class="card-title" style="color:var(--blue);">Candidate Compare</div>
-        <div class="card-body">Side-by-side candidate comparison with AI-generated summaries and Builder Score overlays.</div>
-      </div>
-      <div class="card-purple">
-        <div class="card-title" style="color:var(--purple);">AI Outreach</div>
-        <div class="card-body">Context-aware outreach generation. References specific repos, commits, and contributions.</div>
-      </div>
-      <div class="card-orange">
-        <div class="card-title" style="color:var(--orange);">Bulk Actions</div>
-        <div class="card-body">Select multiple candidates. Batch compare, summarize, generate outreach, or export CSV.</div>
-      </div>
-      <div class="card-cyan">
-        <div class="card-title" style="color:var(--cyan);">Search History</div>
-        <div class="card-body">Every search saved with full strategy context. Re-run, clone, or build new searches from history.</div>
-      </div>
-      <div class="card-blue">
-        <div class="card-title" style="color:var(--blue);">Code Quality Report</div>
-        <div class="card-body">Per-candidate deep dive: repo breakdown, language distribution, contribution timeline, Builder Score.</div>
-      </div>
-      <div class="card-purple">
-        <div class="card-title" style="color:var(--purple);">EEA Signals</div>
-        <div class="card-body">Auto-detected signals: conference talks, papers, patents, maintainer status, high-impact repos.</div>
-      </div>
-      <div class="card-orange">
-        <div class="card-title" style="color:var(--orange);">Outreach Templates</div>
-        <div class="card-body">Customizable templates with merge fields. Save per-role templates. Track which perform best.</div>
-      </div>
-      <div class="card-cyan">
-        <div class="card-title" style="color:var(--cyan);">Watchlist</div>
-        <div class="card-body">Save candidates across searches. Track activity over time. Get notified on profile changes.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PRO TIPS -->
-  <div class="section-tight">
-    <div class="label">Best Results</div>
-    <div class="tips-grid">
-      <div class="card" style="padding:10px 14px;">
-        <div class="card-title">Be Specific With Titles</div>
-        <div class="card-body">"ML Infrastructure Engineer focused on training pipelines" beats "ML Engineer."</div>
-      </div>
-      <div class="card" style="padding:10px 14px;">
-        <div class="card-title">Always Edit the Repo List</div>
-        <div class="card-body">AI suggestions are a starting point. Editing the repo list is the single biggest lever for result quality.</div>
-      </div>
-      <div class="card" style="padding:10px 14px;">
-        <div class="card-title">Use Builder Score for AI Roles</div>
-        <div class="card-body">AI Mastery dimension and Claude Code detection are strongest signals for AI-native engineering hires.</div>
-      </div>
-      <div class="card" style="padding:10px 14px;">
-        <div class="card-title">Target Hidden Gems</div>
-        <div class="card-body">High contributions, low follower counts. Under-recruited and more responsive to outreach.</div>
-      </div>
-      <div class="card" style="padding:10px 14px;">
-        <div class="card-title">Use Websets for Ongoing Roles</div>
-        <div class="card-body">Set up monitoring. New contributors matching your criteria surface automatically.</div>
-      </div>
-      <div class="card" style="padding:10px 14px;">
-        <div class="card-title">Write Criteria Like Filters</div>
-        <div class="card-body">"Has 50+ commits to a distributed systems project with 1K+ stars" works. "Passionate about backend" does not.</div>
-      </div>
-      <div class="card" style="padding:10px 14px;">
-        <div class="card-title">Start Narrow, Broaden Later</div>
-        <div class="card-body">3 tight criteria and 20 verified matches beats 1 loose criterion and 200 unqualified results.</div>
-      </div>
-      <div class="card" style="padding:10px 14px;">
-        <div class="card-title">Layer Enrichments After</div>
-        <div class="card-body">Let the Webset verify matches first, then add Builder Score and contact info to survivors.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <div class="footer">
-    <span style="color:var(--white); font-weight:600;">SourceKit Beta v2.0</span> finds technical talent through shipped work, verified signals, and living search pipelines.<br>
-    <a href="https://getsourcekit.vercel.app">getsourcekit.vercel.app</a> &middot;
-    <a href="https://sourcekit-docs.netlify.app">Docs</a> &middot;
-    <span>Feedback: michael.f.rubino@gmail.com</span>
-  </div>
-
-</div>
 </body>
 </html>

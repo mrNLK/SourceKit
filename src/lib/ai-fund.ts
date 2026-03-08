@@ -6,6 +6,9 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 import {
   type AiFundConcept,
   type AiFundPerson,
@@ -512,6 +515,38 @@ export async function createIntelligenceRun(
 
   if (error) throw error;
   return intelligenceRunFromRow(data);
+}
+
+export async function dispatchHarmonicIntelligence(
+  runId: string,
+  query: string,
+  conceptId?: string | null,
+  limit?: number,
+): Promise<Record<string, unknown>> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/harmonic-intelligence`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      runId,
+      query,
+      ...(conceptId ? { conceptId } : {}),
+      ...(limit ? { limit } : {}),
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: { message: "Request failed" } }));
+    throw new Error(err?.error?.message || `HTTP ${res.status}`);
+  }
+
+  return res.json();
 }
 
 export async function updateIntelligenceRun(

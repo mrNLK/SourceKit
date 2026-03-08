@@ -37,7 +37,7 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
         name: developer.name,
         avatar_url: developer.avatarUrl,
         stage: 'contacted',
-      }, { onConflict: 'github_username' });
+      }, { onConflict: 'user_id,github_username' });
       if (error) throw error;
       setAddedToPipeline(true);
       toast({
