@@ -26,6 +26,7 @@ import {
   createAssignment,
   createScore,
   fetchDashboardStats,
+  createEvidence,
 } from "@/lib/ai-fund";
 import { enrichPersonByLinkedIn } from "@/services/harmonic";
 
@@ -139,6 +140,34 @@ export function useAiFundWorkspace(): AiFundWorkspace {
                   )
                 );
               });
+
+              // Auto-create evidence records from Harmonic highlights and awards
+              const evidencePromises = [];
+              for (const highlight of harmonicMeta.highlights.slice(0, 5)) {
+                evidencePromises.push(
+                  createEvidence({
+                    personId: person.id,
+                    evidenceType: "media_mention",
+                    title: highlight.length > 120 ? highlight.slice(0, 117) + "..." : highlight,
+                    description: highlight,
+                    signalStrength: 60,
+                    metadata: { source: "harmonic", type: "highlight" },
+                  })
+                );
+              }
+              for (const award of harmonicMeta.awards.slice(0, 5)) {
+                evidencePromises.push(
+                  createEvidence({
+                    personId: person.id,
+                    evidenceType: "award",
+                    title: award.title,
+                    description: award.description || null,
+                    signalStrength: 80,
+                    metadata: { source: "harmonic", type: "award" },
+                  })
+                );
+              }
+              Promise.allSettled(evidencePromises).catch(() => {});
             })
             .catch((err) => console.warn("Harmonic person enrichment failed (non-blocking):", err));
         }

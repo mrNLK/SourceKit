@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Plus, ChevronRight, Briefcase } from "lucide-react";
+import { Plus, ChevronRight, Briefcase, Building2 } from "lucide-react";
 import type { AiFundWorkspace, AiFundConcept, ConceptStage } from "@/types/ai-fund";
+import { companyNameToDomain } from "@/services/harmonic";
+import CompanyDetailPanel from "./CompanyDetailPanel";
 
 interface Props {
   workspace: AiFundWorkspace;
@@ -39,12 +41,27 @@ const STAGE_COLORS: Record<ConceptStage, string> = {
   archived: "bg-secondary text-muted-foreground border-border",
 };
 
+function extractCompanyFromConcept(concept: AiFundConcept): { name: string; domain: string } | null {
+  const meta = concept.metadata as Record<string, unknown> | null;
+  if (meta?.companyName && meta?.companyDomain) {
+    return { name: meta.companyName as string, domain: meta.companyDomain as string };
+  }
+  // Try concept name pattern: "AI Diagnostics @ Acme Health"
+  const atMatch = concept.name.match(/@\s*(.+)/);
+  if (atMatch) {
+    const companyName = atMatch[1].trim();
+    return { name: companyName, domain: companyNameToDomain(companyName) };
+  }
+  return null;
+}
+
 export default function ConceptPipelineTab({ workspace }: Props) {
   const { concepts, loading, addConcept, updateConcept } = workspace;
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newThesis, setNewThesis] = useState("");
   const [newSector, setNewSector] = useState("");
+  const [companyLookup, setCompanyLookup] = useState<{ name: string; domain: string } | null>(null);
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -62,7 +79,6 @@ export default function ConceptPipelineTab({ workspace }: Props) {
   const handleAdvanceStage = async (concept: AiFundConcept) => {
     const idx = STAGE_ORDER.indexOf(concept.stage);
     if (idx < STAGE_ORDER.length - 2) {
-      // Don't advance to "archived" automatically
       await updateConcept(concept.id, { stage: STAGE_ORDER[idx + 1] });
     }
   };
@@ -75,7 +91,6 @@ export default function ConceptPipelineTab({ workspace }: Props) {
     );
   }
 
-  // Group by stage
   const grouped = STAGE_ORDER.reduce(
     (acc, stage) => {
       acc[stage] = concepts.filter((c) => c.stage === stage);
@@ -161,39 +176,60 @@ export default function ConceptPipelineTab({ workspace }: Props) {
               </div>
             ) : (
               <div className="space-y-2">
-                {grouped[stage].map((concept) => (
-                  <div
-                    key={concept.id}
-                    className="flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-lg hover:border-primary/30 transition-colors"
-                  >
-                    <Briefcase className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{concept.name}</p>
-                      {concept.thesis && (
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">{concept.thesis}</p>
+                {grouped[stage].map((concept) => {
+                  const companyInfo = extractCompanyFromConcept(concept);
+                  return (
+                    <div
+                      key={concept.id}
+                      className="flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-lg hover:border-primary/30 transition-colors"
+                    >
+                      <Briefcase className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{concept.name}</p>
+                        {concept.thesis && (
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">{concept.thesis}</p>
+                        )}
+                      </div>
+                      {concept.sector && (
+                        <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded shrink-0">
+                          {concept.sector}
+                        </span>
+                      )}
+                      {companyInfo && (
+                        <button
+                          onClick={() => setCompanyLookup(companyInfo)}
+                          title={`View ${companyInfo.name} intelligence`}
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
+                        >
+                          <Building2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      {stage !== "funded" && stage !== "archived" && (
+                        <button
+                          onClick={() => handleAdvanceStage(concept)}
+                          title="Advance to next stage"
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
                       )}
                     </div>
-                    {concept.sector && (
-                      <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded shrink-0">
-                        {concept.sector}
-                      </span>
-                    )}
-                    {stage !== "funded" && stage !== "archived" && (
-                      <button
-                        onClick={() => handleAdvanceStage(concept)}
-                        title="Advance to next stage"
-                        className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         ))}
       </div>
+
+      {/* Company detail panel */}
+      {companyLookup && (
+        <CompanyDetailPanel
+          companyName={companyLookup.name}
+          domain={companyLookup.domain}
+          onClose={() => setCompanyLookup(null)}
+        />
+      )}
     </div>
   );
 }
