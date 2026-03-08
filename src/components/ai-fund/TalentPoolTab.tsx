@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, ExternalLink, Filter } from "lucide-react";
 import type { AiFundWorkspace, AiFundPerson, ProcessStage, PersonType } from "@/types/ai-fund";
 import { scoreColor, scoreLabel } from "@/lib/aifund-scoring";
 import { fetchScoresForPerson } from "@/lib/ai-fund";
-import { useEffect } from "react";
+import PersonDetail from "./PersonDetail";
 
 interface Props {
   workspace: AiFundWorkspace;
@@ -30,6 +30,7 @@ export default function TalentPoolTab({ workspace }: Props) {
   const [filterType, setFilterType] = useState<PersonType | "all">("all");
   const [filterStage, setFilterStage] = useState<ProcessStage | "all">("all");
   const [scores, setScores] = useState<Record<string, number | null>>({});
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -80,6 +81,17 @@ export default function TalentPoolTab({ workspace }: Props) {
     if (filterStage !== "all" && p.processStage !== filterStage) return false;
     return true;
   });
+
+  // Detail view
+  const selectedPerson = selectedPersonId ? people.find((p) => p.id === selectedPersonId) : null;
+  if (selectedPerson) {
+    return (
+      <PersonDetail
+        person={selectedPerson}
+        onBack={() => setSelectedPersonId(null)}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -209,9 +221,10 @@ export default function TalentPoolTab({ workspace }: Props) {
       ) : (
         <div className="space-y-2">
           {filtered.map((person) => (
-            <div
+            <button
               key={person.id}
-              className="flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-lg hover:border-primary/30 transition-colors"
+              onClick={() => setSelectedPersonId(person.id)}
+              className="w-full flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-lg hover:border-primary/30 cursor-pointer transition-colors text-left"
             >
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold shrink-0">
                 {person.fullName.charAt(0).toUpperCase()}
@@ -224,6 +237,7 @@ export default function TalentPoolTab({ workspace }: Props) {
                       href={person.linkedinUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className="text-muted-foreground hover:text-primary"
                     >
                       <ExternalLink className="w-3 h-3" />
@@ -245,7 +259,7 @@ export default function TalentPoolTab({ workspace }: Props) {
                   {scores[person.id] !== null ? `${scores[person.id]?.toFixed(1)} - ${scoreLabel(scores[person.id])}` : "Unscored"}
                 </span>
               )}
-            </div>
+            </button>
           ))}
         </div>
       )}

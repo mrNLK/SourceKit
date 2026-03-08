@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Zap, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
-import type { AiFundIntelligenceRun, IntelligenceProvider, IntelligenceRunStatus } from "@/types/ai-fund";
-import { fetchIntelligenceRuns, createIntelligenceRun, dispatchHarmonicIntelligence } from "@/lib/ai-fund";
+import type { AiFundIntelligenceRun, IntelligenceProvider, IntelligenceRunStatus, AiFundConcept } from "@/types/ai-fund";
+import { fetchIntelligenceRuns, createIntelligenceRun, dispatchHarmonicIntelligence, fetchConcepts } from "@/lib/ai-fund";
+import IntelligenceRunDetail from "./IntelligenceRunDetail";
 
 interface Props {}
 
@@ -24,16 +25,20 @@ export default function IntelligenceTab({}: Props) {
   const [runs, setRuns] = useState<AiFundIntelligenceRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
   // Form
-  const [formProvider, setFormProvider] = useState<IntelligenceProvider>("exa");
+  const [formProvider, setFormProvider] = useState<IntelligenceProvider>("harmonic");
   const [formQuery, setFormQuery] = useState("");
+  const [formConceptId, setFormConceptId] = useState<string>("");
+  const [concepts, setConcepts] = useState<AiFundConcept[]>([]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const r = await fetchIntelligenceRuns();
+        const [r, c] = await Promise.all([fetchIntelligenceRuns(), fetchConcepts()]);
         setRuns(r);
+        setConcepts(c);
       } catch (err) {
         console.error("Failed to load intelligence runs:", err);
       } finally {
@@ -47,16 +52,24 @@ export default function IntelligenceTab({}: Props) {
     if (!formQuery.trim()) return;
     const run = await createIntelligenceRun({
       provider: formProvider,
-      queryParams: { query: formQuery.trim() },
+      queryParams: {
+        query: formQuery.trim(),
+        ...(formConceptId ? { conceptId: formConceptId } : {}),
+      },
     });
     setRuns((prev) => [run, ...prev]);
     setFormQuery("");
+    setFormConceptId("");
     setShowForm(false);
 
     // Dispatch to harmonic-intelligence edge function
     if (formProvider === "harmonic") {
       try {
-        const result = await dispatchHarmonicIntelligence(run.id, formQuery.trim());
+        const result = await dispatchHarmonicIntelligence(
+          run.id,
+          formQuery.trim(),
+          formConceptId || null,
+        );
         const updatedRun = result.run as AiFundIntelligenceRun | undefined;
         if (updatedRun) {
           setRuns((prev) =>
@@ -71,6 +84,16 @@ export default function IntelligenceTab({}: Props) {
       }
     }
   };
+
+  // Detail view
+  if (selectedRunId) {
+    return (
+      <IntelligenceRunDetail
+        runId={selectedRunId}
+        onBack={() => setSelectedRunId(null)}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -107,20 +130,35 @@ export default function IntelligenceTab({}: Props) {
               onChange={(e) => setFormProvider(e.target.value as IntelligenceProvider)}
               className="px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground"
             >
+              <option value="harmonic">Harmonic</option>
               <option value="exa">Exa Websets</option>
               <option value="parallel">Parallel Deep Research</option>
               <option value="github">GitHub API</option>
               <option value="manual">Manual Import</option>
-              <option value="harmonic">Harmonic</option>
             </select>
-            <input
-              type="text"
-              placeholder="Search query *"
-              value={formQuery}
-              onChange={(e) => setFormQuery(e.target.value)}
-              className="px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
+            <select
+              value={formConceptId}
+              onChange={(e) => setFormConceptId(e.target.value)}
+              className="px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground"
+            >
+              <option value="">No concept (standalone)</option>
+              {concepts.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </div>
+          <input
+            type="text"
+            placeholder="Search query *"
+            value={formQuery}
+            onChange={(e) => setFormQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && formQuery.trim()) handleCreate();
+            }}
+            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
           <div className="flex gap-2">
             <button
               onClick={handleCreate}
@@ -152,9 +190,14 @@ export default function IntelligenceTab({}: Props) {
             const config = STATUS_CONFIG[run.status];
             const StatusIcon = config.icon;
             return (
-              <div
+              <button
                 key={run.id}
-                className="flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-lg"
+                onClick={() => run.status === "completed" && setSelectedRunId(run.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-lg text-left transition-colors ${
+                  run.status === "completed"
+                    ? "hover:border-primary/30 cursor-pointer"
+                    : "cursor-default"
+                }`}
               >
                 <StatusIcon className={`w-4 h-4 shrink-0 ${config.color} ${run.status === "running" ? "animate-spin" : ""}`} />
                 <div className="flex-1 min-w-0">
@@ -177,7 +220,7 @@ export default function IntelligenceTab({}: Props) {
                 <span className="text-xs text-muted-foreground shrink-0">
                   {new Date(run.createdAt).toLocaleDateString()}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>

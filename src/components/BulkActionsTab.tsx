@@ -22,14 +22,7 @@ interface ChatMessage {
 type SortKey = "name" | "score" | "stage";
 type SortDir = "asc" | "desc";
 
-const STAGES = ["contacted", "not_interested", "recruiter_screen", "rejected", "moved_to_ats"];
-const STAGE_COLORS: Record<string, string> = {
-  contacted: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  not_interested: "bg-red-500/15 text-red-400 border-red-500/30",
-  recruiter_screen: "bg-purple-500/15 text-purple-400 border-purple-500/30",
-  rejected: "bg-rose-500/15 text-rose-400 border-rose-500/30",
-  moved_to_ats: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-};
+import { STAGE_IDS as STAGES, STAGE_COLORS, PIPELINE_STAGES } from "@/lib/constants";
 
 const QUICK_ACTIONS: { id: string; label: string; tip: string; icon: any; needsSelection: boolean; minSelection?: number; maxSelection?: number }[] = [
   { id: "refine", label: "Refine Shortlist", tip: "AI ranks selected candidates and suggests who to prioritize", icon: Sparkles, needsSelection: true },
@@ -302,7 +295,7 @@ const BulkActionsTab = () => {
               className="bg-secondary/50 border border-border rounded-lg py-1.5 px-2.5 text-xs text-foreground outline-none font-display cursor-pointer"
             >
               <option value="">All Stages</option>
-              {STAGES.map(s => <option key={s} value={s}>{s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</option>)}
+              {PIPELINE_STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
             <div className="flex items-center gap-1.5 text-[10px] font-display text-muted-foreground">
               <span>Score</span>

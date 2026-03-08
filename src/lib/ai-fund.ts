@@ -549,6 +549,76 @@ export async function dispatchHarmonicIntelligence(
   return res.json();
 }
 
+// ---------------------------------------------------------------------------
+// Harmonic Companies (cached from intelligence runs)
+// ---------------------------------------------------------------------------
+
+export interface HarmonicCompanyRow {
+  id: string;
+  user_id: string;
+  harmonic_company_id: string;
+  name: string;
+  domain: string | null;
+  linkedin_url: string | null;
+  website_url: string | null;
+  location: string | null;
+  funding_stage: string | null;
+  funding_total: number | null;
+  last_funding_date: string | null;
+  last_funding_total: number | null;
+  headcount: number | null;
+  headcount_growth_30d: number | null;
+  headcount_growth_90d: number | null;
+  tags: string[];
+  founders: { name: string; title: string; linkedinUrl: string | null }[];
+  raw_payload: Record<string, unknown> | null;
+  fetched_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchHarmonicCompanies(): Promise<HarmonicCompanyRow[]> {
+  const userId = await getUserId();
+  const { data, error } = await supabase
+    .from("aifund_harmonic_companies")
+    .select("*")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false });
+
+  if (error) throw error;
+  return (data || []) as HarmonicCompanyRow[];
+}
+
+export async function fetchHarmonicCompaniesByIds(
+  harmonicIds: string[]
+): Promise<HarmonicCompanyRow[]> {
+  if (harmonicIds.length === 0) return [];
+  const userId = await getUserId();
+  const { data, error } = await supabase
+    .from("aifund_harmonic_companies")
+    .select("*")
+    .eq("user_id", userId)
+    .in("harmonic_company_id", harmonicIds);
+
+  if (error) throw error;
+  return (data || []) as HarmonicCompanyRow[];
+}
+
+export async function fetchIntelligenceRunById(
+  runId: string
+): Promise<AiFundIntelligenceRun | null> {
+  const userId = await getUserId();
+  const { data, error } = await supabase
+    .from("aifund_intelligence_runs")
+    .select("*")
+    .eq("id", runId)
+    .eq("user_id", userId)
+    .single();
+
+  if (error || !data) return null;
+  return intelligenceRunFromRow(data);
+}
+
 export async function updateIntelligenceRun(
   id: string,
   updates: Partial<AiFundIntelligenceRun>

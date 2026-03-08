@@ -4,16 +4,10 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+import { PIPELINE_STAGES as STAGES } from "@/lib/constants";
+
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-const STAGES = [
-  { id: 'contacted', label: 'Contacted', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
-  { id: 'not_interested', label: 'Not Interested', color: 'bg-red-500/15 text-red-400 border-red-500/30' },
-  { id: 'recruiter_screen', label: 'Recruiter Screen', color: 'bg-purple-500/15 text-purple-400 border-purple-500/30' },
-  { id: 'rejected', label: 'Rejected', color: 'bg-rose-500/15 text-rose-400 border-rose-500/30' },
-  { id: 'moved_to_ats', label: 'Moved to ATS', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
-] as const;
 
 // --- Outreach History + Generator for expanded card ---
 const OutreachSection = ({ pipelineId, candidateName, githubUsername }: { pipelineId: string; candidateName: string; githubUsername: string }) => {
