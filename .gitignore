@@ -39,3 +39,7 @@ SourceProof.zip
 
 # Local Netlify folder
 .netlify
+
+# Local nested repos / worktrees
+FounderFinder/
+.claude/worktrees/
