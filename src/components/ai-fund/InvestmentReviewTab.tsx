@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
-import { FileCheck, DollarSign, CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
-import type { AiFundWorkspace, AiFundDecisionMemo, DecisionOutcome } from "@/types/ai-fund";
+import {
+  FileCheck, DollarSign, CheckCircle, XCircle, Clock, AlertTriangle,
+  Building2, TrendingUp, TrendingDown, Loader2,
+} from "lucide-react";
+import type { AiFundWorkspace, AiFundConcept, AiFundDecisionMemo, DecisionOutcome } from "@/types/ai-fund";
 import { fetchDecisionMemos, createDecisionMemo } from "@/lib/ai-fund";
+import { useHarmonicCompany } from "@/hooks/useHarmonicCompany";
+import { companyNameToDomain } from "@/services/harmonic";
 
 interface Props {
   workspace: AiFundWorkspace;
@@ -13,6 +18,67 @@ const OUTCOME_CONFIG: Record<DecisionOutcome, { label: string; icon: React.Eleme
   defer: { label: "Defer", icon: Clock, color: "text-yellow-400" },
   conditional: { label: "Conditional", icon: AlertTriangle, color: "text-orange-400" },
 };
+
+function extractDomainFromConcept(concept: AiFundConcept): string | null {
+  const meta = concept.metadata as Record<string, unknown> | null;
+  if (meta?.companyDomain) return meta.companyDomain as string;
+  const atMatch = concept.name.match(/@\s*(.+)/);
+  if (atMatch) return companyNameToDomain(atMatch[1].trim());
+  return null;
+}
+
+function CompanyContextBadge({ domain }: { domain: string }) {
+  const { company, poachability, isLoading } = useHarmonicCompany(domain);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+        <Loader2 className="w-2.5 h-2.5 animate-spin" /> Loading context...
+      </div>
+    );
+  }
+
+  if (!company) return null;
+
+  return (
+    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground flex-wrap">
+      {company.funding_stage && (
+        <span className="px-1.5 py-0.5 bg-secondary rounded">
+          {company.funding_stage.replace(/_/g, " ")}
+        </span>
+      )}
+      {company.funding_total != null && (
+        <span className="flex items-center gap-0.5">
+          <DollarSign className="w-2.5 h-2.5" />
+          ${(company.funding_total / 1_000_000).toFixed(1)}M raised
+        </span>
+      )}
+      {company.headcount != null && (
+        <span>{company.headcount} employees</span>
+      )}
+      {company.headcount_growth_90d != null && (
+        <span className="flex items-center gap-0.5">
+          {company.headcount_growth_90d > 0 ? (
+            <TrendingUp className="w-2.5 h-2.5 text-emerald-400" />
+          ) : (
+            <TrendingDown className="w-2.5 h-2.5 text-red-400" />
+          )}
+          {company.headcount_growth_90d > 0 ? "+" : ""}
+          {company.headcount_growth_90d.toFixed(0)}% 90d
+        </span>
+      )}
+      {poachability && (
+        <span
+          className={`font-semibold ${
+            poachability.score >= 70 ? "text-emerald-400" : poachability.score >= 40 ? "text-amber-400" : "text-red-400"
+          }`}
+        >
+          Poach: {poachability.score}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function InvestmentReviewTab({ workspace }: Props) {
   const { concepts, loading: workspaceLoading } = workspace;
@@ -165,6 +231,7 @@ export default function InvestmentReviewTab({ workspace }: Props) {
             const concept = conceptMap.get(memo.conceptId);
             const config = OUTCOME_CONFIG[memo.outcome];
             const OutcomeIcon = config.icon;
+            const conceptDomain = concept ? extractDomainFromConcept(concept) : null;
             return (
               <div
                 key={memo.id}
@@ -196,6 +263,7 @@ export default function InvestmentReviewTab({ workspace }: Props) {
                   {memo.rationale && (
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{memo.rationale}</p>
                   )}
+                  {conceptDomain && <CompanyContextBadge domain={conceptDomain} />}
                 </div>
                 <span className="text-xs text-muted-foreground shrink-0">
                   {new Date(memo.decidedAt).toLocaleDateString()}

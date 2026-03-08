@@ -10,7 +10,14 @@ import type {
   HarmonicRunSummary,
 } from "@/types/ai-fund";
 import { fetchIntelligenceRuns, createIntelligenceRun, updateIntelligenceRun } from "@/lib/ai-fund";
-import { searchCompaniesNaturalLanguage, computePoachability, enrichCompanyByDomain } from "@/services/harmonic";
+import {
+  searchCompaniesNaturalLanguage,
+  computePoachability,
+  enrichCompanyByDomain,
+  listSavedSearches,
+  getNetNewResults,
+} from "@/services/harmonic";
+import type { HarmonicSavedSearch } from "@/types/harmonic";
 
 const STATUS_CONFIG: Record<IntelligenceRunStatus, { icon: React.ElementType; color: string }> = {
   pending: { icon: Clock, color: "text-yellow-400" },
@@ -84,6 +91,13 @@ export default function IntelligenceTab() {
   const [formQuery, setFormQuery] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Saved searches
+  const [savedSearches, setSavedSearches] = useState<HarmonicSavedSearch[]>([]);
+  const [savedSearchesLoading, setSavedSearchesLoading] = useState(false);
+  const [savedSearchError, setSavedSearchError] = useState<string | null>(null);
+  const [pollingSearch, setPollingSearch] = useState<string | null>(null);
+  const [netNewCount, setNetNewCount] = useState<Record<string, number>>({});
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -97,6 +111,36 @@ export default function IntelligenceTab() {
     };
     load();
   }, []);
+
+  // Load saved searches
+  const loadSavedSearches = async () => {
+    setSavedSearchesLoading(true);
+    setSavedSearchError(null);
+    try {
+      const searches = await listSavedSearches();
+      setSavedSearches(searches);
+    } catch (err) {
+      setSavedSearchError(err instanceof Error ? err.message : "Failed to load saved searches");
+    } finally {
+      setSavedSearchesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSavedSearches();
+  }, []);
+
+  const handlePollSearch = async (searchUrn: string) => {
+    setPollingSearch(searchUrn);
+    try {
+      const results = await getNetNewResults(searchUrn);
+      setNetNewCount((prev) => ({ ...prev, [searchUrn]: results.count || results.results?.length || 0 }));
+    } catch (err) {
+      console.error("Failed to poll saved search:", err);
+    } finally {
+      setPollingSearch(null);
+    }
+  };
 
   const handleCreate = async () => {
     if (!formQuery.trim()) return;
@@ -262,6 +306,64 @@ export default function IntelligenceTab() {
           </div>
         </div>
       )}
+
+      {/* Saved Searches */}
+      <div className="pt-2">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-foreground">Saved Searches</h2>
+          <button
+            onClick={loadSavedSearches}
+            disabled={savedSearchesLoading}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {savedSearchesLoading ? "Loading..." : "Refresh"}
+          </button>
+        </div>
+        {savedSearchError ? (
+          <div className="px-4 py-3 bg-card border border-border rounded-lg">
+            <p className="text-xs text-muted-foreground">{savedSearchError}</p>
+          </div>
+        ) : savedSearches.length === 0 ? (
+          <div className="px-4 py-3 bg-card border border-border rounded-lg">
+            <p className="text-xs text-muted-foreground">
+              {savedSearchesLoading ? "Loading saved searches..." : "No saved searches found in Harmonic."}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {savedSearches.map((ss) => (
+              <div
+                key={ss.entity_urn}
+                className="flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-lg"
+              >
+                <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{ss.name}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {ss.type.replace(/_/g, " ").toLowerCase()} · {ss.is_private ? "private" : "shared"}
+                  </p>
+                </div>
+                {netNewCount[ss.entity_urn] != null && netNewCount[ss.entity_urn] > 0 && (
+                  <span className="px-2 py-0.5 text-[10px] font-semibold bg-primary/10 text-primary rounded-full">
+                    {netNewCount[ss.entity_urn]} new
+                  </span>
+                )}
+                <button
+                  onClick={() => handlePollSearch(ss.entity_urn)}
+                  disabled={pollingSearch === ss.entity_urn}
+                  className="px-2 py-1 text-[10px] font-medium text-muted-foreground bg-secondary rounded hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  {pollingSearch === ss.entity_urn ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    "Check new"
+                  )}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Runs list */}
       {runs.length === 0 ? (

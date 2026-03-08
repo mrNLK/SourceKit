@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Plus, ExternalLink, Filter, Sparkles } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Plus, ExternalLink, Filter, Sparkles, Users } from "lucide-react";
 import type { AiFundWorkspace, AiFundPerson, ProcessStage, PersonType, HarmonicPersonMetadata } from "@/types/ai-fund";
 import { scoreColor, scoreLabel } from "@/lib/aifund-scoring";
 import { fetchScoresForPerson } from "@/lib/ai-fund";
@@ -31,6 +31,28 @@ export default function TalentPoolTab({ workspace }: Props) {
   const [filterStage, setFilterStage] = useState<ProcessStage | "all">("all");
   const [scores, setScores] = useState<Record<string, number | null>>({});
   const [selectedPerson, setSelectedPerson] = useState<AiFundPerson | null>(null);
+
+  // Compute same-company network counts
+  const companyPeers = useMemo(() => {
+    const companyCounts: Record<string, number> = {};
+    for (const p of people) {
+      if (p.currentCompany) {
+        const key = p.currentCompany.toLowerCase().trim();
+        companyCounts[key] = (companyCounts[key] || 0) + 1;
+      }
+    }
+    // Only return counts where there are 2+ people from same company
+    const result: Record<string, number> = {};
+    for (const p of people) {
+      if (p.currentCompany) {
+        const key = p.currentCompany.toLowerCase().trim();
+        if (companyCounts[key] > 1) {
+          result[p.id] = companyCounts[key] - 1; // "N others"
+        }
+      }
+    }
+    return result;
+  }, [people]);
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -227,6 +249,15 @@ export default function TalentPoolTab({ workspace }: Props) {
                     <p className="text-sm font-medium text-foreground truncate">{person.fullName}</p>
                     {harmonicMeta && (
                       <Sparkles className="w-3 h-3 text-primary shrink-0" title="Harmonic enriched" />
+                    )}
+                    {companyPeers[person.id] != null && (
+                      <span
+                        className="flex items-center gap-0.5 text-[10px] text-muted-foreground"
+                        title={`${companyPeers[person.id]} other${companyPeers[person.id] > 1 ? "s" : ""} from ${person.currentCompany}`}
+                      >
+                        <Users className="w-3 h-3" />
+                        +{companyPeers[person.id]}
+                      </span>
                     )}
                     {person.linkedinUrl && (
                       <a
