@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { enrichCompanyByDomain, computePoachability } from '@/services/harmonic'
 import type { CompanyContext, PoachabilityScore } from '@/types/harmonic'
+import { toast } from '@/hooks/use-toast'
 
 /**
  * Fetch and cache Harmonic company data for a given domain.
@@ -20,6 +22,17 @@ export function useHarmonicCompany(domain: string | null | undefined) {
     staleTime: 1000 * 60 * 30, // 30 minutes client-side
     retry: 1, // No auto-retry storms
   })
+
+  // Surface enrichment errors as toasts so the user knows something went wrong
+  useEffect(() => {
+    if (query.error && domain) {
+      toast({
+        title: 'Company enrichment failed',
+        description: query.error instanceof Error ? query.error.message : 'Could not fetch company data',
+        variant: 'destructive',
+      })
+    }
+  }, [query.error, domain])
 
   return {
     company: query.data?.company as CompanyContext | undefined,

@@ -3,6 +3,7 @@ import {
   Zap, Clock, CheckCircle, XCircle, Loader2,
   Building2, ChevronDown, ChevronRight, MapPin, DollarSign, Users,
 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import type {
   AiFundIntelligenceRun,
   IntelligenceProvider,
@@ -137,6 +138,7 @@ export default function IntelligenceTab() {
       setNetNewCount((prev) => ({ ...prev, [searchUrn]: results.count || results.results?.length || 0 }));
     } catch (err) {
       console.error("Failed to poll saved search:", err);
+      toast({ title: "Saved search check failed", description: err instanceof Error ? err.message : "Could not fetch new results", variant: "destructive" });
     } finally {
       setPollingSearch(null);
     }
@@ -223,6 +225,7 @@ export default function IntelligenceTab() {
           setExpandedRunId(run.id);
         } catch (err) {
           console.error("Harmonic search failed:", err);
+          toast({ title: "Harmonic search failed", description: err instanceof Error ? err.message : "Search could not be completed", variant: "destructive" });
           await updateIntelligenceRun(run.id, {
             status: "failed",
             completedAt: new Date().toISOString(),

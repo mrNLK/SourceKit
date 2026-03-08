@@ -1,8 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
-import { Plus, ExternalLink, Filter, Sparkles, Users } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Plus, ExternalLink, Filter, Sparkles, Users, Loader2, Zap } from "lucide-react";
 import type { AiFundWorkspace, AiFundPerson, ProcessStage, PersonType, HarmonicPersonMetadata } from "@/types/ai-fund";
 import { scoreColor, scoreLabel } from "@/lib/aifund-scoring";
-import { fetchScoresForPerson } from "@/lib/ai-fund";
+import { fetchScoresForPerson, updatePerson as updatePersonDb, createEvidence } from "@/lib/ai-fund";
+import { enrichPersonByLinkedIn } from "@/services/harmonic";
+import { toast } from "@/hooks/use-toast";
 import PersonDetailPanel from "./PersonDetailPanel";
 
 interface Props {
@@ -31,6 +33,100 @@ export default function TalentPoolTab({ workspace }: Props) {
   const [filterStage, setFilterStage] = useState<ProcessStage | "all">("all");
   const [scores, setScores] = useState<Record<string, number | null>>({});
   const [selectedPerson, setSelectedPerson] = useState<AiFundPerson | null>(null);
+  const [bulkEnriching, setBulkEnriching] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
+
+  // People eligible for bulk enrichment: have LinkedIn URL but no Harmonic metadata
+  const enrichable = useMemo(
+    () =>
+      people.filter(
+        (p) =>
+          p.linkedinUrl &&
+          !(p.metadata as Record<string, unknown> | null)?.harmonic
+      ),
+    [people]
+  );
+
+  const handleBulkEnrich = useCallback(async () => {
+    if (enrichable.length === 0) return;
+    setBulkEnriching(true);
+    setBulkProgress({ done: 0, total: enrichable.length });
+    let succeeded = 0;
+    let failed = 0;
+
+    for (const person of enrichable) {
+      try {
+        const hp = await enrichPersonByLinkedIn(person.linkedinUrl!);
+        const harmonicMeta: HarmonicPersonMetadata = {
+          entityUrn: hp.entity_urn,
+          profilePictureUrl: hp.profile_picture_url,
+          headline: hp.linkedin_headline,
+          education: (hp.education || []).map((e) => ({
+            school: e.school || "Unknown",
+            degree: e.degree,
+            field: e.field_of_study,
+          })),
+          experience: (hp.experience || []).map((e) => ({
+            title: e.title || "Unknown",
+            company: e.company_name || "Unknown",
+            companyUrn: e.company,
+            startDate: e.start_date,
+            endDate: e.end_date,
+            isCurrent: e.is_current_position,
+          })),
+          highlights: (hp.highlights || []).map((h) => h.text),
+          awards: (hp.awards__beta || []).map((a) => ({
+            title: a.title,
+            description: a.description,
+          })),
+          languages: hp.languages,
+          enrichedAt: new Date().toISOString(),
+        };
+        const updatedMeta = { ...(person.metadata || {}), harmonic: harmonicMeta };
+        await updatePersonDb(person.id, { metadata: updatedMeta });
+
+        // Auto-create evidence from highlights and awards
+        const evidencePromises = [];
+        for (const highlight of harmonicMeta.highlights.slice(0, 5)) {
+          evidencePromises.push(
+            createEvidence({
+              personId: person.id,
+              evidenceType: "media_mention",
+              title: highlight.length > 120 ? highlight.slice(0, 117) + "..." : highlight,
+              description: highlight,
+              signalStrength: 60,
+              metadata: { source: "harmonic", type: "highlight" },
+            })
+          );
+        }
+        for (const award of harmonicMeta.awards.slice(0, 5)) {
+          evidencePromises.push(
+            createEvidence({
+              personId: person.id,
+              evidenceType: "award",
+              title: award.title,
+              description: award.description || null,
+              signalStrength: 80,
+              metadata: { source: "harmonic", type: "award" },
+            })
+          );
+        }
+        await Promise.allSettled(evidencePromises);
+        succeeded++;
+      } catch {
+        failed++;
+      }
+      setBulkProgress((prev) => ({ ...prev, done: prev.done + 1 }));
+    }
+
+    setBulkEnriching(false);
+    toast({
+      title: "Bulk enrichment complete",
+      description: `${succeeded} enriched, ${failed} failed out of ${enrichable.length} candidates`,
+    });
+    // Refresh workspace to show new metadata
+    workspace.refresh();
+  }, [enrichable, workspace]);
 
   // Compute same-company network counts
   const companyPeers = useMemo(() => {
@@ -121,13 +217,35 @@ export default function TalentPoolTab({ workspace }: Props) {
             {people.length} candidate{people.length !== 1 ? "s" : ""} tracked
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Person
-        </button>
+        <div className="flex items-center gap-2">
+          {enrichable.length > 0 && (
+            <button
+              onClick={handleBulkEnrich}
+              disabled={bulkEnriching}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-secondary/80 disabled:opacity-50 transition-colors"
+              title={`Enrich ${enrichable.length} people with LinkedIn URLs via Harmonic`}
+            >
+              {bulkEnriching ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {bulkProgress.done}/{bulkProgress.total}
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  Enrich {enrichable.length}
+                </>
+              )}
+            </button>
+          )}
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Person
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
