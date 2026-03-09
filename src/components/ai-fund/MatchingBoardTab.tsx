@@ -3,6 +3,10 @@ import { Link2, Plus, Sparkles, TrendingUp } from "lucide-react";
 import type { AiFundWorkspace, AssignmentRole } from "@/types/ai-fund";
 import { scoreFit } from "@/lib/scoring";
 
+interface Props {
+  workspace: AiFundWorkspace;
+}
+
 export default function MatchingBoardTab({ workspace }: Props) {
   const { concepts, people, assignments, loading, addAssignment } = workspace;
   const [showForm, setShowForm] = useState(false);
