@@ -8,10 +8,13 @@ const STACK_ITEMS = [
   { label: "Claude API", category: "ai" },
   { label: "Exa Search", category: "ai" },
   { label: "Exa Websets", category: "ai" },
+  { label: "Harmonic API", category: "ai" },
+  { label: "Parallel.ai", category: "ai" },
+  { label: "GitHub API", category: "data" },
   { label: "Supabase", category: "backend" },
   { label: "PostgreSQL", category: "backend" },
   { label: "Vercel", category: "infra" },
-  { label: "GitHub API", category: "data" },
+  { label: "Stripe", category: "infra" },
   { label: "Node.js", category: "backend" },
 ] as const;
 

@@ -6,9 +6,9 @@ interface HeaderProps {
 }
 
 const NAV_ITEMS: { id: SectionId; label: string }[] = [
-  { id: "overview", label: "Overview" },
+  { id: "overview", label: "How it Works" },
   { id: "features", label: "Features" },
-  { id: "eea", label: "EEA" },
+  { id: "eea", label: "Builder Score" },
   { id: "screens", label: "Screens" },
   { id: "stack", label: "Stack" },
 ];

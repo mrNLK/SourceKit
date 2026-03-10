@@ -8,7 +8,7 @@ export function Footer() {
           <div className="flex items-center gap-2.5">
             <SourceKitLogo size={20} color="var(--sk-muted)" />
             <span className="font-mono text-xs text-sk-muted">
-              sourcekit.dev
+              SourceKit Beta v2.0
             </span>
           </div>
 
@@ -39,9 +39,24 @@ export function Footer() {
             </a>
           </div>
 
-          <span className="font-mono text-[10px] text-sk-muted/50">
-            Built with signal
-          </span>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://getsourcekit.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-[10px] text-sk-accent hover:text-white transition-colors duration-200 no-underline"
+            >
+              getsourcekit.vercel.app
+            </a>
+            <a
+              href="https://sourcekit-docs.netlify.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-[10px] text-sk-muted/50 hover:text-sk-accent transition-colors duration-200 no-underline"
+            >
+              sourcekit-docs.netlify.app
+            </a>
+          </div>
         </div>
       </div>
     </footer>
