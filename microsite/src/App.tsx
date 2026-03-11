@@ -7,6 +7,7 @@ import { Features } from "@/components/Features";
 import { EEASourcing } from "@/components/EEASourcing";
 import { ScreensDemos } from "@/components/ScreensDemos";
 import { Stack } from "@/components/Stack";
+import { Architecture } from "@/components/Architecture";
 import { Footer } from "@/components/Footer";
 import { PosterModal } from "@/components/PosterModal";
 
@@ -23,6 +24,7 @@ export default function App() {
         <Features />
         <EEASourcing />
         <ScreensDemos />
+        <Architecture />
         <Stack />
       </main>
       <Footer />

@@ -56,78 +56,126 @@ export function ProductOverview() {
               How it works
             </span>
             <h2 className="text-3xl md:text-4xl font-semibold text-white mt-3 tracking-tight">
-              Signal to shortlist
+              From role to ranked pipeline
             </h2>
             <p className="text-sk-muted text-sm mt-2 max-w-lg">
-              Set your technical criteria. Exa finds matching repos and
-              contributors. Claude scores them. You get a ranked pool.
+              Paste a JD, drop in a job URL, or describe the role. Claude builds
+              your strategy. Five APIs execute it. You get a scored pipeline.
             </p>
+          </div>
+        </AnimateOnScroll>
+
+        {/* Pipeline flow */}
+        <AnimateOnScroll delay={50}>
+          <div className="panel-card p-6 mb-6">
+            <h3 className="font-mono text-xs font-semibold text-sk-accent uppercase tracking-widest mb-5">
+              Pipeline
+            </h3>
+            <div className="flex flex-wrap items-center gap-3">
+              {[
+                { step: "Your Role", desc: "Paste JD, URL, or role + company" },
+                { step: "AI Strategy", desc: "Claude builds repos, skills, criteria" },
+                { step: "Refine", desc: "Edit targets, adjust filters" },
+                { step: "Multi-API Search", desc: "Exa + GitHub + Parallel scan" },
+                { step: "Scored Pipeline", desc: "Ranked candidates with evidence" },
+              ].map((item, i) => (
+                <div key={item.step} className="flex items-center gap-3">
+                  <div className="bg-sk-panel border border-sk-border rounded-lg px-4 py-3 min-w-[140px]">
+                    <div className="font-mono text-[10px] text-sk-muted uppercase tracking-wider mb-1">
+                      {i === 0 ? "Input" : i === 1 ? "Claude + Parallel" : i === 2 ? "You" : i === 3 ? "Exa + GitHub" : "Exa Websets"}
+                    </div>
+                    <div className="text-sm font-semibold text-white">{item.step}</div>
+                    <div className="text-[11px] text-sk-muted mt-0.5">{item.desc}</div>
+                  </div>
+                  {i < 4 && (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-sk-accent flex-shrink-0">
+                      <path d="M3 8h10M10 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </AnimateOnScroll>
 
         <div className="flex flex-col gap-6">
           <InfoRow
-            title="Workflow"
+            title="Three ways to start"
             delay={100}
             items={[
               {
-                label: "Criteria",
+                label: "Role + Company",
                 description:
-                  "Language, framework, commit frequency, quality bar.",
+                  "Claude infers the stack, identifies repos, builds strategy.",
               },
               {
-                label: "Search",
+                label: "Paste a JD",
                 description:
-                  "Exa indexes GitHub and returns repos that match.",
+                  "AI parses requirements, tech stack, and seniority level.",
               },
               {
-                label: "Extract",
+                label: "Paste a Job URL",
                 description:
-                  "Pull active contributors from matched repos.",
+                  "Drop a Lever, Greenhouse, or Ashby link. Parallel.ai extracts content.",
               },
             ]}
           />
 
           <InfoRow
-            title="Quick start"
+            title="Scoring"
             delay={200}
             items={[
               {
-                label: "Connect",
+                label: "Composite Score",
                 description:
-                  "Read-only GitHub auth for public repo metadata.",
+                  "0 to 100 GitHub activity weighted by role relevance.",
               },
               {
-                label: "Pool",
+                label: "Commit Volume + Recency",
                 description:
-                  "Set your filters and build a candidate pool.",
+                  "How actively and recently the candidate has contributed.",
               },
               {
-                label: "Review",
+                label: "Language + Stack Match",
                 description:
-                  "Ranked results with commit-level evidence.",
+                  "How well primary languages align with role requirements.",
+              },
+              {
+                label: "Repo Relevance + Impact",
+                description:
+                  "High-signal repos (well-starred, actively maintained) weighted over personal projects.",
               },
             ]}
           />
 
           <InfoRow
-            title="Websets"
+            title="Pipeline stages"
             delay={300}
             items={[
               {
-                label: "Persistent",
+                label: "Sourced",
                 description:
-                  "Searches keep running and pick up new repos.",
+                  "Candidates enter from search results or Webset matches.",
               },
               {
-                label: "Auto-refresh",
+                label: "Contacted",
                 description:
-                  "Pools update as contributors push new work.",
+                  "AI-generated outreach referencing each candidate's actual work.",
               },
               {
-                label: "Export",
+                label: "Responded",
                 description:
-                  "Alerts on high-signal matches. ATS export.",
+                  "Track engagement and move candidates forward.",
+              },
+              {
+                label: "Screen",
+                description:
+                  "Bulk select for compare, summary, or batch outreach.",
+              },
+              {
+                label: "CSV Export",
+                description:
+                  "Export any stage to CSV anytime.",
               },
             ]}
           />
