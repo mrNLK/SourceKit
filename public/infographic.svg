@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#060609"/>
+      <stop offset="100%" stop-color="#0C0C14"/>
+    </linearGradient>
+    <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00E5A0" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#00E5A0" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="greenBar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00E5A0"/>
+      <stop offset="100%" stop-color="#00B87D"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="30"/>
+    </filter>
+  </defs>
+
+  <!-- BG -->
+  <rect width="1080" height="1920" fill="url(#bg)"/>
+
+  <!-- Hero glow blob -->
+  <ellipse cx="540" cy="200" rx="400" ry="200" fill="#00E5A0" opacity="0.06" filter="url(#softGlow)"/>
+
+  <!-- ════════════════ HERO ════════════════ -->
+
+  <g transform="translate(540,130) scale(1.3)" filter="url(#glow)">
+    <path d="M-40,-56 L-72,0 L-40,56" stroke="#00E5A0" stroke-width="18" stroke-linecap="round" fill="none"/>
+    <path d="M40,-56 L72,0 L40,56" stroke="#00E5A0" stroke-width="18" stroke-linecap="round" fill="none"/>
+    <line x1="0" y1="-42" x2="0" y2="-68" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
+    <line x1="0" y1="42" x2="0" y2="68" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
+    <circle cx="0" cy="0" r="9" fill="#00E5A0"/>
+  </g>
+
+  <text x="540" y="280" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="64" font-weight="800" letter-spacing="8">SOURCEKIT</text>
+
+  <text x="540" y="330" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="400" opacity="0.5">Hire engineers by what they've shipped.</text>
+
+  <!-- Big accent stat banner -->
+  <rect x="0" y="370" width="1080" height="90" fill="#00E5A0" opacity="0.08"/>
+  <rect x="0" y="370" width="1080" height="1" fill="#00E5A0" opacity="0.2"/>
+  <rect x="0" y="460" width="1080" height="1" fill="#00E5A0" opacity="0.2"/>
+
+  <text x="180" y="425" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="15" font-weight="700" letter-spacing="2">GITHUB SIGNAL</text>
+  <text x="180" y="448" text-anchor="middle" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="13">Not resumes</text>
+
+  <line x1="310" y1="395" x2="310" y2="445" stroke="#1A1A24" stroke-width="1"/>
+
+  <text x="440" y="425" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="15" font-weight="700" letter-spacing="2">AI SCORING</text>
+  <text x="440" y="448" text-anchor="middle" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="13">0–100 by Claude</text>
+
+  <line x1="570" y1="395" x2="570" y2="445" stroke="#1A1A24" stroke-width="1"/>
+
+  <text x="700" y="425" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="15" font-weight="700" letter-spacing="2">HIDDEN GEMS</text>
+  <text x="700" y="448" text-anchor="middle" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="13">Low-profile talent</text>
+
+  <line x1="830" y1="395" x2="830" y2="445" stroke="#1A1A24" stroke-width="1"/>
+
+  <text x="955" y="425" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="15" font-weight="700" letter-spacing="2">EEA DETECT</text>
+  <text x="955" y="448" text-anchor="middle" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="13">Ability signals</text>
+
+  <!-- ════════════════ WORKFLOW — VERTICAL TIMELINE ════════════════ -->
+
+  <text x="540" y="530" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="32" font-weight="800">How It Works</text>
+  <rect x="490" y="545" width="100" height="3" rx="1.5" fill="#00E5A0" opacity="0.4"/>
+
+  <!-- Timeline line -->
+  <line x1="130" y1="600" x2="130" y2="1080" stroke="#1A1A24" stroke-width="2"/>
+
+  <!-- Step 1 -->
+  <circle cx="130" cy="620" r="20" fill="#060609" stroke="#00E5A0" stroke-width="2.5"/>
+  <text x="130" y="626" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" font-weight="800">1</text>
+  <text x="170" y="614" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="700">Research</text>
+  <text x="170" y="640" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="15">Paste a JD — AI builds a sourcing strategy with target</text>
+  <text x="170" y="660" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="15">repos, companies, skills &amp; EEA signals to detect.</text>
+  <text x="170" y="684" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="12" font-weight="600" opacity="0.7">8–15 REPOS  ·  8–12 COMPANIES  ·  SKILL WEIGHTING</text>
+
+  <!-- Step 2 -->
+  <circle cx="130" cy="720" r="20" fill="#060609" stroke="#00E5A0" stroke-width="2.5"/>
+  <text x="130" y="726" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" font-weight="800">2</text>
+  <text x="170" y="714" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="700">Search</text>
+  <text x="170" y="740" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="15">Find real GitHub contributors matching your criteria.</text>
+  <text x="170" y="760" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="15">AI scores each 0–100 and surfaces hidden gems.</text>
+  <text x="170" y="784" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="12" font-weight="600" opacity="0.7">NATURAL LANGUAGE  ·  LOCATION  ·  SENIORITY FILTERS</text>
+
+  <!-- Step 3 -->
+  <circle cx="130" cy="820" r="20" fill="#060609" stroke="#00E5A0" stroke-width="2.5"/>
+  <text x="130" y="826" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" font-weight="800">3</text>
+  <text x="170" y="814" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="700">Enrich</text>
+  <text x="170" y="840" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="15">LinkedIn lookup via Exa semantic search.</text>
+  <text x="170" y="860" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="15">Discover contact info, emails &amp; social profiles.</text>
+
+  <!-- Step 4 -->
+  <circle cx="130" cy="910" r="20" fill="#060609" stroke="#00E5A0" stroke-width="2.5"/>
+  <text x="130" y="916" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" font-weight="800">4</text>
+  <text x="170" y="904" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="700">Pipeline</text>
+  <text x="170" y="930" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="15">5-stage Kanban board with drag &amp; drop.</text>
+  <text x="170" y="950" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="15">Track every candidate from source to offer.</text>
+
+  <!-- Step 5 -->
+  <circle cx="130" cy="1000" r="20" fill="#060609" stroke="#00E5A0" stroke-width="2.5"/>
+  <text x="130" y="1006" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="16" font-weight="800">5</text>
+  <text x="170" y="994" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="700">Outreach</text>
+  <text x="170" y="1020" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="15">AI writes personalized messages referencing</text>
+  <text x="170" y="1040" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="15">the candidate's actual repos and commits.</text>
+
+  <!-- Step 6 -->
+  <circle cx="130" cy="1080" r="20" fill="#00E5A0"/>
+  <text x="130" y="1086" text-anchor="middle" fill="#060609" font-family="system-ui, sans-serif" font-size="16" font-weight="800">6</text>
+  <text x="170" y="1074" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="700">Bulk Actions</text>
+  <text x="170" y="1100" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="15">Compare, rank &amp; batch-outreach multiple</text>
+  <text x="170" y="1120" fill="#7A7A8E" font-family="system-ui, sans-serif" font-size="15">candidates via an AI chat interface.</text>
+
+  <!-- ════════════════ BIG NUMBERS ════════════════ -->
+
+  <rect x="0" y="1170" width="1080" height="260" fill="#00E5A0" opacity="0.04"/>
+  <rect x="0" y="1170" width="1080" height="1" fill="#00E5A0" opacity="0.15"/>
+
+  <text x="540" y="1220" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="32" font-weight="800">By the Numbers</text>
+
+  <text x="165" y="1310" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="72" font-weight="800">124</text>
+  <text x="165" y="1340" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="14" font-weight="600" letter-spacing="2">TESTS</text>
+  <text x="165" y="1360" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="14" font-weight="600" letter-spacing="2">PASSING</text>
+
+  <line x1="305" y1="1270" x2="305" y2="1360" stroke="#1A1A24" stroke-width="1"/>
+
+  <text x="430" y="1310" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="72" font-weight="800">0</text>
+  <text x="430" y="1340" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="14" font-weight="600" letter-spacing="2">TYPESCRIPT</text>
+  <text x="430" y="1360" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="14" font-weight="600" letter-spacing="2">ERRORS</text>
+
+  <line x1="555" y1="1270" x2="555" y2="1360" stroke="#1A1A24" stroke-width="1"/>
+
+  <text x="680" y="1310" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="72" font-weight="800">&lt;11s</text>
+  <text x="680" y="1340" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="14" font-weight="600" letter-spacing="2">BUILD</text>
+  <text x="680" y="1360" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="14" font-weight="600" letter-spacing="2">TIME</text>
+
+  <line x1="810" y1="1270" x2="810" y2="1360" stroke="#1A1A24" stroke-width="1"/>
+
+  <text x="935" y="1310" text-anchor="middle" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="72" font-weight="800">100</text>
+  <text x="935" y="1340" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="14" font-weight="600" letter-spacing="2">AI SCORE</text>
+  <text x="935" y="1360" text-anchor="middle" fill="#55556A" font-family="system-ui, sans-serif" font-size="14" font-weight="600" letter-spacing="2">CEILING</text>
+
+  <rect x="0" y="1429" width="1080" height="1" fill="#00E5A0" opacity="0.15"/>
+
+  <!-- ════════════════ TECH STACK — HORIZONTAL PILLS ════════════════ -->
+
+  <text x="540" y="1500" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="32" font-weight="800">Built With</text>
+  <rect x="490" y="1515" width="100" height="3" rx="1.5" fill="#00E5A0" opacity="0.4"/>
+
+  <!-- Row: Frontend -->
+  <text x="80" y="1570" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2">FRONTEND</text>
+  <rect x="80" y="1585" width="920" height="1" fill="#1A1A24"/>
+  <text x="80" y="1615" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="16">React 18  ·  TypeScript  ·  Vite  ·  Tailwind CSS  ·  shadcn/ui  ·  TanStack Query</text>
+
+  <!-- Row: Backend -->
+  <text x="80" y="1660" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2">BACKEND</text>
+  <rect x="80" y="1675" width="920" height="1" fill="#1A1A24"/>
+  <text x="80" y="1705" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="16">Supabase  ·  PostgreSQL  ·  Edge Functions  ·  Google SSO  ·  Webhooks  ·  Stripe</text>
+
+  <!-- Row: AI -->
+  <text x="80" y="1750" fill="#00E5A0" font-family="system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2">AI &amp; APIS</text>
+  <rect x="80" y="1765" width="920" height="1" fill="#1A1A24"/>
+  <text x="80" y="1795" fill="#CDCDE0" font-family="system-ui, sans-serif" font-size="16">Anthropic Claude  ·  GitHub REST API  ·  Exa Semantic Search  ·  Vercel</text>
+
+  <!-- ════════════════ FOOTER ════════════════ -->
+
+  <rect x="0" y="1840" width="1080" height="80" fill="#00E5A0" opacity="0.04"/>
+  <rect x="0" y="1840" width="1080" height="1" fill="#00E5A0" opacity="0.15"/>
+
+  <g transform="translate(540,1880) scale(0.3)" filter="url(#glow)">
+    <path d="M-40,-56 L-72,0 L-40,56" stroke="#00E5A0" stroke-width="18" stroke-linecap="round" fill="none"/>
+    <path d="M40,-56 L72,0 L40,56" stroke="#00E5A0" stroke-width="18" stroke-linecap="round" fill="none"/>
+    <line x1="0" y1="-42" x2="0" y2="-68" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
+    <line x1="0" y1="42" x2="0" y2="68" stroke="#00E5A0" stroke-width="11" stroke-linecap="round"/>
+    <circle cx="0" cy="0" r="9" fill="#00E5A0"/>
+  </g>
+
+  <text x="440" y="1886" text-anchor="end" fill="#55556A" font-family="system-ui, sans-serif" font-size="14" font-weight="500">getsourcekit.vercel.app</text>
+  <text x="640" y="1886" fill="#55556A" font-family="system-ui, sans-serif" font-size="14" font-weight="500">@SourceKit</text>
+
+</svg>
