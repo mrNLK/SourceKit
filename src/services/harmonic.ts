@@ -4,6 +4,7 @@ import type {
   HarmonicEnrichmentStatus,
   HarmonicSearchResult,
   HarmonicCompany,
+  HarmonicSavedSearch,
   CompanyContext,
   PoachabilityScore,
 } from "@/types/harmonic"
@@ -126,6 +127,25 @@ export async function typeaheadSearch(
 
 export async function getTeamConnections(companyIdOrUrn: string) {
   return callEdgeFunction('harmonic-search', 'team_connections', { id_or_urn: companyIdOrUrn })
+}
+
+// ---------------------------------------------------------------------------
+// Saved Searches (harmonic-search function)
+// ---------------------------------------------------------------------------
+
+export async function listSavedSearches(): Promise<HarmonicSavedSearch[]> {
+  const data = await callEdgeFunction('harmonic-search', 'saved_searches', {})
+  return Array.isArray(data) ? data : data.results || []
+}
+
+export async function getNetNewResults(
+  savedSearchId: string,
+  newResultsSince?: string,
+): Promise<HarmonicSearchResult<HarmonicCompany>> {
+  return callEdgeFunction('harmonic-search', 'net_new_results', {
+    saved_search_id: savedSearchId,
+    new_results_since: newResultsSince,
+  })
 }
 
 // ---------------------------------------------------------------------------

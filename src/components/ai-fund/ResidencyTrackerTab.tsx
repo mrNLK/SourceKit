@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Home, Calendar, DollarSign } from "lucide-react";
-import type { AiFundWorkspace, AiFundResidency, ResidencyStatus } from "@/types/ai-fund";
+import { Home, Calendar, DollarSign, Briefcase, Sparkles } from "lucide-react";
+import type { AiFundWorkspace, AiFundResidency, AiFundPerson, ResidencyStatus, HarmonicPersonMetadata } from "@/types/ai-fund";
 import { fetchResidencies } from "@/lib/ai-fund";
 
 interface Props {
@@ -16,9 +16,17 @@ const STATUS_COLORS: Record<ResidencyStatus, string> = {
 };
 
 export default function ResidencyTrackerTab({ workspace }: Props) {
-  const { loading: workspaceLoading } = workspace;
+  const { assignments, people, loading: workspaceLoading } = workspace;
   const [residencies, setResidencies] = useState<AiFundResidency[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Build lookup: assignmentId → person
+  const personByAssignment = new Map<string, AiFundPerson>();
+  const personMap = new Map(people.map((p) => [p.id, p]));
+  for (const a of assignments) {
+    const person = personMap.get(a.personId);
+    if (person) personByAssignment.set(a.id, person);
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -63,25 +71,23 @@ export default function ResidencyTrackerTab({ workspace }: Props) {
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Active residencies */}
           {active.length > 0 && (
             <div>
               <h2 className="text-sm font-semibold text-foreground mb-3">Active</h2>
               <div className="space-y-2">
                 {active.map((r) => (
-                  <ResidencyCard key={r.id} residency={r} />
+                  <ResidencyCard key={r.id} residency={r} person={personByAssignment.get(r.assignmentId)} />
                 ))}
               </div>
             </div>
           )}
 
-          {/* Others */}
           {completed.length > 0 && (
             <div>
               <h2 className="text-sm font-semibold text-foreground mb-3">Completed / Other</h2>
               <div className="space-y-2">
                 {completed.map((r) => (
-                  <ResidencyCard key={r.id} residency={r} />
+                  <ResidencyCard key={r.id} residency={r} person={personByAssignment.get(r.assignmentId)} />
                 ))}
               </div>
             </div>
@@ -92,38 +98,84 @@ export default function ResidencyTrackerTab({ workspace }: Props) {
   );
 }
 
-function ResidencyCard({ residency }: { residency: AiFundResidency }) {
+function ResidencyCard({ residency, person }: { residency: AiFundResidency; person?: AiFundPerson }) {
   const start = new Date(residency.startDate);
   const end = residency.endDate ? new Date(residency.endDate) : null;
   const weeks = end
     ? Math.ceil((end.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000))
     : Math.ceil((Date.now() - start.getTime()) / (7 * 24 * 60 * 60 * 1000));
 
+  const harmonic = person
+    ? ((person.metadata as Record<string, unknown> | null)?.harmonic as HarmonicPersonMetadata | undefined)
+    : undefined;
+
+  // Find most recent previous role from Harmonic experience (not current)
+  const previousRole = harmonic?.experience.find((e) => !e.isCurrent);
+
   return (
-    <div className="flex items-center gap-4 px-4 py-3 bg-card border border-border rounded-lg">
-      <Home className="w-4 h-4 text-primary shrink-0" />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_COLORS[residency.status]}`}>
-            {residency.status}
-          </span>
+    <div className="bg-card border border-border rounded-lg overflow-hidden">
+      <div className="flex items-center gap-4 px-4 py-3">
+        <Home className="w-4 h-4 text-primary shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_COLORS[residency.status]}`}>
+              {residency.status}
+            </span>
+            {person && (
+              <span className="text-sm font-medium text-foreground truncate">{person.fullName}</span>
+            )}
+            {harmonic && (
+              <Sparkles className="w-3 h-3 text-primary shrink-0" title="Harmonic enriched" />
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              {start.toLocaleDateString()} {end ? `- ${end.toLocaleDateString()}` : "(ongoing)"}
+            </span>
+            <span className="flex items-center gap-1">
+              <DollarSign className="w-3 h-3" />
+              ${residency.stipendMonthly.toLocaleString()}/mo
+            </span>
+            <span>{weeks} weeks</span>
+          </div>
         </div>
-        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            {start.toLocaleDateString()} {end ? `- ${end.toLocaleDateString()}` : "(ongoing)"}
-          </span>
-          <span className="flex items-center gap-1">
-            <DollarSign className="w-3 h-3" />
-            ${residency.stipendMonthly.toLocaleString()}/mo
-          </span>
-          <span>{weeks} weeks</span>
+        <div className="text-right shrink-0">
+          <p className="text-xs text-muted-foreground">{residency.milestones.length} milestones</p>
+          <p className="text-xs text-muted-foreground">{residency.weeklyCheckIns.length} check-ins</p>
         </div>
       </div>
-      <div className="text-right shrink-0">
-        <p className="text-xs text-muted-foreground">{residency.milestones.length} milestones</p>
-        <p className="text-xs text-muted-foreground">{residency.weeklyCheckIns.length} check-ins</p>
-      </div>
+
+      {/* Harmonic person context */}
+      {(person || previousRole) && (
+        <div className="px-4 pb-3 border-t border-border pt-2">
+          <div className="flex items-center gap-3 flex-wrap text-[10px] text-muted-foreground">
+            {person?.currentRole && (
+              <span className="flex items-center gap-1">
+                <Briefcase className="w-2.5 h-2.5" />
+                {person.currentRole}
+                {person.currentCompany && ` @ ${person.currentCompany}`}
+              </span>
+            )}
+            {previousRole && (
+              <span className="px-1.5 py-0.5 bg-secondary rounded">
+                Previously: {previousRole.title} @ {previousRole.company}
+              </span>
+            )}
+            {harmonic && harmonic.highlights.length > 0 && (
+              <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded">
+                {harmonic.highlights.length} highlight{harmonic.highlights.length > 1 ? "s" : ""}
+              </span>
+            )}
+            {harmonic && harmonic.education.length > 0 && (
+              <span className="px-1.5 py-0.5 bg-secondary rounded">
+                {harmonic.education[0].school}
+                {harmonic.education[0].degree ? ` (${harmonic.education[0].degree})` : ""}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

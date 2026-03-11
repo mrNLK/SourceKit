@@ -93,6 +93,7 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
       }
     } catch (e) {
       console.error('LinkedIn enrichment failed:', e);
+      toast({ title: "LinkedIn enrichment failed", description: e instanceof Error ? e.message : "Could not enrich LinkedIn profile", variant: "destructive" });
     } finally {
       setLinkedinLoading(false);
     }

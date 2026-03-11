@@ -1,6 +1,17 @@
-import { Settings, Key, Globe, Bell } from "lucide-react";
+import { Settings, Key, Globe, Bell, Building2, CheckCircle, XCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { searchCompaniesNaturalLanguage } from "@/services/harmonic";
 
 export default function AiFundSettingsTab() {
+  const [harmonicStatus, setHarmonicStatus] = useState<"checking" | "connected" | "disconnected">("checking");
+
+  useEffect(() => {
+    // Quick health check: try a minimal search to see if Harmonic API key is configured
+    searchCompaniesNaturalLanguage("test")
+      .then(() => setHarmonicStatus("connected"))
+      .catch(() => setHarmonicStatus("disconnected"));
+  }, []);
+
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
@@ -8,6 +19,42 @@ export default function AiFundSettingsTab() {
         <p className="text-sm text-muted-foreground mt-1">
           Configure integrations, API keys, and notification preferences
         </p>
+      </div>
+
+      {/* Harmonic Integration */}
+      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Building2 className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold text-foreground">Harmonic</h2>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-3 py-2 bg-background rounded-lg">
+            <span className="text-sm text-foreground">API Connection</span>
+            {harmonicStatus === "checking" ? (
+              <span className="text-xs text-muted-foreground">Checking...</span>
+            ) : harmonicStatus === "connected" ? (
+              <span className="flex items-center gap-1 text-xs text-emerald-400">
+                <CheckCircle className="w-3 h-3" /> Connected
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-xs text-destructive">
+                <XCircle className="w-3 h-3" /> Not configured
+              </span>
+            )}
+          </div>
+          <div className="flex items-center justify-between px-3 py-2 bg-background rounded-lg">
+            <span className="text-sm text-foreground">Company cache TTL</span>
+            <span className="text-xs text-muted-foreground">7 days</span>
+          </div>
+          <div className="flex items-center justify-between px-3 py-2 bg-background rounded-lg">
+            <span className="text-sm text-foreground">Auto-enrich on person add</span>
+            <span className="text-xs text-primary">Enabled</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Harmonic API key is managed server-side via the HARMONIC_API_KEY environment variable.
+            Company data is cached for 7 days. Person enrichment triggers automatically when a LinkedIn URL is provided.
+          </p>
+        </div>
       </div>
 
       {/* API Keys */}
