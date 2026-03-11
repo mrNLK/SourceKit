@@ -6,7 +6,7 @@ const WEBSETS_BASE = 'https://api.exa.ai/websets/v0'
 const ALLOWED_ACTIONS = [
   'create', 'list', 'get', 'items', 'enrich', 'delete',
   'create_monitor', 'pause_monitor', 'resume_monitor', 'list_monitors',
-  'batch_pipeline',
+  'batch_pipeline', 'register_webhook',
 ]
 
 function getSupabase() {
@@ -344,6 +344,33 @@ serve(async (req) => {
           JSON.stringify({ added: inserted?.length || 0, skipped: items.length - (inserted?.length || 0) }),
           { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         )
+      }
+
+      // -----------------------------------------------------------------
+      // Webhook registration (Prompt 7)
+      // -----------------------------------------------------------------
+
+      case 'register_webhook': {
+        const { webset_id, events } = params
+        if (!webset_id) {
+          return new Response(
+            JSON.stringify({ error: 'webset_id is required' }),
+            { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+          )
+        }
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')
+        const webhookUrl = `${supabaseUrl}/functions/v1/webset-webhook`
+        const webhookSecret = Deno.env.get('WEBSET_WEBHOOK_SECRET') || ''
+        response = await fetch(`${WEBSETS_BASE}/websets/${webset_id}/webhooks`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            url: webhookUrl,
+            secret: webhookSecret,
+            events: events || ['webset.idle', 'webset.item.created', 'webset.item.enriched', 'webset.enrichment.completed'],
+          }),
+        })
+        break
       }
 
       default:

@@ -183,6 +183,9 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
             <p className="text-xs text-muted-foreground font-display mb-2">@{developer.username}</p>
             
             <p className="text-sm text-secondary-foreground line-clamp-2 mb-2">{developer.bio}</p>
+            {developer.groundedSummary && (
+              <p className="text-xs text-muted-foreground italic line-clamp-2 mb-2 border-l-2 border-primary/30 pl-2">{developer.groundedSummary}</p>
+            )}
             
             {developer.contributedRepos && Object.keys(developer.contributedRepos).length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
