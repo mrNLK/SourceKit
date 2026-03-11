@@ -1,186 +1,428 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>SourceKit v2.0 - Evidence-Based Technical Sourcing</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SourceKit v2.0 — Evidence-Based Technical Sourcing</title>
   <style>
-    body { margin: 0; background: #0A0A0F; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    svg { max-width: 600px; width: 90%; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #E8E8EC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a2e; padding: 32px; max-width: 900px; margin: 0 auto; line-height: 1.5; }
+
+    /* Header */
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding: 0 4px; }
+    .logo { font-size: 28px; font-weight: 300; }
+    .logo em { font-style: italic; color: #0DA88A; font-weight: 400; }
+    .logo span { font-weight: 600; color: #1a1a2e; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .header-url { font-family: monospace; font-size: 12px; color: #888; }
+    .beta-badge { font-family: monospace; font-size: 11px; color: #0DA88A; border: 1.5px solid #0DA88A; border-radius: 4px; padding: 3px 10px; font-weight: 600; letter-spacing: 1px; }
+
+    /* Cards */
+    .card { background: #fff; border-radius: 12px; padding: 28px; }
+    .section-label { font-family: monospace; font-size: 10px; letter-spacing: 2px; color: #888; text-transform: uppercase; margin-bottom: 6px; }
+
+    /* Top two-column */
+    .top-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+    /* Architecture card */
+    .arch-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .arch-sub { font-size: 13px; color: #666; margin-bottom: 20px; }
+    .arch-flow { display: flex; flex-direction: column; gap: 0; }
+    .arch-layer { display: flex; align-items: flex-start; gap: 0; min-height: 56px; }
+    .arch-layer-label { width: 72px; flex-shrink: 0; font-family: monospace; font-size: 10px; color: #888; text-transform: uppercase; padding-top: 10px; letter-spacing: 1px; }
+    .arch-layer-content { flex: 1; display: flex; gap: 10px; position: relative; padding-left: 20px; }
+    .arch-layer-content::before { content: ''; position: absolute; left: 4px; top: 0; bottom: -12px; border-left: 2px dotted #ccc; }
+    .arch-flow > .arch-layer:last-child .arch-layer-content::before { display: none; }
+    .arch-box { background: #f5f5f8; border: 1px solid #e0e0e6; border-radius: 8px; padding: 8px 14px; font-size: 12px; text-align: center; min-width: 100px; }
+    .arch-box strong { display: block; font-size: 13px; font-weight: 600; }
+    .arch-box small { font-size: 10px; color: #888; display: block; margin-top: 2px; }
+    .arch-box .tag-label { font-family: monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; }
+    .arch-box .tag-label.teal { color: #0DA88A; }
+    .arch-box .tag-label.orange { color: #E67E22; }
+    .arch-box .tag-label.blue { color: #3B82F6; }
+    .arch-box.highlight { border-color: #0DA88A; }
+    .arch-output-box { background: #f5f5f8; border: 1.5px solid #0DA88A; border-radius: 8px; padding: 10px 20px; text-align: center; margin-left: 20px; }
+    .arch-output-box strong { font-size: 14px; font-weight: 700; }
+    .arch-output-box small { font-size: 11px; color: #666; display: block; margin-top: 2px; }
+    .arch-connector { height: 14px; padding-left: 20px; display: flex; align-items: center; }
+    .arch-layer-label.output-label { padding-top: 14px; }
+
+    /* Workflow card */
+    .workflow-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .workflow-sub { font-size: 13px; color: #666; margin-bottom: 20px; }
+    .workflow-steps { display: flex; flex-direction: column; gap: 12px; }
+    .workflow-step { background: #f8f8fb; border: 1px solid #e8e8ee; border-radius: 8px; padding: 14px 16px; }
+    .workflow-step-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .workflow-step-num { font-family: monospace; font-size: 11px; color: #aaa; margin-right: 8px; }
+    .workflow-step-name { font-size: 14px; font-weight: 700; }
+    .workflow-step-tag { font-family: monospace; font-size: 10px; padding: 2px 8px; border-radius: 4px; border: 1px solid; }
+    .workflow-step-tag.strategy { color: #0DA88A; border-color: #0DA88A; }
+    .workflow-step-tag.parallel { color: #3B82F6; border-color: #3B82F6; }
+    .workflow-step-tag.proof { color: #6B7280; border-color: #6B7280; }
+    .workflow-step-tag.discovery { color: #8B5CF6; border-color: #8B5CF6; }
+    .workflow-step-tag.output { color: #F59E0B; border-color: #F59E0B; }
+    .workflow-step p { font-size: 12px; color: #666; margin: 0; }
+
+    /* EEA Section */
+    .eea-section { margin-bottom: 16px; }
+    .eea-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+    .eea-header-left { flex: 0 0 160px; }
+    .eea-label-block .section-label { margin-bottom: 2px; }
+    .eea-label-sub { font-size: 9px; font-family: monospace; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+    .eea-role-title { font-size: 18px; font-weight: 700; margin: 12px 0 8px; line-height: 1.3; }
+    .eea-role-desc { font-size: 12px; color: #666; }
+    .eea-tags { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; justify-content: flex-end; align-items: flex-start; }
+    .eea-tags-label { font-size: 10px; color: #888; font-family: monospace; width: 100%; text-align: right; margin-bottom: 2px; }
+    .eea-tag { font-size: 11px; padding: 4px 10px; border-radius: 4px; border: 1px solid #ccc; background: #f8f8fb; color: #444; white-space: nowrap; }
+    .eea-tag.green { border-color: #0DA88A; color: #0DA88A; background: #E6F9F3; }
+    .eea-tag.orange { border-color: #E67E22; color: #E67E22; background: #FEF3E6; }
+
+    /* Candidate cards */
+    .candidates { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+    .candidate-card { display: grid; grid-template-columns: 56px 1fr auto; gap: 16px; background: #f8f8fb; border: 1px solid #e0e0e6; border-radius: 10px; padding: 16px 20px; align-items: start; }
+    .candidate-score { font-size: 32px; font-weight: 700; color: #1a1a2e; line-height: 1; padding-top: 4px; }
+    .candidate-info h4 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .candidate-info h4 .gem-badge { font-size: 9px; background: #F59E0B; color: #fff; padding: 2px 6px; border-radius: 3px; font-weight: 700; text-transform: lowercase; }
+    .candidate-meta { font-size: 11px; color: #888; margin-top: 2px; }
+    .candidate-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+    .candidate-tags .c-tag { font-size: 10px; padding: 3px 8px; border-radius: 3px; border: 1px solid #ddd; background: #fff; color: #555; }
+    .candidate-tags .c-tag.orange { border-color: #F59E0B; color: #D97706; background: #FFFBEB; }
+    .candidate-signals { font-size: 11px; color: #666; line-height: 1.7; }
+    .candidate-signals .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+    .dot.green { background: #0DA88A; }
+    .dot.orange { background: #F59E0B; }
+    .dot.red { background: #EF4444; }
+
+    /* Websets Section */
+    .websets-section { margin-bottom: 16px; }
+    .websets-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .websets-sub { font-size: 13px; color: #666; margin-bottom: 20px; }
+    .websets-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .webset-card { background: #f8f8fb; border: 1px solid #e0e0e6; border-radius: 8px; padding: 16px; }
+    .webset-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .webset-card-header h4 { font-size: 13px; font-weight: 700; }
+    .webset-mode { font-size: 9px; font-family: monospace; padding: 2px 8px; border-radius: 3px; letter-spacing: 1px; }
+    .webset-mode.live { background: #E6F9F3; color: #0DA88A; border: 1px solid #0DA88A; }
+    .webset-mode.monitor { background: #EEF2FF; color: #6366F1; border: 1px solid #6366F1; }
+    .webset-criteria { font-size: 11px; color: #666; margin-bottom: 12px; line-height: 1.5; }
+    .webset-criteria .crit-tag { font-size: 10px; padding: 2px 6px; border-radius: 3px; border: 1px solid #ddd; background: #fff; color: #555; }
+    .webset-criteria .crit-tag.green { border-color: #0DA88A; color: #0DA88A; background: #E6F9F3; }
+    .webset-criteria .crit-tag.blue { border-color: #3B82F6; color: #3B82F6; background: #EFF6FF; }
+    .webset-stats { display: flex; gap: 20px; margin-bottom: 10px; }
+    .webset-stat strong { display: block; font-size: 22px; font-weight: 700; }
+    .webset-stat small { font-size: 10px; color: #888; }
+    .webset-new { font-size: 11px; color: #0DA88A; display: flex; align-items: center; gap: 6px; }
+    .webset-new .new-dot { width: 7px; height: 7px; border-radius: 50%; background: #0DA88A; }
+    .webset-new .new-time { color: #aaa; margin-left: auto; }
+
+    /* Bottom stats */
+    .bottom-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+    .stat-card { background: #fff; border-radius: 10px; padding: 20px; border-top: 3px solid #0DA88A; }
+    .stat-card .section-label { margin-bottom: 4px; }
+    .stat-card .stat-value { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+    .stat-card p { font-size: 12px; color: #666; }
+
+    /* Footer */
+    .footer { display: flex; justify-content: space-between; align-items: flex-end; padding: 8px 4px 0; }
+    .footer-left { font-size: 11px; color: #888; }
+    .footer-left strong { color: #555; }
+    .footer-right { text-align: right; }
+    .footer-right a { font-family: monospace; font-size: 13px; font-weight: 700; color: #0DA88A; text-decoration: none; display: block; }
+    .footer-right .gh { font-size: 11px; color: #aaa; font-weight: 400; }
   </style>
 </head>
 <body>
-  <svg viewBox="0 0 500 900" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- Background -->
-    <rect width="500" height="900" rx="8" fill="#0A0A0F" />
-    <rect x="1" y="1" width="498" height="898" rx="7" stroke="#1e1e28" strokeWidth="1" />
 
-    <!-- Header -->
-    <rect x="24" y="24" width="452" height="80" rx="6" fill="#111116" />
-    <!-- Logo -->
-    <rect x="36" y="36" width="40" height="40" rx="8" stroke="#00E5A0" stroke-width="2" fill="none" />
-    <path d="M46 46L56 42L66 46V58L56 62L46 58V46Z" stroke="#00E5A0" stroke-width="2" fill="none" stroke-linejoin="round" />
-    <circle cx="56" cy="52" r="3" fill="#00E5A0" opacity="0.8" />
-    <text x="88" y="55" fill="#F0F0F5" font-size="18" font-family="monospace" font-weight="600">SourceKit</text>
-    <text x="88" y="78" fill="#9E9E9E" font-size="10" font-family="sans-serif">Find engineers by what they build</text>
-    <text x="420" y="55" fill="#00E5A0" font-size="9" font-family="monospace" text-anchor="end" opacity="0.6">v2.0</text>
-    <text x="420" y="72" fill="#00E5A0" font-size="7" font-family="monospace" text-anchor="end" opacity="0.4">Beta</text>
+  <!-- Header -->
+  <div class="header">
+    <div class="logo"><em>Source</em><span>Kit</span></div>
+    <div class="header-right">
+      <span class="header-url">getsourcekit.vercel.app</span>
+      <span class="beta-badge">BETA V2.0</span>
+    </div>
+  </div>
 
-    <!-- Workflow section -->
-    <text x="36" y="136" fill="#00E5A0" font-size="8" font-family="monospace" letter-spacing="2">PIPELINE</text>
-    <!-- Step 1 -->
-    <rect x="36" y="148" width="72" height="36" rx="4" fill="#111116" stroke="#1e1e28" />
-    <text x="72" y="164" fill="#9E9E9E" font-size="6" font-family="monospace" text-anchor="middle">INPUT</text>
-    <text x="72" y="176" fill="#F0F0F5" font-size="7" font-family="sans-serif" text-anchor="middle">Your Role</text>
-    <line x1="108" y1="166" x2="116" y2="166" stroke="#00E5A0" stroke-width="1" opacity="0.4" />
-    <!-- Step 2 -->
-    <rect x="116" y="148" width="72" height="36" rx="4" fill="#111116" stroke="#1e1e28" />
-    <text x="152" y="164" fill="#9E9E9E" font-size="6" font-family="monospace" text-anchor="middle">CLAUDE</text>
-    <text x="152" y="176" fill="#F0F0F5" font-size="7" font-family="sans-serif" text-anchor="middle">AI Strategy</text>
-    <line x1="188" y1="166" x2="196" y2="166" stroke="#00E5A0" stroke-width="1" opacity="0.4" />
-    <!-- Step 3 -->
-    <rect x="196" y="148" width="72" height="36" rx="4" fill="#111116" stroke="#1e1e28" />
-    <text x="232" y="164" fill="#9E9E9E" font-size="6" font-family="monospace" text-anchor="middle">YOU</text>
-    <text x="232" y="176" fill="#F0F0F5" font-size="7" font-family="sans-serif" text-anchor="middle">Refine</text>
-    <line x1="268" y1="166" x2="276" y2="166" stroke="#00E5A0" stroke-width="1" opacity="0.4" />
-    <!-- Step 4 -->
-    <rect x="276" y="148" width="72" height="36" rx="4" fill="#111116" stroke="#1e1e28" />
-    <text x="312" y="164" fill="#9E9E9E" font-size="6" font-family="monospace" text-anchor="middle">EXA+GITHUB</text>
-    <text x="312" y="176" fill="#F0F0F5" font-size="7" font-family="sans-serif" text-anchor="middle">Search</text>
-    <line x1="348" y1="166" x2="356" y2="166" stroke="#00E5A0" stroke-width="1" opacity="0.4" />
-    <!-- Step 5 -->
-    <rect x="356" y="148" width="120" height="36" rx="4" fill="#111116" stroke="#00E5A0" stroke-opacity="0.3" />
-    <text x="416" y="164" fill="#9E9E9E" font-size="6" font-family="monospace" text-anchor="middle">SCORED</text>
-    <text x="416" y="176" fill="#00E5A0" font-size="7" font-family="sans-serif" text-anchor="middle">Pipeline</text>
+  <!-- Top Row: Architecture + Workflow -->
+  <div class="top-row">
+    <!-- System Architecture -->
+    <div class="card">
+      <div class="section-label">System Architecture</div>
+      <div class="arch-title">Four layers, five APIs</div>
+      <div class="arch-sub">Each API has one job. No layer crosses its boundary.</div>
+      <div class="arch-flow">
+        <div class="arch-layer">
+          <div class="arch-layer-label">Input</div>
+          <div class="arch-layer-content">
+            <div class="arch-box" style="flex:1;">
+              <strong>Role Input</strong>
+              <small>Job description, role spec, or job URL</small>
+            </div>
+          </div>
+        </div>
+        <div class="arch-connector"></div>
+        <div class="arch-layer">
+          <div class="arch-layer-label">Strategy</div>
+          <div class="arch-layer-content">
+            <div class="arch-box">
+              <strong>Claude</strong>
+              <span class="tag-label teal">PLANNING</span>
+              <small>Role parsing, repo targets, EEA criteria</small>
+            </div>
+            <div class="arch-box">
+              <strong>Parallel</strong>
+              <span class="tag-label blue">GRAPH</span>
+              <small>Company mapping, JD extraction</small>
+            </div>
+          </div>
+        </div>
+        <div class="arch-connector"></div>
+        <div class="arch-layer">
+          <div class="arch-layer-label">Discovery</div>
+          <div class="arch-layer-content">
+            <div class="arch-box">
+              <strong>Exa</strong>
+              <span class="tag-label teal">SEARCH</span>
+              <small>Neural search, Websets, findSimilar</small>
+            </div>
+            <div class="arch-box">
+              <strong>GitHub</strong>
+              <span class="tag-label blue">SIGNAL</span>
+              <small>Commits, maintainers</small>
+            </div>
+            <div class="arch-box">
+              <strong>Harmonic</strong>
+              <span class="tag-label orange">INTEL</span>
+              <small>Ecosystem, headcount</small>
+            </div>
+          </div>
+        </div>
+        <div class="arch-connector"></div>
+        <div class="arch-layer">
+          <div class="arch-layer-label output-label">Output</div>
+          <div class="arch-layer-content" style="padding-top: 4px;">
+            <div class="arch-output-box" style="flex:1;">
+              <strong>Ranked Candidate Pipeline</strong>
+              <small>Scored with contribution proof, company context, EEA citations</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <!-- Features section -->
-    <text x="36" y="220" fill="#00E5A0" font-size="8" font-family="monospace" letter-spacing="2">FEATURES</text>
-    <!-- Feature 1: AI Strategy -->
-    <rect x="36" y="232" width="140" height="64" rx="4" fill="#111116" stroke="#1e1e28" />
-    <text x="50" y="250" fill="#F0F0F5" font-size="9" font-family="sans-serif" font-weight="600">AI Strategy</text>
-    <text x="50" y="264" fill="#9E9E9E" font-size="7" font-family="sans-serif">Claude builds sourcing plan</text>
-    <text x="50" y="276" fill="#9E9E9E" font-size="7" font-family="sans-serif">from JD, URL, or role</text>
-    <!-- Feature 2: Builder Score -->
-    <rect x="184" y="232" width="140" height="64" rx="4" fill="#111116" stroke="#00E5A0" stroke-opacity="0.3" />
-    <text x="198" y="246" fill="#00E5A0" font-size="6" font-family="monospace">NEW</text>
-    <text x="198" y="258" fill="#F0F0F5" font-size="9" font-family="sans-serif" font-weight="600">Builder Score</text>
-    <text x="198" y="272" fill="#9E9E9E" font-size="7" font-family="sans-serif">0-100 across 7 dimensions</text>
-    <text x="198" y="284" fill="#9E9E9E" font-size="7" font-family="sans-serif">AI-weighted code analysis</text>
-    <!-- Feature 3: Harmonic -->
-    <rect x="332" y="232" width="144" height="64" rx="4" fill="#111116" stroke="#00E5A0" stroke-opacity="0.3" />
-    <text x="346" y="246" fill="#00E5A0" font-size="6" font-family="monospace">NEW</text>
-    <text x="346" y="258" fill="#F0F0F5" font-size="9" font-family="sans-serif" font-weight="600">Harmonic</text>
-    <text x="346" y="272" fill="#9E9E9E" font-size="7" font-family="sans-serif">Startup ecosystem mapping</text>
-    <text x="346" y="284" fill="#9E9E9E" font-size="7" font-family="sans-serif">Pre-breakout companies</text>
+    <!-- API Workflow -->
+    <div class="card">
+      <div class="section-label">API Workflow</div>
+      <div class="workflow-title">Request sequence</div>
+      <div class="workflow-sub">Every search runs this sequence in order. APIs are stateless and non-overlapping.</div>
+      <div class="workflow-steps">
+        <div class="workflow-step">
+          <div class="workflow-step-header">
+            <div><span class="workflow-step-num">01</span><span class="workflow-step-name">Exa Research API</span></div>
+            <span class="workflow-step-tag strategy">strategy</span>
+          </div>
+          <p>Generates target repos, poach companies, and EEA signal definitions from role spec. Returns structured JSON with citations. No hallucinated repos.</p>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-step-header">
+            <div><span class="workflow-step-num">02</span><span class="workflow-step-name">Parallel Task API</span></div>
+            <span class="workflow-step-tag parallel">parallel</span>
+          </div>
+          <p>Researches all target companies simultaneously. Returns headcount, tech stack, hiring signals, attrition patterns per company.</p>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-step-header">
+            <div><span class="workflow-step-num">03</span><span class="workflow-step-name">GitHub REST API</span></div>
+            <span class="workflow-step-tag proof">proof</span>
+          </div>
+          <p>Mines contributors from each target repo. Pulls commit counts, maintainer status, contribution recency.</p>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-step-header">
+            <div><span class="workflow-step-num">04</span><span class="workflow-step-name">Exa Search + Answer</span></div>
+            <span class="workflow-step-tag discovery">discovery</span>
+          </div>
+          <p>Neural search matches candidates by embeddings. Answer API synthesizes "what is this person known for?" with citations per candidate.</p>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-step-header">
+            <div><span class="workflow-step-num">05</span><span class="workflow-step-name">Harmonic + Scoring</span></div>
+            <span class="workflow-step-tag output">output</span>
+          </div>
+          <p>Adds market and ecosystem context. Scores 0–100 against EEA criteria. Flags hidden gems. Pipeline complete.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <!-- Feature 4: Websets -->
-    <rect x="36" y="304" width="140" height="64" rx="4" fill="#111116" stroke="#00E5A0" stroke-opacity="0.3" />
-    <text x="50" y="318" fill="#00E5A0" font-size="6" font-family="monospace">NEW</text>
-    <text x="50" y="330" fill="#F0F0F5" font-size="9" font-family="sans-serif" font-weight="600">Exa Websets</text>
-    <text x="50" y="344" fill="#9E9E9E" font-size="7" font-family="sans-serif">Auto-updating talent pools</text>
-    <text x="50" y="356" fill="#9E9E9E" font-size="7" font-family="sans-serif">Define once, match forever</text>
-    <!-- Feature 5: Parallel -->
-    <rect x="184" y="304" width="140" height="64" rx="4" fill="#111116" stroke="#00E5A0" stroke-opacity="0.3" />
-    <text x="198" y="318" fill="#00E5A0" font-size="6" font-family="monospace">NEW</text>
-    <text x="198" y="330" fill="#F0F0F5" font-size="9" font-family="sans-serif" font-weight="600">Parallel.ai</text>
-    <text x="198" y="344" fill="#9E9E9E" font-size="7" font-family="sans-serif">Company graph intelligence</text>
-    <text x="198" y="356" fill="#9E9E9E" font-size="7" font-family="sans-serif">Adjacent market mapping</text>
-    <!-- Feature 6: Pipeline -->
-    <rect x="332" y="304" width="144" height="64" rx="4" fill="#111116" stroke="#1e1e28" />
-    <text x="346" y="322" fill="#F0F0F5" font-size="9" font-family="sans-serif" font-weight="600">Pipeline</text>
-    <text x="346" y="336" fill="#9E9E9E" font-size="7" font-family="sans-serif">Kanban + AI outreach</text>
-    <text x="346" y="348" fill="#9E9E9E" font-size="7" font-family="sans-serif">Batch compare + rank</text>
+  <!-- EEA Search Section -->
+  <div class="card eea-section">
+    <div class="eea-header">
+      <div class="eea-header-left">
+        <div class="eea-label-block">
+          <div class="section-label">EEA Search —</div>
+          <div class="eea-label-sub">Evidence of<br>Exceptional Ability</div>
+        </div>
+        <div class="eea-role-title">Role: Founding ML Engineer · AI Fund Incubator</div>
+        <div class="eea-role-desc">Binary checks against public artifacts. Score 0–100. Only verifiable evidence counts.</div>
+      </div>
+      <div class="eea-tags">
+        <div class="eea-tags-label">Criteria applied</div>
+        <span class="eea-tag green">maintainer ≥500★ repo</span>
+        <span class="eea-tag">production ML system</span>
+        <span class="eea-tag">NeurIPS / ICML / ICLR</span>
+        <span class="eea-tag orange">conference talk</span>
+        <span class="eea-tag">YC founder</span>
+        <span class="eea-tag">50+ commits frontier repo</span>
+      </div>
+    </div>
 
-    <!-- Builder Score Dimensions -->
-    <text x="36" y="404" fill="#00E5A0" font-size="8" font-family="monospace" letter-spacing="2">BUILDER SCORE</text>
-    <rect x="36" y="416" width="440" height="110" rx="4" fill="#111116" stroke="#1e1e28" />
-    <!-- Dimension bars -->
-    <text x="50" y="438" fill="#9E9E9E" font-size="7" font-family="monospace">AI Mastery</text>
-    <rect x="130" y="432" width="200" height="5" rx="2" fill="#1e1e28" />
-    <rect x="130" y="432" width="200" height="5" rx="2" fill="#00E5A0" opacity="0.8" />
-    <text x="340" y="438" fill="#00E5A0" font-size="7" font-family="monospace">30%</text>
+    <div class="candidates">
+      <!-- Candidate 1 -->
+      <div class="candidate-card">
+        <div class="candidate-score">94</div>
+        <div class="candidate-info">
+          <h4>Priya Mehta <span class="gem-badge">hidden gem</span></h4>
+          <div class="candidate-meta">Senior MLE · Cohere · Previously Mila · @pmehta-ml</div>
+          <div class="candidate-tags">
+            <span class="c-tag">Maintainer — vllm</span>
+            <span class="c-tag">312 commits — transformers</span>
+            <span class="c-tag">ICLR 2024</span>
+            <span class="c-tag orange">Low LinkedIn footprint</span>
+            <span class="c-tag">Answer API verified</span>
+          </div>
+        </div>
+        <div class="candidate-signals">
+          <span class="dot green"></span>Maintainer status confirmed<br>
+          <span class="dot green"></span>Production system evidence<br>
+          <span class="dot green"></span>Top-venue publication<br>
+          <span class="dot orange"></span>No conference talks found<br>
+          <span class="dot orange"></span>YC — no match
+        </div>
+      </div>
 
-    <text x="50" y="456" fill="#9E9E9E" font-size="7" font-family="monospace">Build Vel.</text>
-    <rect x="130" y="450" width="200" height="5" rx="2" fill="#1e1e28" />
-    <rect x="130" y="450" width="134" height="5" rx="2" fill="#00C88A" opacity="0.8" />
-    <text x="340" y="456" fill="#00E5A0" font-size="7" font-family="monospace">20%</text>
+      <!-- Candidate 2 -->
+      <div class="candidate-card">
+        <div class="candidate-score">88</div>
+        <div class="candidate-info">
+          <h4>Marcus Osei</h4>
+          <div class="candidate-meta">Staff Eng · Mistral AI · Paris · @m-osei</div>
+          <div class="candidate-tags">
+            <span class="c-tag">Core contributor — dspy</span>
+            <span class="c-tag">Shipped OSS inference engine</span>
+            <span class="c-tag">MLSys 2023 talk</span>
+            <span class="c-tag">Answer API verified</span>
+          </div>
+        </div>
+        <div class="candidate-signals">
+          <span class="dot green"></span>Frontier repo contributor<br>
+          <span class="dot green"></span>Conference talk confirmed<br>
+          <span class="dot green"></span>Shipped OSS system<br>
+          <span class="dot orange"></span>Non-US location<br>
+          <span class="dot red"></span>No publication record
+        </div>
+      </div>
 
-    <text x="50" y="474" fill="#9E9E9E" font-size="7" font-family="monospace">Tooling</text>
-    <rect x="130" y="468" width="200" height="5" rx="2" fill="#1e1e28" />
-    <rect x="130" y="468" width="100" height="5" rx="2" fill="#00B07A" opacity="0.8" />
-    <text x="340" y="474" fill="#00E5A0" font-size="7" font-family="monospace">15%</text>
+      <!-- Candidate 3 -->
+      <div class="candidate-card">
+        <div class="candidate-score">71</div>
+        <div class="candidate-info">
+          <h4>Arjun Kapoor <span class="gem-badge">hidden gem</span></h4>
+          <div class="candidate-meta">IC at stealth startup · 0 LinkedIn activity · @akapoor-infra</div>
+          <div class="candidate-tags">
+            <span class="c-tag">187 commits — unsloth</span>
+            <span class="c-tag">Contributer — outlines</span>
+            <span class="c-tag orange">No resume or profile</span>
+            <span class="c-tag">findSimilar discovery</span>
+          </div>
+        </div>
+        <div class="candidate-signals">
+          <span class="dot green"></span>High commit velocity<br>
+          <span class="dot green"></span>Emerging frontier repos<br>
+          <span class="dot red"></span>No publication record<br>
+          <span class="dot red"></span>No conference presence<br>
+          <span class="dot orange"></span>Likely under-recruited
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <text x="50" y="492" fill="#9E9E9E" font-size="7" font-family="monospace">Commits</text>
-    <rect x="130" y="486" width="200" height="5" rx="2" fill="#1e1e28" />
-    <rect x="130" y="486" width="100" height="5" rx="2" fill="#009968" opacity="0.8" />
-    <text x="340" y="492" fill="#00E5A0" font-size="7" font-family="monospace">15%</text>
+  <!-- Exa Websets Section -->
+  <div class="card websets-section">
+    <div class="section-label">Exa Websets — Persistent Auto-Updating Pipelines</div>
+    <div class="websets-title">Define once. Pipeline grows on its own.</div>
+    <div class="websets-sub">Websets run on a schedule. New verified matches append automatically. No re-running searches.</div>
+    <div class="websets-grid">
+      <!-- Webset 1 -->
+      <div class="webset-card">
+        <div class="webset-card-header">
+          <h4>Founding ML Engineers · US/Remote</h4>
+          <span class="webset-mode live">LIVE · WEEKLY</span>
+        </div>
+        <div class="webset-criteria">
+          Criteria: <span class="crit-tag green">50+ commits to frontier ML repo</span> AND <span class="crit-tag green">shipped production AI system</span> AND <span class="crit-tag blue">US or remote</span>
+        </div>
+        <div class="webset-stats">
+          <div class="webset-stat"><strong>143</strong><small>Verified matches</small></div>
+          <div class="webset-stat"><strong>+12</strong><small>Added this week</small></div>
+          <div class="webset-stat"><strong>87%</strong><small>EEA threshold met</small></div>
+        </div>
+        <div class="webset-new">
+          <span class="new-dot"></span> New: @rlin-systems — 94 commits vllm, shipped Cortex inference
+          <span class="new-time">2h ago</span>
+        </div>
+      </div>
+      <!-- Webset 2 -->
+      <div class="webset-card">
+        <div class="webset-card-header">
+          <h4>Founders in Residence · FIR Pipeline</h4>
+          <span class="webset-mode monitor">MONITORING · DAILY</span>
+        </div>
+        <div class="webset-criteria">
+          Criteria: <span class="crit-tag green">shipped AI product with users</span> OR <span class="crit-tag blue">YC alum no Series A</span> AND <span class="crit-tag green">technical founder signal</span>
+        </div>
+        <div class="webset-stats">
+          <div class="webset-stat"><strong>61</strong><small>Verified matches</small></div>
+          <div class="webset-stat"><strong>+4</strong><small>Added today</small></div>
+          <div class="webset-stat"><strong>100%</strong><small>Criteria verified</small></div>
+        </div>
+        <div class="webset-new">
+          <span class="new-dot"></span> New: @mwilson-ai — YC W23, shut down, GitHub active again
+          <span class="new-time">41m ago</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <text x="50" y="510" fill="#9E9E9E" font-size="7" font-family="monospace">Test/Doc/Com</text>
-    <rect x="130" y="504" width="200" height="5" rx="2" fill="#1e1e28" />
-    <rect x="130" y="504" width="84" height="5" rx="2" fill="#006B48" opacity="0.8" />
-    <text x="340" y="510" fill="#00E5A0" font-size="7" font-family="monospace">20%</text>
+  <!-- Bottom Stats -->
+  <div class="bottom-stats">
+    <div class="stat-card">
+      <div class="section-label">Hidden Gem Rate</div>
+      <div class="stat-value">~40%</div>
+      <p>of top-scored candidates have low or zero LinkedIn activity. Keyword search misses them. Artifact search finds them.</p>
+    </div>
+    <div class="stat-card">
+      <div class="section-label">Websets vs One-Shot</div>
+      <div class="stat-value">Always on</div>
+      <p>A Webset running weekly finds candidates who weren't active when you first searched. Pipeline grows without recruiter effort.</p>
+    </div>
+    <div class="stat-card">
+      <div class="section-label">EEA vs Keywords</div>
+      <div class="stat-value">Binary</div>
+      <p>Criteria are pass/fail against public evidence — not subjective screening. Score reflects verifiable signal only.</p>
+    </div>
+  </div>
 
-    <!-- EEA section -->
-    <text x="36" y="562" fill="#00E5A0" font-size="8" font-family="monospace" letter-spacing="2">EEA FRAMEWORK</text>
-    <rect x="36" y="574" width="216" height="100" rx="4" fill="#111116" stroke="#1e1e28" />
-    <text x="50" y="594" fill="#F0F0F5" font-size="9" font-family="sans-serif" font-weight="600">Signals</text>
-    <text x="50" y="612" fill="#9E9E9E" font-size="7" font-family="sans-serif">Published Research</text>
-    <text x="50" y="626" fill="#9E9E9E" font-size="7" font-family="sans-serif">Open Source Impact</text>
-    <text x="50" y="640" fill="#9E9E9E" font-size="7" font-family="sans-serif">Conference + Teaching</text>
-    <text x="50" y="654" fill="#9E9E9E" font-size="7" font-family="sans-serif">Technical Leadership</text>
-    <text x="50" y="668" fill="#9E9E9E" font-size="7" font-family="sans-serif">Scale + Impact</text>
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <strong>findSimilar:</strong> Click any strong match → Exa returns 10 engineers with comparable GitHub profiles.<br>
+      Fastest path from one signal to a full pipeline.
+    </div>
+    <div class="footer-right">
+      <a href="https://getsourcekit.vercel.app">getsourcekit.vercel.app</a>
+      <span class="gh">github.com/mrNLK/SourceKit</span>
+    </div>
+  </div>
 
-    <rect x="264" y="574" width="212" height="100" rx="4" fill="#111116" stroke="#1e1e28" />
-    <text x="278" y="594" fill="#F0F0F5" font-size="9" font-family="sans-serif" font-weight="600">Webset Recipes</text>
-    <text x="278" y="612" fill="#9E9E9E" font-size="7" font-family="sans-serif">ML Infra Engineer</text>
-    <text x="278" y="626" fill="#9E9E9E" font-size="7" font-family="sans-serif">Robotics Software</text>
-    <text x="278" y="640" fill="#9E9E9E" font-size="7" font-family="sans-serif">Staff Frontend</text>
-    <text x="278" y="654" fill="#9E9E9E" font-size="7" font-family="sans-serif">Security Engineer</text>
-
-    <!-- Stack section -->
-    <text x="36" y="710" fill="#00E5A0" font-size="8" font-family="monospace" letter-spacing="2">STACK — 5 APIs, ZERO OVERLAP</text>
-    <!-- Row 1 -->
-    <rect x="36" y="722" width="80" height="22" rx="11" fill="#111116" stroke="#1e1e28" />
-    <text x="76" y="737" fill="#9E9E9E" font-size="7" font-family="monospace" text-anchor="middle">Claude</text>
-    <rect x="124" y="722" width="80" height="22" rx="11" fill="#111116" stroke="#1e1e28" />
-    <text x="164" y="737" fill="#9E9E9E" font-size="7" font-family="monospace" text-anchor="middle">Exa</text>
-    <rect x="212" y="722" width="80" height="22" rx="11" fill="#111116" stroke="#1e1e28" />
-    <text x="252" y="737" fill="#9E9E9E" font-size="7" font-family="monospace" text-anchor="middle">GitHub</text>
-    <rect x="300" y="722" width="80" height="22" rx="11" fill="#111116" stroke="#00E5A0" stroke-opacity="0.3" />
-    <text x="340" y="737" fill="#00E5A0" font-size="7" font-family="monospace" text-anchor="middle">Harmonic</text>
-    <rect x="388" y="722" width="88" height="22" rx="11" fill="#111116" stroke="#00E5A0" stroke-opacity="0.3" />
-    <text x="432" y="737" fill="#00E5A0" font-size="7" font-family="monospace" text-anchor="middle">Parallel.ai</text>
-    <!-- Row 2 -->
-    <rect x="36" y="752" width="80" height="22" rx="11" fill="#111116" stroke="#1e1e28" />
-    <text x="76" y="767" fill="#9E9E9E" font-size="7" font-family="monospace" text-anchor="middle">React</text>
-    <rect x="124" y="752" width="80" height="22" rx="11" fill="#111116" stroke="#1e1e28" />
-    <text x="164" y="767" fill="#9E9E9E" font-size="7" font-family="monospace" text-anchor="middle">TypeScript</text>
-    <rect x="212" y="752" width="80" height="22" rx="11" fill="#111116" stroke="#1e1e28" />
-    <text x="252" y="767" fill="#9E9E9E" font-size="7" font-family="monospace" text-anchor="middle">Supabase</text>
-    <rect x="300" y="752" width="80" height="22" rx="11" fill="#111116" stroke="#1e1e28" />
-    <text x="340" y="767" fill="#9E9E9E" font-size="7" font-family="monospace" text-anchor="middle">Vercel</text>
-    <rect x="388" y="752" width="88" height="22" rx="11" fill="#111116" stroke="#1e1e28" />
-    <text x="432" y="767" fill="#9E9E9E" font-size="7" font-family="monospace" text-anchor="middle">Stripe</text>
-
-    <!-- Pro Tips -->
-    <text x="36" y="810" fill="#00E5A0" font-size="8" font-family="monospace" letter-spacing="2">PRO TIPS</text>
-    <rect x="36" y="822" width="216" height="36" rx="4" fill="#111116" stroke="#1e1e28" />
-    <text x="50" y="838" fill="#F0F0F5" font-size="7" font-family="sans-serif" font-weight="600">Always Edit the Repo List</text>
-    <text x="50" y="850" fill="#9E9E9E" font-size="6" font-family="sans-serif">Single biggest lever for result quality</text>
-    <rect x="260" y="822" width="216" height="36" rx="4" fill="#111116" stroke="#1e1e28" />
-    <text x="274" y="838" fill="#F0F0F5" font-size="7" font-family="sans-serif" font-weight="600">Use Websets for Ongoing Roles</text>
-    <text x="274" y="850" fill="#9E9E9E" font-size="6" font-family="sans-serif">New matches surface automatically</text>
-
-    <!-- Footer -->
-    <line x1="36" y1="872" x2="464" y2="872" stroke="#1e1e28" stroke-width="0.5" />
-    <text x="36" y="890" fill="#9E9E9E" font-size="7" font-family="sans-serif">getsourcekit.vercel.app</text>
-    <text x="250" y="890" fill="#9E9E9E" font-size="6" font-family="sans-serif" text-anchor="middle">sourcekit-docs.netlify.app</text>
-    <text x="464" y="890" fill="#9E9E9E" font-size="6" font-family="monospace" text-anchor="end" opacity="0.5">SourceKit Beta v2.0</text>
-
-    <!-- Decorative corner accents -->
-    <path d="M12,24 L12,12 L24,12" stroke="#00E5A0" stroke-width="1" fill="none" opacity="0.2" />
-    <path d="M488,12 L488,24" stroke="#00E5A0" stroke-width="1" fill="none" opacity="0.2" />
-    <path d="M476,12 L488,12" stroke="#00E5A0" stroke-width="1" fill="none" opacity="0.2" />
-    <path d="M12,876 L12,888 L24,888" stroke="#00E5A0" stroke-width="1" fill="none" opacity="0.2" />
-    <path d="M476,888 L488,888 L488,876" stroke="#00E5A0" stroke-width="1" fill="none" opacity="0.2" />
-  </svg>
 </body>
 </html>
