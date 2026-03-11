@@ -6,12 +6,14 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
+import NotificationCenter from "@/components/NotificationCenter";
 
 export type ActiveTab = "search" | "research" | "history" | "pipeline" | "watchlist" | "bulk" | "websets" | "settings" | "guide";
 
 interface DashboardLayoutProps {
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
+  onSearchFromNotification?: (query: string) => void;
   children: React.ReactNode;
 }
 
@@ -27,7 +29,7 @@ const NAV_ITEMS: { id: ActiveTab; label: string; icon: React.ElementType; tip: s
   { id: "guide", label: "Guide", icon: BookOpen, tip: "Quick reference for workflows, tips, and features" },
 ];
 
-const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutProps) => {
+const DashboardLayout = ({ activeTab, onTabChange, onSearchFromNotification, children }: DashboardLayoutProps) => {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { count: watchlistCount } = useWatchlist();
@@ -59,12 +61,15 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
-        <SourceKitMark className="w-7 h-7 text-primary" />
-        <span className="text-sm tracking-tight">
-          <span className="text-foreground font-semibold">Source</span><span className="text-muted-foreground font-medium">Kit</span>
-        </span>
+      {/* Logo + Notifications */}
+      <div className="flex items-center justify-between px-5 py-5 border-b border-border">
+        <div className="flex items-center gap-2.5">
+          <SourceKitMark className="w-7 h-7 text-primary" />
+          <span className="text-sm tracking-tight">
+            <span className="text-foreground font-semibold">Source</span><span className="text-muted-foreground font-medium">Kit</span>
+          </span>
+        </div>
+        <NotificationCenter onSearchClick={(q) => { onSearchFromNotification?.(q); }} />
       </div>
 
       {/* Navigation */}
@@ -188,12 +193,13 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-1">
               <SourceKitMark className="w-5 h-5 text-primary" />
               <span className="text-sm">
                 <span className="text-foreground font-semibold">Source</span><span className="text-muted-foreground font-medium">Kit</span>
               </span>
             </div>
+            <NotificationCenter onSearchClick={(q) => { onSearchFromNotification?.(q); }} />
           </header>
         )}
 

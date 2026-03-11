@@ -39,7 +39,7 @@ const WebsetsTab = () => {
     if (addingItem || addedItems.has(item.id)) return
     setAddingItem(item.id)
     try {
-      const username = item.url ? new URL(item.url).pathname.replace(/^\//, '').replace(/\//g, '-') : item.id
+      const username = item.url ? (() => { try { return new URL(item.url).pathname.replace(/^\//, '').replace(/\//g, '-'); } catch { return item.id; } })() : item.id
       const { error } = await supabase.from('pipeline').upsert({
         github_username: username,
         name: item.title || username,
@@ -65,7 +65,7 @@ const WebsetsTab = () => {
       for (const item of batchItems) {
         if (addedItems.has(item.id)) continue
         try {
-          const username = item.url ? new URL(item.url).pathname.replace(/^\//, '').replace(/\//g, '-') : item.id
+          const username = item.url ? (() => { try { return new URL(item.url).pathname.replace(/^\//, '').replace(/\//g, '-'); } catch { return item.id; } })() : item.id
           const { error } = await supabase.from('pipeline').upsert({
             github_username: username,
             name: item.title || username,

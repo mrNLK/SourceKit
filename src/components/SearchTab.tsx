@@ -20,6 +20,7 @@ import {
   type SeniorityFilter,
 } from "@/lib/search-helpers";
 
+import ErrorBoundary from "@/components/ErrorBoundary";
 import OnboardingCard from "@/components/search/OnboardingCard";
 import SuggestionChips from "@/components/search/SuggestionChips";
 import SearchFilters from "@/components/search/SearchFilters";
@@ -27,6 +28,11 @@ import SearchFunnel from "@/components/search/SearchFunnel";
 import SearchResults from "@/components/search/SearchResults";
 import SearchProgress from "@/components/search/SearchProgress";
 import SkillPriorities from "@/components/search/SkillPriorities";
+import ScoreExplanation from "@/components/ScoreExplanation";
+import SimilarCandidates from "@/components/SimilarCandidates";
+import NLQueryPreview from "@/components/search/NLQueryPreview";
+import { useScoreExplanation } from "@/hooks/useScoreExplanation";
+import { useNLQueryParser } from "@/hooks/useNLQueryParser";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -85,13 +91,26 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
   const [enrichProgress, setEnrichProgress] = useState<{ current: number; total: number; skipped: number } | null>(null);
   const [enrichedUsernames, setEnrichedUsernames] = useState<Set<string>>(new Set());
 
+  // FEAT: Score explanation panel
+  const { explanation: scoreExplanation, isOpen: scoreOpen, openExplanation: openScore, close: closeScore } = useScoreExplanation();
+
+  // FEAT: NL query parser
+  const { isParsing, parsed: nlParsed, parseQuery, clearParsed } = useNLQueryParser();
+
   // FEAT-006: Saved searches (bookmarks)
   const { savedSearches, isSaved: checkIsSaved, saveSearch, deleteSearch } = useSavedSearches();
   const isSaved = checkIsSaved(query);
-  const handleSaveSearch = () => saveSearch(query, expandedQuery, {
-    seniority: seniorityFilter, skills: skillFilters, language: languageFilter,
-    minScore, showGemsOnly, showUngettable, resultLimit,
-  });
+  const handleSaveSearch = () => {
+    if (isSaved) {
+      const existing = savedSearches.find(s => s.query === query);
+      if (existing) deleteSearch(existing.id);
+    } else {
+      saveSearch(query, expandedQuery, {
+        seniority: seniorityFilter, skills: skillFilters, language: languageFilter,
+        minScore, showGemsOnly, showUngettable, resultLimit,
+      });
+    }
+  };
   const handleDeleteSaved = (id: string) => deleteSearch(id);
   const handleLoadSaved = (saved: SavedSearch) => {
     setQuery(saved.query);
@@ -204,13 +223,25 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
     return q;
   }, [query, expandedQuery, skillFilters]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) { toast({ title: "Enter a search query", description: "Type a skill, language, or domain to search for engineers." }); return; }
+    // F5: Try NL parsing first — if it's natural language, show preview instead of immediate search
+    const nlResult = await parseQuery(query.trim());
+    if (nlResult) return; // Show NL preview, user clicks "Search" to proceed
     // P22: Clear strategy when doing a manual search (prevents stale strategy data)
     if (!expandedQuery) setActiveStrategy(undefined);
     setActiveSearchId(undefined);
     setActiveQuery(buildSearchQuery());
+  };
+
+  // F5: When user confirms NL-parsed search
+  const handleNLSearch = (githubQuery: string) => {
+    clearParsed();
+    setExpandedQuery(githubQuery);
+    setActiveStrategy(undefined);
+    setActiveSearchId(undefined);
+    setActiveQuery(githubQuery);
   };
 
   const handleChipSubmit = (chip: SuggestionChip) => {
@@ -326,6 +357,19 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
               </div>
             </CollapsibleContent>
           </Collapsible>
+        )}
+
+        {/* F5: NL Query Preview */}
+        {nlParsed && (
+          <div className="mb-4">
+            <NLQueryPreview parsed={nlParsed} onSearch={handleNLSearch} onDismiss={clearParsed} />
+          </div>
+        )}
+        {isParsing && (
+          <div className="mb-4 glass rounded-lg p-3 flex items-center gap-2 border border-primary/20">
+            <Loader2 className="w-3 h-3 animate-spin text-primary" />
+            <span className="text-[11px] text-muted-foreground font-display">Interpreting your search...</span>
+          </div>
         )}
 
         {!activeQuery && !activeSearchId && !expandedQuery && (
@@ -485,6 +529,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
             onBatchAddToPipeline={handleBatchAddToPipeline}
             onToggleShortlist={toggleShortlist}
             onCardClick={(d) => setSlideOutDev(d)}
+            onScoreClick={openScore}
             onExpandSearch={handleExpandSearch}
           />
         )}
@@ -507,8 +552,29 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
 
       {slideOutDev && <CandidateSlideOut developer={slideOutDev} onClose={() => setSlideOutDev(null)} />}
       <UpgradeModal open={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      {scoreOpen && scoreExplanation && (
+        <>
+          <div className="fixed inset-0 bg-background/50 z-40" onClick={closeScore} />
+          <ScoreExplanation explanation={scoreExplanation} onClose={closeScore} />
+          <div className="fixed bottom-0 right-0 w-[400px] max-w-full z-50 p-4 border-t border-border glass">
+            <SimilarCandidates
+              developer={scoreExplanation.developer}
+              allCandidates={results}
+              onSelect={(dev) => { closeScore(); setSlideOutDev(dev); }}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };
 
-export default SearchTab;
+function SearchTabWithBoundary(props: SearchTabProps) {
+  return (
+    <ErrorBoundary fallbackLabel="SearchTab">
+      <SearchTab {...props} />
+    </ErrorBoundary>
+  );
+}
+
+export default SearchTabWithBoundary;

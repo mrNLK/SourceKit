@@ -36,8 +36,12 @@ export function exportEEAItemsToCSV(items: EEAWebsetItem[], filename?: string): 
     ];
   });
 
-  // Escape CSV values
+  // Escape CSV values (includes formula injection protection)
   const escape = (val: string): string => {
+    // Neutralize formula injection: prefix dangerous leading chars with a single quote
+    if (/^[=+\-@\t\r]/.test(val)) {
+      val = "'" + val;
+    }
     if (val.includes(',') || val.includes('"') || val.includes('\n')) {
       return `"${val.replace(/"/g, '""')}"`;
     }

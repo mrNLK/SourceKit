@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1"
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { requireAuth } from '../_shared/gate.ts';
 
 const WEBSETS_BASE = 'https://api.exa.ai/websets/v0'
 const ALLOWED_ACTIONS = [
@@ -28,9 +29,13 @@ async function getUserId(authHeader: string | null): Promise<string | null> {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: getCorsHeaders(req) })
+    return new Response('ok', { headers: corsHeaders })
   }
+
+  const authErr = requireAuth(req, corsHeaders)
+  if (authErr) return authErr
 
   try {
     const body = await req.json()

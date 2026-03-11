@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { requireAuth, authErrorResponse } from '../_shared/auth.ts';
+import { validateExternalUrl } from '../_shared/url-validator.ts';
 
 function getSupabase() {
   return createClient(
@@ -11,9 +12,13 @@ function getSupabase() {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: getCorsHeaders(req) });
+    return new Response(null, { headers: corsHeaders });
   }
+
+  const authErr = requireAuth(req, corsHeaders);
+  if (authErr) return authErr;
 
   try {
     await requireAuth(req);
@@ -64,8 +69,8 @@ serve(async (req) => {
     const toLabel = stageLabels[to_stage] || to_stage;
     const displayName = candidate_name || github_username;
 
-    // Fire generic webhook
-    if (webhookUrl) {
+    // Fire generic webhook (validate URL to prevent SSRF)
+    if (webhookUrl && validateExternalUrl(webhookUrl).valid) {
       try {
         const payload = {
           event: 'pipeline.stage_changed',
@@ -92,8 +97,8 @@ serve(async (req) => {
       }
     }
 
-    // Fire Slack webhook
-    if (slackWebhookUrl) {
+    // Fire Slack webhook (validate URL to prevent SSRF)
+    if (slackWebhookUrl && validateExternalUrl(slackWebhookUrl).valid) {
       try {
         const slackPayload = {
           blocks: [

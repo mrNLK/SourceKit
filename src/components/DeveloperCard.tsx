@@ -17,9 +17,10 @@ interface DeveloperCardProps {
   showPipelineButton?: boolean;
   inPipeline?: boolean;
   onCardClick?: (dev: Developer) => void;
+  onScoreClick?: (dev: Developer) => void;
 }
 
-const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipelineButton, inPipeline, onCardClick }: DeveloperCardProps) => {
+const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipelineButton, inPipeline, onCardClick, onScoreClick }: DeveloperCardProps) => {
   const navigate = useNavigate();
   const { isWatched, toggle: toggleWatchlist } = useWatchlist();
   const [linkedinLoading, setLinkedinLoading] = useState(false);
@@ -234,7 +235,9 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
 
           {/* Score */}
           <div className="flex flex-col items-center shrink-0 z-10 relative">
-            <div className={`w-11 h-11 rounded-lg flex items-center justify-center font-display text-sm font-bold ${
+            <button
+              onClick={(e) => { e.stopPropagation(); onScoreClick?.(developer); }}
+              className={`w-11 h-11 rounded-lg flex items-center justify-center font-display text-sm font-bold transition-transform hover:scale-110 ${
               developer.ungettable ? "bg-secondary text-muted-foreground border border-border opacity-60" :
               developer.score >= 70 ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" :
               developer.score >= 40 ? "bg-amber-500/15 text-amber-400 border border-amber-500/30" :
@@ -242,8 +245,8 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
               "bg-secondary text-secondary-foreground border border-border"
             }`}>
               {developer.score}
-            </div>
-            <span className="text-[10px] text-muted-foreground mt-1 font-display" title="AI relevance score (0-100). Green 70+: strong match. Amber 40-69: moderate. Red <40: weak. Based on contributions, skills, and seniority.">SCORE</span>
+            </button>
+            <span className="text-[10px] text-muted-foreground mt-1 font-display" title="Click for score breakdown">SCORE</span>
           </div>
         </div>
       </button>

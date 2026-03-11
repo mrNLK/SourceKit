@@ -216,7 +216,66 @@ describe('exportEEAItemsToCSV', () => {
     expect(dataLine.startsWith('"The ""Great"" Dev"')).toBe(true);
   });
 
-  // 8. Filename -- custom vs default
+  // 8. Formula injection protection
+  it('prefixes formula-triggering characters with a single quote', () => {
+    const items: EEAWebsetItem[] = [
+      makeItem({
+        title: '=CMD("calc")',
+        enrichments: [
+          { signal_id: 's1', signal_name: 'Note', value: '+1234567890', format: 'text', verified: false },
+        ],
+      }),
+    ];
+
+    exportEEAItemsToCSV(items);
+
+    const csv = mocks.getCSV();
+    const dataLine = csv.split('\n')[1];
+
+    // Title starts with = so should be prefixed with '
+    expect(dataLine).toContain("'=CMD");
+    // Signal value starts with + so should be prefixed with '
+    expect(dataLine).toContain("'+1234567890");
+  });
+
+  it('prefixes - and @ formula characters', () => {
+    const items: EEAWebsetItem[] = [
+      makeItem({
+        title: '-@SUM(A1:A10)',
+        enrichments: [],
+      }),
+    ];
+
+    exportEEAItemsToCSV(items);
+
+    const csv = mocks.getCSV();
+    const dataLine = csv.split('\n')[1];
+
+    expect(dataLine).toContain("'-@SUM");
+  });
+
+  it('does not prefix normal values', () => {
+    const items: EEAWebsetItem[] = [
+      makeItem({
+        title: 'John Smith',
+        enrichments: [
+          { signal_id: 's1', signal_name: 'Score', value: '85', format: 'number', verified: false },
+        ],
+      }),
+    ];
+
+    exportEEAItemsToCSV(items);
+
+    const csv = mocks.getCSV();
+    const dataLine = csv.split('\n')[1];
+
+    expect(dataLine).toContain('John Smith');
+    expect(dataLine).not.toContain("'John Smith");
+    expect(dataLine).toContain('85');
+    expect(dataLine).not.toContain("'85");
+  });
+
+  // 9. Filename -- custom vs default
   it('uses a custom filename when provided, otherwise falls back to date-based default', () => {
     const items: EEAWebsetItem[] = [makeItem()];
 

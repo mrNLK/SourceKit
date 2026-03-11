@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { requireAuth, authErrorResponse } from '../_shared/auth.ts';
+import { validateExternalUrl } from '../_shared/url-validator.ts';
 
 /**
  * Extract text from a JD URL using Parallel.ai (JS-rendered pages) with
@@ -85,15 +86,10 @@ serve(async (req) => {
       });
     }
 
-    // Validate URL
-    let parsedUrl: URL;
-    try {
-      parsedUrl = new URL(url);
-      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        throw new Error('Invalid protocol');
-      }
-    } catch {
-      return new Response(JSON.stringify({ error: 'Invalid URL. Please provide a valid http/https URL.' }), {
+    // Validate URL — blocks private IPs, metadata endpoints, localhost (SSRF protection)
+    const urlCheck = validateExternalUrl(url);
+    if (!urlCheck.valid) {
+      return new Response(JSON.stringify({ error: urlCheck.error }), {
         status: 400,
         headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
@@ -103,7 +99,8 @@ serve(async (req) => {
     let source = 'fetch'; // Track which method succeeded
 
     // Try Parallel.ai first (handles JS-rendered pages like Greenhouse, Lever, Workable)
-    const parallelKey = parallel_api_key || Deno.env.get('PARALLEL_API_KEY');
+    // Only use server-side API key — never accept keys from client
+    const parallelKey = Deno.env.get('PARALLEL_API_KEY');
     if (parallelKey) {
       text = await extractWithParallel(url, parallelKey);
       if (text) source = 'parallel';

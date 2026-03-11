@@ -27,6 +27,8 @@ CREATE TABLE public.candidates (
   twitter_username TEXT,
   email TEXT,
   github_url TEXT,
+  query_hash TEXT,
+  linkedin_fetched_at TIMESTAMPTZ,
   fetched_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
@@ -65,6 +67,7 @@ CREATE TABLE public.pipeline (
   stage TEXT NOT NULL DEFAULT 'contacted' CHECK (stage IN ('contacted', 'not_interested', 'recruiter_screen', 'rejected', 'moved_to_ats')),
   notes TEXT,
   tags TEXT[] DEFAULT '{}',
+  eea_data JSONB,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   UNIQUE (user_id, github_username)
@@ -94,6 +97,9 @@ CREATE TABLE public.outreach_history (
   candidate_id UUID REFERENCES public.candidates(id) ON DELETE CASCADE,
   pipeline_id UUID REFERENCES public.pipeline(id) ON DELETE CASCADE,
   message TEXT NOT NULL,
+  channel TEXT,
+  status TEXT,
+  sent_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -215,19 +221,21 @@ CREATE POLICY "Service role all pipeline_events" ON public.pipeline_events FOR A
 
 -- 9. Settings (key-value store) — already user-scoped via user_id
 CREATE TABLE public.settings (
-  key TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
+  key TEXT NOT NULL,
   value TEXT NOT NULL DEFAULT '',
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, key)
 );
 
 CREATE INDEX idx_settings_key ON public.settings(key);
 
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read settings" ON public.settings FOR SELECT USING (true);
-CREATE POLICY "Allow public insert settings" ON public.settings FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update settings" ON public.settings FOR UPDATE USING (true);
+CREATE POLICY "Users read own settings" ON public.settings FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own settings" ON public.settings FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users update own settings" ON public.settings FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users delete own settings" ON public.settings FOR DELETE USING (auth.uid() = user_id);
 
 CREATE TRIGGER update_settings_updated_at
   BEFORE UPDATE ON public.settings
@@ -277,3 +285,204 @@ BEGIN
   WHERE user_id = p_user_id;
 END;
 $$;
+
+
+-- 9. Safe view for candidates (hides PII from client-side queries)
+CREATE OR REPLACE VIEW public.candidates_safe AS
+SELECT
+  id, github_username, name, avatar_url, bio, location,
+  followers, public_repos, stars, top_languages, highlights,
+  score, summary, about, is_hidden_gem, joined_year,
+  contributed_repos, twitter_username, github_url,
+  fetched_at, created_at, updated_at
+FROM public.candidates;
+
+
+-- 10. EEA signal templates (user-created signal definitions)
+CREATE TABLE IF NOT EXISTS public.eea_signal_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  role_category TEXT NOT NULL,
+  signal_name TEXT NOT NULL,
+  webset_criterion TEXT NOT NULL,
+  enrichment_description TEXT NOT NULL,
+  enrichment_format TEXT NOT NULL DEFAULT 'text',
+  enrichment_options JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.eea_signal_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own templates" ON public.eea_signal_templates FOR ALL USING (auth.uid() = user_id);
+
+
+-- 14. Webset refs (Exa webset tracking)
+CREATE TABLE IF NOT EXISTS public.webset_refs (
+  id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  query TEXT NOT NULL,
+  count INTEGER NOT NULL DEFAULT 10,
+  status TEXT NOT NULL DEFAULT 'running',
+  eea_signals JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.webset_refs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own webset_refs" ON public.webset_refs FOR ALL USING (auth.uid() = user_id);
+
+
+-- 15. Webset mappings
+CREATE TABLE IF NOT EXISTS public.webset_mappings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  webset_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  query TEXT,
+  status TEXT DEFAULT 'running',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.webset_mappings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own webset_mappings" ON public.webset_mappings FOR ALL USING (auth.uid() = user_id);
+
+
+-- 16. Outreach sequences (automated email campaigns)
+CREATE TABLE IF NOT EXISTS public.outreach_sequences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  steps JSONB NOT NULL DEFAULT '[]',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.outreach_sequences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own sequences" ON public.outreach_sequences FOR ALL USING (auth.uid() = user_id);
+
+CREATE TRIGGER update_sequences_updated_at
+  BEFORE UPDATE ON public.outreach_sequences
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+-- 17. Sequence enrollments (candidate enrollment in a sequence)
+CREATE TABLE IF NOT EXISTS public.sequence_enrollments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sequence_id UUID NOT NULL REFERENCES public.outreach_sequences(id) ON DELETE CASCADE,
+  pipeline_id UUID NOT NULL REFERENCES public.pipeline(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  current_step INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'completed', 'replied', 'bounced')),
+  next_send_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(sequence_id, pipeline_id)
+);
+
+ALTER TABLE public.sequence_enrollments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own enrollments" ON public.sequence_enrollments FOR ALL USING (auth.uid() = user_id);
+
+CREATE INDEX idx_enrollments_next_send ON public.sequence_enrollments(next_send_at) WHERE status = 'active';
+CREATE INDEX idx_sequence_enrollments_sequence_id ON public.sequence_enrollments(sequence_id);
+CREATE INDEX idx_sequence_enrollments_pipeline_id ON public.sequence_enrollments(pipeline_id);
+
+CREATE TRIGGER update_enrollments_updated_at
+  BEFORE UPDATE ON public.sequence_enrollments
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+-- 18. Outreach events (sent, opened, clicked, etc.)
+CREATE TABLE IF NOT EXISTS public.outreach_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  enrollment_id UUID NOT NULL REFERENCES public.sequence_enrollments(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL CHECK (event_type IN ('sent', 'opened', 'clicked', 'replied', 'bounced')),
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.outreach_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role full outreach_events" ON public.outreach_events FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Users read own outreach_events" ON public.outreach_events
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.sequence_enrollments se
+      JOIN public.outreach_sequences os ON os.id = se.sequence_id
+      WHERE se.id = outreach_events.enrollment_id AND os.user_id = auth.uid()
+    )
+  );
+
+CREATE INDEX idx_outreach_events_enrollment_id ON public.outreach_events(enrollment_id);
+
+
+-- 19. GitHub activity cache (heatmap/timeline data)
+CREATE TABLE IF NOT EXISTS public.github_activity_cache (
+  github_username TEXT PRIMARY KEY,
+  contribution_data JSONB NOT NULL DEFAULT '{}',
+  activity_score INTEGER DEFAULT 0,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.github_activity_cache ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read activity cache" ON public.github_activity_cache FOR SELECT USING (true);
+CREATE POLICY "Service role write activity cache" ON public.github_activity_cache FOR ALL USING (auth.role() = 'service_role');
+
+
+-- 20. Search alerts (extends saved_searches)
+ALTER TABLE public.saved_searches ADD COLUMN IF NOT EXISTS alert_enabled BOOLEAN DEFAULT false;
+ALTER TABLE public.saved_searches ADD COLUMN IF NOT EXISTS alert_frequency TEXT DEFAULT 'daily';
+ALTER TABLE public.saved_searches ADD COLUMN IF NOT EXISTS last_alert_run TIMESTAMPTZ;
+
+
+-- 21. Search alert results (tracks new candidates per alert)
+CREATE TABLE IF NOT EXISTS public.search_alert_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  saved_search_id UUID NOT NULL REFERENCES public.saved_searches(id) ON DELETE CASCADE,
+  candidate_username TEXT NOT NULL,
+  first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(saved_search_id, candidate_username)
+);
+
+ALTER TABLE public.search_alert_results ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role full alert_results" ON public.search_alert_results FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Users read own alert_results" ON public.search_alert_results
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.saved_searches
+      WHERE id = search_alert_results.saved_search_id AND user_id = auth.uid()
+    )
+  );
+
+
+-- 22. Notifications
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL DEFAULT 'search_alert',
+  title TEXT NOT NULL,
+  body TEXT,
+  metadata JSONB DEFAULT '{}',
+  read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users read own notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users update own notifications" ON public.notifications FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users delete own notifications" ON public.notifications FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Service role full notifications" ON public.notifications FOR ALL USING (auth.role() = 'service_role');
+
+CREATE INDEX idx_notifications_user_unread ON public.notifications(user_id, read) WHERE read = false;
+
+
+-- 23. Missing indexes on user_id and FK columns (P8)
+CREATE INDEX IF NOT EXISTS idx_outreach_history_user_id ON public.outreach_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_outreach_history_created_at ON public.outreach_history(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_search_results_user_id ON public.search_results(user_id);
+CREATE INDEX IF NOT EXISTS idx_search_results_search_id ON public.search_results(search_id);
+CREATE INDEX IF NOT EXISTS idx_search_results_candidate_id ON public.search_results(candidate_id);
+CREATE INDEX IF NOT EXISTS idx_pipeline_events_user_id ON public.pipeline_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_pipeline_events_pipeline_id ON public.pipeline_events(pipeline_id);
+CREATE INDEX IF NOT EXISTS idx_pipeline_events_created_at ON public.pipeline_events(created_at DESC);
+
+-- Composite indexes for user-scoped time-ordered queries
+CREATE INDEX IF NOT EXISTS idx_pipeline_user_created ON public.pipeline(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_search_history_user_created ON public.search_history(user_id, created_at DESC);

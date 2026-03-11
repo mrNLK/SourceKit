@@ -1,11 +1,16 @@
+import { useState } from "react";
 import { X, ArrowRight } from "lucide-react";
 
 const OnboardingCard = () => {
-  if (localStorage.getItem("sourcekit-gs-onboarding-dismissed")) return null;
+  const [dismissed, setDismissed] = useState(
+    () => !!localStorage.getItem("sourcekit-gs-onboarding-dismissed")
+  );
+
+  if (dismissed) return null;
 
   return (
     <div className="glass rounded-xl p-5 space-y-3 border border-primary/20 relative">
-      <button onClick={() => { localStorage.setItem("sourcekit-gs-onboarding-dismissed", "1"); window.dispatchEvent(new Event("storage")); }} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground">
+      <button onClick={() => { localStorage.setItem("sourcekit-gs-onboarding-dismissed", "1"); setDismissed(true); }} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground">
         <X className="h-4 w-4" />
       </button>
       <h2 className="text-sm font-display font-semibold text-foreground">Find engineers by what they've built</h2>

@@ -126,6 +126,65 @@ describe("api module", () => {
       expect(body.targetRepos).toEqual(["org/repo"]);
       expect(body.skills).toEqual(["Go"]);
     });
+
+    it("calls POST when hideUngettable is true", async () => {
+      mockSession();
+      (global.fetch as Mock).mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            results: [],
+            parsedCriteria: { repos: [], skills: [], location: null, seniority: null },
+            reposSearched: [],
+          }),
+      });
+
+      await searchDevelopers("react devs", { hideUngettable: true });
+
+      const [, init] = (global.fetch as Mock).mock.calls[0];
+      expect(init.method).toBe("POST");
+      const body = JSON.parse(init.body);
+      expect(body.hideUngettable).toBe(true);
+    });
+
+    it("calls POST when hideUngettable is false", async () => {
+      mockSession();
+      (global.fetch as Mock).mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            results: [],
+            parsedCriteria: { repos: [], skills: [], location: null, seniority: null },
+            reposSearched: [],
+          }),
+      });
+
+      await searchDevelopers("react devs", { hideUngettable: false });
+
+      const [, init] = (global.fetch as Mock).mock.calls[0];
+      expect(init.method).toBe("POST");
+      const body = JSON.parse(init.body);
+      expect(body.hideUngettable).toBe(false);
+    });
+
+    it("calls GET when hideUngettable is undefined (no options)", async () => {
+      mockSession();
+      (global.fetch as Mock).mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            results: [],
+            parsedCriteria: { repos: [], skills: [], location: null, seniority: null },
+            reposSearched: [],
+          }),
+      });
+
+      await searchDevelopers("react devs");
+
+      const [url, init] = (global.fetch as Mock).mock.calls[0];
+      expect(url).toContain("github-search?q=react+devs");
+      expect(init.body).toBeUndefined();
+    });
   });
 
   // ─── Error handling ─────────────────────────────────────────────
@@ -276,17 +335,16 @@ describe("api module", () => {
   // ─── notifyStageChange ──────────────────────────────────────────
 
   describe("notifyStageChange", () => {
-    it("fires and does not throw on failure", async () => {
+    it("rejects on failure so caller can handle the error", async () => {
       mockSession();
       (global.fetch as Mock).mockRejectedValue(new Error("network error"));
 
-      // Should not throw — fire-and-forget
-      expect(() =>
+      await expect(
         notifyStageChange({
           github_username: "alice",
           to_stage: "contacted",
         }),
-      ).not.toThrow();
+      ).rejects.toThrow("network error");
     });
   });
 });

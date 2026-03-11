@@ -75,6 +75,35 @@ export async function checkSearchGate(authHeader: string | null): Promise<GateRe
 }
 
 /**
+ * Quick auth check for edge functions that require authentication.
+ * Returns a 401 Response if unauthenticated, or null if auth is present.
+ * Use: const authErr = requireAuth(req, corsHeaders); if (authErr) return authErr;
+ */
+export function requireAuth(req: Request, corsHeaders: Record<string, string>): Response | null {
+  const authHeader = req.headers.get('Authorization');
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+  if (!authHeader || authHeader === `Bearer ${anonKey}`) {
+    return new Response(
+      JSON.stringify({ error: 'Authentication required' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  return null;
+}
+
+/**
+ * Extract user ID from auth header. Returns null if unauthenticated.
+ */
+export async function getUserIdFromAuth(req: Request): Promise<string | null> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) return null;
+  const token = authHeader.replace('Bearer ', '');
+  const supabase = getSupabase();
+  const { data: { user } } = await supabase.auth.getUser(token);
+  return user?.id || null;
+}
+
+/**
  * Increment the search count for a user after a successful search.
  * Uses a single atomic RPC call to avoid race conditions under concurrent requests.
  */

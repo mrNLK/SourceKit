@@ -20,6 +20,7 @@ interface SearchResultsProps {
   onBatchAddToPipeline: () => void;
   onToggleShortlist: (username: string) => void;
   onCardClick: (dev: Developer) => void;
+  onScoreClick?: (dev: Developer) => void;
   onExpandSearch: () => void;
 }
 
@@ -27,7 +28,7 @@ const SearchResults = ({
   filtered, results, isExpanding, canExpand, currentResultCount, maxResults,
   batchSelected, batchAdding, pipelineSet, shortlisted,
   onToggleBatchSelect, onSelectAll, onClearSelection, onBatchAddToPipeline,
-  onToggleShortlist, onCardClick, onExpandSearch,
+  onToggleShortlist, onCardClick, onScoreClick, onExpandSearch,
 }: SearchResultsProps) => (
   <>
     {/* Batch actions bar */}
@@ -79,6 +80,7 @@ const SearchResults = ({
             showPipelineButton
             inPipeline={pipelineSet.has(dev.username)}
             onCardClick={(d) => onCardClick(d)}
+            onScoreClick={onScoreClick}
           />
           {dev.skillMatch >= 0 && (
             <div className={`absolute bottom-3 right-3 text-[10px] font-display font-bold px-2 py-0.5 rounded-full border ${

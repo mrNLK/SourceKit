@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { EEAFull } from "@/components/EEASignals";
 import { CompanyContext } from "@/components/CompanyContext";
 import { notifyStageChange } from "@/lib/api";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import type { Language } from "@/types/developer";
 
 import { PIPELINE_STAGES as STAGES } from "@/lib/constants";
@@ -634,4 +635,12 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
   );
 };
 
-export default CandidateProfile;
+function CandidateProfileWithBoundary(props: CandidateProfileProps) {
+  return (
+    <ErrorBoundary fallbackLabel="CandidateProfile">
+      <CandidateProfile {...props} />
+    </ErrorBoundary>
+  );
+}
+
+export default CandidateProfileWithBoundary;

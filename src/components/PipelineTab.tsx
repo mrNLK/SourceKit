@@ -1,13 +1,15 @@
 import { GripVertical, Trash2, Loader2, Bookmark, BookmarkCheck, Clock, Search, ArrowRight, ArrowUpDown, ChevronDown, Tag, StickyNote, Share2, X, Plus, BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import CandidateProfile from "@/components/CandidateProfile";
 import ExportButton from "@/components/ExportButton";
 import PipelineAnalytics from "@/components/pipeline/PipelineAnalytics";
 import EEAMetadata from "@/components/pipeline/EEAMetadata";
+import PresenceAvatars from "@/components/pipeline/PresenceAvatars";
 import { useWatchlist } from "@/hooks/useWatchlist";
+import { usePipelineRealtime } from "@/hooks/usePipelineRealtime";
 import { toast } from "@/hooks/use-toast";
 import { notifyStageChange } from "@/lib/api";
 import { useSettings } from "@/hooks/useSettings";
@@ -36,7 +38,8 @@ interface PipelineCandidate {
   avatar_url: string | null;
   stage: string;
   notes: string | null;
-  tags: string[];
+  tags: string[] | null;
+  eea_data?: { strength: string; enrichments: string[] } | null;
   created_at: string;
   updated_at: string;
 }
@@ -51,6 +54,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
   const [selectedCandidate, setSelectedCandidate] = useState<PipelineCandidate | null>(null);
   const { isWatched, toggle: toggleWatchlist } = useWatchlist();
   const { settings } = useSettings();
+  const { presenceState, trackViewing } = usePipelineRealtime();
   const [sortByScore, setSortByScore] = useState(false);
   const [activeStageFilter, setActiveStageFilter] = useState<string | null>(null);
   const [activeTagFilters, setActiveTagFilters] = useState<Set<string>>(new Set());
@@ -145,7 +149,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
       const candidate = candidates.find((c: any) => c.id === variables.id);
       const stageLabel = STAGES.find(s => s.id === variables.stage)?.label || variables.stage;
       toast({ title: `Moved ${candidate?.name || candidate?.github_username || "candidate"} to ${stageLabel}` });
-      // Fire-and-forget webhook notification
+      // Non-blocking webhook notification with error feedback
       if (candidate) {
         notifyStageChange({
           pipeline_id: variables.id,
@@ -153,6 +157,8 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
           candidate_name: candidate.name ?? undefined,
           from_stage: variables.fromStage,
           to_stage: variables.stage,
+        }).catch(() => {
+          toast({ title: "Webhook notification failed", description: "Check your webhook URL in Settings.", variant: "destructive" });
         });
       }
     },
@@ -200,17 +206,17 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
     },
   });
 
-  const handleDrop = (stageId: string) => {
+  const handleDrop = useCallback((stageId: string) => {
     if (draggedItem) {
-      const fromStage = candidates.find((c: any) => c.id === draggedItem)?.stage;
+      const fromStage = candidates.find((c: PipelineCandidate) => c.id === draggedItem)?.stage;
       moveMutation.mutate({ id: draggedItem, stage: stageId, fromStage });
       setDraggedItem(null);
     }
-  };
+  }, [draggedItem, candidates, moveMutation]);
 
-  const handleBack = useCallback(() => setSelectedCandidate(null), []);
+  const handleBack = useCallback(() => { setSelectedCandidate(null); trackViewing(null); }, [trackViewing]);
 
-  const handleShareToSlack = async (candidate: PipelineCandidate) => {
+  const handleShareToSlack = useCallback(async (candidate: PipelineCandidate) => {
     try {
       const webhookUrl = settings.slack_webhook_url;
       if (!webhookUrl) {
@@ -247,7 +253,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
     } catch {
       toast({ title: "Failed to share to Slack", variant: "destructive" });
     }
-  };
+  }, [settings.slack_webhook_url, candidateScores]);
 
   // Stage pill counts
   const stageCounts = useMemo(() => {
@@ -257,13 +263,13 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
     return counts;
   }, [candidates]);
 
-  const toggleTagFilter = (tag: string) => {
+  const toggleTagFilter = useCallback((tag: string) => {
     setActiveTagFilters(prev => {
       const next = new Set(prev);
       if (next.has(tag)) next.delete(tag); else next.add(tag);
       return next;
     });
-  };
+  }, []);
 
   if (selectedCandidate) {
     return <CandidateProfile pipelineCandidate={selectedCandidate} onBack={handleBack} />;
@@ -425,10 +431,11 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
               stage={STAGES.find(s => s.id === c.stage) || STAGES[0]}
               stageChangedAt={stageChangeTimes[c.id]}
               onDragStart={() => setDraggedItem(c.id)}
-              onClick={() => setSelectedCandidate(c)}
+              onClick={() => { setSelectedCandidate(c); trackViewing(c.id); }}
               onRemove={() => { if (window.confirm(`Remove ${c.name || c.github_username}?`)) removeMutation.mutate(c.id); }}
               onWatch={() => toggleWatchlist(c.github_username, c.name, c.avatar_url)}
               isWatched={isWatched(c.github_username)}
+              presenceUsers={presenceState[c.id] || []}
               onNotesChange={(notes) => notesMutation.mutate({ id: c.id, notes })}
               onTagsChange={(tags) => tagsMutation.mutate({ id: c.id, tags })}
               onShareSlack={() => handleShareToSlack(c)}
@@ -471,10 +478,11 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
                       stage={stage}
                       stageChangedAt={stageChangeTimes[c.id]}
                       onDragStart={() => setDraggedItem(c.id)}
-                      onClick={() => setSelectedCandidate(c)}
+                      onClick={() => { setSelectedCandidate(c); trackViewing(c.id); }}
                       onRemove={() => { if (window.confirm(`Remove ${c.name || c.github_username}?`)) removeMutation.mutate(c.id); }}
                       onWatch={() => toggleWatchlist(c.github_username, c.name, c.avatar_url)}
                       isWatched={isWatched(c.github_username)}
+                      presenceUsers={presenceState[c.id] || []}
                       onNotesChange={(notes) => notesMutation.mutate({ id: c.id, notes })}
                       onTagsChange={(tags) => tagsMutation.mutate({ id: c.id, tags })}
                       onShareSlack={() => handleShareToSlack(c)}
@@ -503,27 +511,35 @@ interface PipelineCardProps {
   onRemove: () => void;
   onWatch: () => void;
   isWatched: boolean;
+  presenceUsers: { id: string; email?: string }[];
   onNotesChange: (notes: string) => void;
   onTagsChange: (tags: string[]) => void;
   onShareSlack: () => void;
   onMove: (stage: string) => void;
 }
 
-function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, onRemove, onWatch, isWatched, onNotesChange, onTagsChange, onShareSlack, onMove }: PipelineCardProps) {
+const PipelineCard = memo(function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, onRemove, onWatch, isWatched, presenceUsers, onNotesChange, onTagsChange, onShareSlack, onMove }: PipelineCardProps) {
   const [showNotes, setShowNotes] = useState(false);
   const [notesValue, setNotesValue] = useState(c.notes || "");
   const [showTagInput, setShowTagInput] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [showMoveMenu, setShowMoveMenu] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  const tags: string[] = (c as any).tags || [];
+  const tags: string[] = c.tags || [];
   // Use stage change timestamp if available, otherwise fall back to created_at
   const stageTime = daysInStage(stageChangedAt || c.created_at);
   const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 
   useEffect(() => { setNotesValue(c.notes || ""); }, [c.notes]);
 
+  // Cleanup debounce on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
+
   const handleNotesBlur = () => {
+    // Clear pending debounce to prevent double-save
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     if (notesValue !== (c.notes || "")) {
       onNotesChange(notesValue);
     }
@@ -579,6 +595,7 @@ function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, o
           <p className="text-[10px] text-muted-foreground font-display truncate">@{c.github_username}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          <PresenceAvatars users={presenceUsers} />
           {score > 0 && (
             <span className={`text-[10px] font-display font-bold px-1.5 py-0.5 rounded ${
               score >= 70 ? "bg-emerald-500/15 text-emerald-400" :
@@ -726,6 +743,6 @@ function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, o
       </div>
     </div>
   );
-}
+});
 
 export default PipelineTab;

@@ -325,7 +325,7 @@ const DeveloperProfile = () => {
           <div className="glass rounded-xl p-5">
             <h3 className="font-display text-sm font-semibold text-foreground mb-4">Top Languages</h3>
             <div className="space-y-2.5">
-              {developer.topLanguages.map((lang: Language) => (
+              {(developer.topLanguages || []).map((lang: Language) => (
                 <div key={lang.name}>
                   <div className="flex items-center justify-between text-sm mb-1">
                     <span className="flex items-center gap-2 text-secondary-foreground">
@@ -488,7 +488,7 @@ const DeveloperProfile = () => {
                 <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 text-xs font-display px-4 py-2 rounded-full bg-secondary text-secondary-foreground border border-border hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-colors">
                   <link.icon className="w-3.5 h-3.5" />
-                  {link.label} · <span className="text-muted-foreground truncate max-w-[120px]">{new URL(link.url).hostname}</span>
+                  {link.label} · <span className="text-muted-foreground truncate max-w-[120px]">{(() => { try { return new URL(link.url).hostname; } catch { return link.url; } })()}</span>
                 </a>
               ))}
             </div>
