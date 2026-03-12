@@ -144,6 +144,56 @@ describe("authentication", () => {
     expect(mockSignOut).toHaveBeenCalledTimes(1);
     expect(global.fetch).not.toHaveBeenCalled();
   });
+
+  it("retries once with refreshed token when API returns Invalid JWT", async () => {
+    mockRefreshSession.mockResolvedValueOnce({
+      data: { session: { access_token: "retry-token" } },
+      error: null,
+    });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({ error: "Invalid JWT" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ data: [] }),
+      });
+
+    const result = await listWebsets();
+    expect(result).toEqual([]);
+
+    const firstCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    const secondCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1];
+    expect(firstCall.headers["Authorization"]).toBe("Bearer valid-session-token");
+    expect(secondCall.headers["Authorization"]).toBe("Bearer retry-token");
+    expect(mockRefreshSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("signs out when API still returns Invalid JWT after retry", async () => {
+    mockRefreshSession.mockResolvedValueOnce({
+      data: { session: { access_token: "retry-token" } },
+      error: null,
+    });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({ error: "Invalid JWT" }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({ error: "Invalid JWT" }),
+      });
+
+    await expect(listWebsets()).rejects.toThrow("Session expired – please sign in again.");
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+  });
 });
 
 // ---------------------------------------------------------------------------
