@@ -62,13 +62,7 @@ function formatAnthropicError(status: number, errText: string): string {
 function shouldRetryWithAnotherModel(status: number, errText: string): boolean {
   if (status !== 400 && status !== 404) return false;
   const message = parseAnthropicErrorMessage(errText).toLowerCase();
-  if (!message.includes("model")) return false;
-  return (
-    message.includes("invalid") ||
-    message.includes("not found") ||
-    message.includes("not available") ||
-    message.includes("unsupported")
-  );
+  return message.includes("model");
 }
 
 /** Strip prompt injection patterns from user-supplied text */
