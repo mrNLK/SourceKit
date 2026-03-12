@@ -70,6 +70,7 @@ serve(async (req) => {
     switch (action) {
       case 'create': {
         const { query, count, entity_type, criteria, enrichments } = params
+        const normalizedCriteria = Array.isArray(criteria) ? criteria.slice(0, 5) : undefined
         response = await fetch(`${WEBSETS_BASE}/websets`, {
           method: 'POST',
           headers,
@@ -78,7 +79,7 @@ serve(async (req) => {
               query,
               count: count || 10,
               entity: { type: entity_type || 'person' },
-              ...(criteria ? { criteria } : {}),
+              ...(normalizedCriteria && normalizedCriteria.length > 0 ? { criteria: normalizedCriteria } : {}),
             },
             ...(enrichments && enrichments.length > 0 ? { enrichments } : {}),
           }),
@@ -246,11 +247,12 @@ serve(async (req) => {
             { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
           )
         }
+        const normalizedCriteria = Array.isArray(criteria) ? criteria.slice(0, 5) : undefined
         const monitorBody: Record<string, unknown> = { cron }
         if (query) monitorBody.search = {
           query,
           ...(entity ? { entity } : { entity: { type: 'person' } }),
-          ...(criteria ? { criteria } : {}),
+          ...(normalizedCriteria && normalizedCriteria.length > 0 ? { criteria: normalizedCriteria } : {}),
           ...(count ? { count } : {}),
         }
         if (behavior) monitorBody.behavior = behavior
