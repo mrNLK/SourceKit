@@ -25,7 +25,7 @@ serve(async (req) => {
     const userPrompt = `Write an outreach message for ${candidate_name || github_username} (GitHub: ${github_username}).${role_context ? ` Context: ${role_context}` : ''} Keep it short and genuine.`;
 
     const message = await anthropicCall(systemPrompt, userPrompt, {
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-3-5-haiku-latest',
       maxTokens: 1024,
     });
 
