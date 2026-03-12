@@ -24,10 +24,7 @@ serve(async (req) => {
 
     const userPrompt = `Write an outreach message for ${candidate_name || github_username} (GitHub: ${github_username}).${role_context ? ` Context: ${role_context}` : ''} Keep it short and genuine.`;
 
-    const message = await anthropicCall(systemPrompt, userPrompt, {
-      model: 'claude-3-5-haiku-latest',
-      maxTokens: 1024,
-    });
+    const message = await anthropicCall(systemPrompt, userPrompt, { maxTokens: 1024 });
 
     return new Response(JSON.stringify({ message: message || 'Could not generate message.' }), {
       headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },

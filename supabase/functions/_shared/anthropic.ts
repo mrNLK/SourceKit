@@ -1,11 +1,16 @@
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 const DEFAULT_ANTHROPIC_MODEL =
-  Deno.env.get("ANTHROPIC_MODEL")?.trim() || "claude-3-5-haiku-latest";
+  Deno.env.get("ANTHROPIC_MODEL")?.trim() || "claude-sonnet-4-20250514";
 const FALLBACK_ANTHROPIC_MODELS: string[] = [
-  "claude-3-5-haiku-latest",
-  "claude-3-7-sonnet-latest",
   "claude-sonnet-4-20250514",
+  "claude-3-7-sonnet-20250219",
+  "claude-3-7-sonnet-latest",
+  "claude-3-5-sonnet-20241022",
+  "claude-3-5-sonnet-latest",
+  "claude-3-5-haiku-20241022",
+  "claude-3-5-haiku-latest",
+  "claude-3-haiku-20240307",
 ];
 
 interface AnthropicOptions {
@@ -55,7 +60,7 @@ function formatAnthropicError(status: number, errText: string): string {
 }
 
 function shouldRetryWithAnotherModel(status: number, errText: string): boolean {
-  if (status !== 400) return false;
+  if (status !== 400 && status !== 404) return false;
   const message = parseAnthropicErrorMessage(errText).toLowerCase();
   if (!message.includes("model")) return false;
   return (
