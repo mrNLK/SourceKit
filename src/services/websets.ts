@@ -22,6 +22,20 @@ export interface Webset {
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+function extractApiErrorMessage(data: any): string {
+  const err = data?.error
+  return (
+    (typeof err === 'string' ? err : undefined) ||
+    err?.message ||
+    data?.message ||
+    JSON.stringify(err || data)
+  )
+}
+
+function isInvalidJwtError(message: string): boolean {
+  return /invalid jwt/i.test(message)
+}
+
 async function getValidAccessToken(): Promise<string> {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
   if (sessionError || !session?.access_token) {
@@ -54,12 +68,11 @@ async function getValidAccessToken(): Promise<string> {
   throw new Error('Session expired – please sign in again.')
 }
 
-async function callWebsetsApi(action: string, params: Record<string, unknown>) {
-  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Supabase not configured')
-
-  // Validate and refresh token before invoking Edge Functions.
-  const token = await getValidAccessToken()
-
+async function executeWebsetsApiRequest(
+  action: string,
+  params: Record<string, unknown>,
+  token: string,
+) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/exa-websets`, {
     method: 'POST',
     headers: {
@@ -72,16 +85,44 @@ async function callWebsetsApi(action: string, params: Record<string, unknown>) {
 
   const data = await res.json()
   if (!res.ok || data.error) {
-    // Exa API may return { error: { message, type } } or { error: "string" }
-    const err = data.error
-    const message =
-      typeof err === 'string' ? err
-      : err?.message ? err.message
-      : data.message ? data.message
-      : JSON.stringify(err || data)
-    throw new Error(message)
+    throw new Error(extractApiErrorMessage(data))
   }
+
   return data
+}
+
+async function callWebsetsApi(action: string, params: Record<string, unknown>) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Supabase not configured')
+
+  // Validate and refresh token before invoking Edge Functions.
+  const initialToken = await getValidAccessToken()
+
+  try {
+    return await executeWebsetsApiRequest(action, params, initialToken)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (!isInvalidJwtError(message)) {
+      throw error
+    }
+
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+    const refreshedToken = refreshData.session?.access_token
+    if (refreshError || !refreshedToken) {
+      await supabase.auth.signOut()
+      throw new Error('Session expired – please sign in again.')
+    }
+
+    try {
+      return await executeWebsetsApiRequest(action, params, refreshedToken)
+    } catch (retryError) {
+      const retryMessage = retryError instanceof Error ? retryError.message : String(retryError)
+      if (isInvalidJwtError(retryMessage)) {
+        await supabase.auth.signOut()
+        throw new Error('Session expired – please sign in again.')
+      }
+      throw retryError
+    }
+  }
 }
 
 export async function createWebset(
