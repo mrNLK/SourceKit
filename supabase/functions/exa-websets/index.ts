@@ -16,13 +16,14 @@ function getSupabase() {
   )
 }
 
-async function getUserId(authHeader: string | null): Promise<string | null> {
-  if (!authHeader) return null
+async function getUserId(authHeader: string | null, userJwtHeader: string | null): Promise<string | null> {
+  const rawToken = userJwtHeader || authHeader
+  if (!rawToken) return null
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_ANON_KEY')!
   )
-  const token = authHeader.replace('Bearer ', '')
+  const token = rawToken.replace('Bearer ', '').trim()
   const { data: { user } } = await supabase.auth.getUser(token)
   return user?.id || null
 }
@@ -53,7 +54,10 @@ serve(async (req) => {
     }
 
     // Extract user for multi-tenant isolation
-    const userId = await getUserId(req.headers.get('Authorization'))
+    const userId = await getUserId(
+      req.headers.get('Authorization'),
+      req.headers.get('x-user-jwt')
+    )
 
     const headers: Record<string, string> = {
       'x-api-key': apiKey,
@@ -66,6 +70,7 @@ serve(async (req) => {
     switch (action) {
       case 'create': {
         const { query, count, entity_type, criteria, enrichments } = params
+        const normalizedCriteria = Array.isArray(criteria) ? criteria.slice(0, 5) : undefined
         response = await fetch(`${WEBSETS_BASE}/websets`, {
           method: 'POST',
           headers,
@@ -74,7 +79,7 @@ serve(async (req) => {
               query,
               count: count || 10,
               entity: { type: entity_type || 'person' },
-              ...(criteria ? { criteria } : {}),
+              ...(normalizedCriteria && normalizedCriteria.length > 0 ? { criteria: normalizedCriteria } : {}),
             },
             ...(enrichments && enrichments.length > 0 ? { enrichments } : {}),
           }),
@@ -242,11 +247,12 @@ serve(async (req) => {
             { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
           )
         }
+        const normalizedCriteria = Array.isArray(criteria) ? criteria.slice(0, 5) : undefined
         const monitorBody: Record<string, unknown> = { cron }
         if (query) monitorBody.search = {
           query,
           ...(entity ? { entity } : { entity: { type: 'person' } }),
-          ...(criteria ? { criteria } : {}),
+          ...(normalizedCriteria && normalizedCriteria.length > 0 ? { criteria: normalizedCriteria } : {}),
           ...(count ? { count } : {}),
         }
         if (behavior) monitorBody.behavior = behavior

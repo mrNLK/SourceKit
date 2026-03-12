@@ -135,6 +135,20 @@ describe("buildWebsetPayload", () => {
     // only default enrichments
     expect(payload.enrichments).toHaveLength(2);
   });
+
+  it("caps criteria and signal enrichments to Exa limit (5)", () => {
+    const signals = Array.from({ length: 8 }, (_, i) =>
+      makeWebsetSignal({
+        id: `sig_${i}`,
+        signal: `Signal ${i + 1}`,
+        webset_criterion: `Criterion ${i + 1}`,
+        enrichment_description: `Enrichment ${i + 1}`,
+      })
+    );
+    const payload = buildWebsetPayload(makeConfig({ signals }));
+    expect(payload.criteria).toHaveLength(5);
+    expect(payload.enrichments).toHaveLength(7); // 5 signal enrichments + 2 default enrichments
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -160,6 +174,18 @@ describe("buildMonitorPayload", () => {
     });
     const payload = buildMonitorPayload(config);
     expect(payload.criteria).toHaveLength(1);
+  });
+
+  it("caps monitor criteria to Exa limit (5)", () => {
+    const signals = Array.from({ length: 8 }, (_, i) =>
+      makeWebsetSignal({
+        id: `sig_${i}`,
+        webset_criterion: `Criterion ${i + 1}`,
+        enabled: true,
+      })
+    );
+    const payload = buildMonitorPayload(makeConfig({ signals }));
+    expect(payload.criteria).toHaveLength(5);
   });
 });
 

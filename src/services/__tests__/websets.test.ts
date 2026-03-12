@@ -95,11 +95,12 @@ describe("authentication", () => {
     await expect(listWebsets()).rejects.toThrow("Authentication required");
   });
 
-  it("sends session token as Bearer header, not anon key", async () => {
+  it("sends anon key as Bearer and user JWT in x-user-jwt header", async () => {
     mockFetch({ data: [] });
     await listWebsets();
     const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(options.headers["Authorization"]).toBe("Bearer valid-session-token");
+    expect(options.headers["Authorization"]).toBe("Bearer test-anon-key");
+    expect(options.headers["x-user-jwt"]).toBe("Bearer valid-session-token");
     expect(options.headers["apikey"]).toBe("test-anon-key");
   });
 
@@ -121,7 +122,8 @@ describe("authentication", () => {
     await listWebsets();
 
     const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(options.headers["Authorization"]).toBe("Bearer fresh-session-token");
+    expect(options.headers["Authorization"]).toBe("Bearer test-anon-key");
+    expect(options.headers["x-user-jwt"]).toBe("Bearer fresh-session-token");
     expect(mockRefreshSession).toHaveBeenCalledTimes(1);
   });
 
@@ -168,8 +170,10 @@ describe("authentication", () => {
 
     const firstCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1];
     const secondCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1];
-    expect(firstCall.headers["Authorization"]).toBe("Bearer valid-session-token");
-    expect(secondCall.headers["Authorization"]).toBe("Bearer retry-token");
+    expect(firstCall.headers["Authorization"]).toBe("Bearer test-anon-key");
+    expect(secondCall.headers["Authorization"]).toBe("Bearer test-anon-key");
+    expect(firstCall.headers["x-user-jwt"]).toBe("Bearer valid-session-token");
+    expect(secondCall.headers["x-user-jwt"]).toBe("Bearer retry-token");
     expect(mockRefreshSession).toHaveBeenCalledTimes(1);
   });
 
