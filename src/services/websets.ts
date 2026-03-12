@@ -22,15 +22,43 @@ export interface Webset {
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+async function getValidAccessToken(): Promise<string> {
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+  if (sessionError || !session?.access_token) {
+    throw new Error('Authentication required – please sign in.')
+  }
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (!userError && user) {
+    const { data: { session: latestSession } } = await supabase.auth.getSession()
+    return latestSession?.access_token || session.access_token
+  }
+
+  const isAuthError = Boolean(userError?.message && /jwt|token|session/i.test(userError.message))
+  if (userError && !isAuthError) {
+    throw new Error(userError.message)
+  }
+
+  const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+  const refreshedToken = refreshData.session?.access_token
+  if (!refreshError && refreshedToken) {
+    return refreshedToken
+  }
+
+  const isRefreshAuthError = Boolean(refreshError?.message && /jwt|token|session|refresh/i.test(refreshError.message))
+  if (refreshError && !isRefreshAuthError) {
+    throw new Error(refreshError.message)
+  }
+
+  await supabase.auth.signOut()
+  throw new Error('Session expired – please sign in again.')
+}
+
 async function callWebsetsApi(action: string, params: Record<string, unknown>) {
   if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Supabase not configured')
 
-  // Use the user's session token for multi-tenant isolation
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.access_token) {
-    throw new Error('Authentication required – please sign in.')
-  }
-  const token = session.access_token
+  // Validate and refresh token before invoking Edge Functions.
+  const token = await getValidAccessToken()
 
   const res = await fetch(`${SUPABASE_URL}/functions/v1/exa-websets`, {
     method: 'POST',

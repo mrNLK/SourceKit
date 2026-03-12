@@ -4,13 +4,21 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 // Mocks — must be set up before dynamic import of websets module
 // ---------------------------------------------------------------------------
 
-const { mockGetSession } = vi.hoisted(() => ({
+const { mockGetSession, mockGetUser, mockRefreshSession, mockSignOut } = vi.hoisted(() => ({
   mockGetSession: vi.fn(),
+  mockGetUser: vi.fn(),
+  mockRefreshSession: vi.fn(),
+  mockSignOut: vi.fn(),
 }));
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    auth: { getSession: mockGetSession },
+    auth: {
+      getSession: mockGetSession,
+      getUser: mockGetUser,
+      refreshSession: mockRefreshSession,
+      signOut: mockSignOut,
+    },
   },
 }));
 
@@ -46,6 +54,10 @@ function mockSession(token = "valid-session-token") {
     data: { session: { access_token: token } },
     error: null,
   });
+  mockGetUser.mockResolvedValue({
+    data: { user: { id: "user_1" } },
+    error: null,
+  });
 }
 
 function mockNoSession() {
@@ -66,6 +78,11 @@ function mockFetch(body: unknown, ok = true, status = 200) {
 beforeEach(() => {
   vi.restoreAllMocks();
   mockSession();
+  mockRefreshSession.mockResolvedValue({
+    data: { session: null },
+    error: null,
+  });
+  mockSignOut.mockResolvedValue({ error: null });
 });
 
 // ---------------------------------------------------------------------------
@@ -84,6 +101,48 @@ describe("authentication", () => {
     const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(options.headers["Authorization"]).toBe("Bearer valid-session-token");
     expect(options.headers["apikey"]).toBe("test-anon-key");
+  });
+
+  it("refreshes and uses a new token when current JWT is invalid", async () => {
+    mockGetSession.mockResolvedValueOnce({
+      data: { session: { access_token: "stale-session-token" } },
+      error: null,
+    });
+    mockGetUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: { message: "Invalid JWT" },
+    });
+    mockRefreshSession.mockResolvedValueOnce({
+      data: { session: { access_token: "fresh-session-token" } },
+      error: null,
+    });
+    mockFetch({ data: [] });
+
+    await listWebsets();
+
+    const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(options.headers["Authorization"]).toBe("Bearer fresh-session-token");
+    expect(mockRefreshSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("signs out and throws re-login error when refresh fails", async () => {
+    mockGetSession.mockResolvedValueOnce({
+      data: { session: { access_token: "stale-session-token" } },
+      error: null,
+    });
+    mockGetUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: { message: "Invalid JWT" },
+    });
+    mockRefreshSession.mockResolvedValueOnce({
+      data: { session: null },
+      error: { message: "Refresh failed" },
+    });
+    global.fetch = vi.fn();
+
+    await expect(listWebsets()).rejects.toThrow("Session expired – please sign in again.");
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });
 
