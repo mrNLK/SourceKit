@@ -4,6 +4,7 @@ import type { WebsetEEASignal } from '@/types/eea';
 import { useEEAWebset } from '@/hooks/useEEAWebset';
 import { useWebsets } from '@/hooks/useWebsets';
 import { toast } from '@/hooks/use-toast';
+import { MAX_WEBSET_CRITERIA } from '@/lib/eea-webset';
 
 interface CreateWebsetButtonProps {
   role: string;
@@ -16,15 +17,15 @@ interface CreateWebsetButtonProps {
 const CreateWebsetButton = ({ role, company, skills, signals, onNavigateToWebsets }: CreateWebsetButtonProps) => {
   const [searchCount, setSearchCount] = useState(25);
   const { addWebsetRef } = useWebsets();
+  const enabledCount = signals.filter(s => s.enabled).length;
+  const verifiedCount = Math.min(enabledCount, MAX_WEBSET_CRITERIA);
 
   const { createEEAWebset, isCreating, error, createdWebsetId } = useEEAWebset({
     addWebsetRef,
     onCreated: () => {
-      toast({ title: 'EEA Webset created', description: `Searching for ${searchCount} candidates with ${enabledCount} criteria.` });
+      toast({ title: 'EEA Webset created', description: `Searching for ${searchCount} candidates with ${verifiedCount} criteria.` });
     },
   });
-
-  const enabledCount = signals.filter(s => s.enabled).length;
 
   const handleCreate = async () => {
     await createEEAWebset(role, signals, {
@@ -44,7 +45,7 @@ const CreateWebsetButton = ({ role, company, skills, signals, onNavigateToWebset
           <div className="flex-1">
             <p className="text-sm font-display font-semibold text-foreground">EEA Webset Created</p>
             <p className="text-xs text-muted-foreground font-body mt-0.5">
-              {enabledCount} criteria active. Exa is verifying candidates now.
+              {verifiedCount} criteria active. Exa is verifying candidates now.
             </p>
           </div>
           {onNavigateToWebsets && (
@@ -70,7 +71,7 @@ const CreateWebsetButton = ({ role, company, skills, signals, onNavigateToWebset
           <div>
             <p className="text-sm font-display font-semibold text-foreground">Create EEA Webset</p>
             <p className="text-xs text-muted-foreground font-body mt-0.5">
-              {enabledCount} criteria will be verified by Exa's AI agents
+              {verifiedCount} criteria will be verified by Exa's AI agents
             </p>
           </div>
         </div>
@@ -107,6 +108,12 @@ const CreateWebsetButton = ({ role, company, skills, signals, onNavigateToWebset
 
       {error && (
         <p className="text-xs text-destructive mt-2">{error}</p>
+      )}
+
+      {enabledCount > MAX_WEBSET_CRITERIA && (
+        <p className="text-xs text-amber-400 mt-2">
+          Exa supports up to {MAX_WEBSET_CRITERIA} criteria per webset. Using the first {MAX_WEBSET_CRITERIA} enabled criteria.
+        </p>
       )}
 
       {enabledCount === 0 && (

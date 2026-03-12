@@ -55,14 +55,17 @@ export interface WebsetCreatePayload {
   enrichments: { description: string; format: string; options?: { label: string }[] }[];
 }
 
+export const MAX_WEBSET_CRITERIA = 5;
+
 export function buildWebsetPayload(config: EEAWebsetConfig): WebsetCreatePayload {
   const enabledSignals = config.signals.filter(s => s.enabled);
+  const selectedSignals = enabledSignals.slice(0, MAX_WEBSET_CRITERIA);
 
-  const criteria = enabledSignals.map(s => ({
+  const criteria = selectedSignals.map(s => ({
     description: s.webset_criterion,
   }));
 
-  const signalEnrichments = enabledSignals.map(s => {
+  const signalEnrichments = selectedSignals.map(s => {
     const enrichment: { description: string; format: string; options?: { label: string }[] } = {
       description: s.enrichment_description,
       format: s.enrichment_format,
@@ -77,7 +80,7 @@ export function buildWebsetPayload(config: EEAWebsetConfig): WebsetCreatePayload
   const defaultEnrichments = [
     { description: 'Contact email', format: 'text' },
     {
-      description: `EEA strength: how many of the following criteria does this person clearly meet? ${enabledSignals.map(s => s.signal).join('; ')}. Rate as Strong (3+), Moderate (2), or Weak (0-1)`,
+      description: `EEA strength: how many of the following criteria does this person clearly meet? ${selectedSignals.map(s => s.signal).join('; ')}. Rate as Strong (3+), Moderate (2), or Weak (0-1)`,
       format: 'options',
       options: [
         { label: 'Strong' },
@@ -109,7 +112,7 @@ export interface MonitorCreatePayload {
 }
 
 export function buildMonitorPayload(config: EEAWebsetConfig): MonitorCreatePayload {
-  const enabledSignals = config.signals.filter(s => s.enabled);
+  const enabledSignals = config.signals.filter(s => s.enabled).slice(0, MAX_WEBSET_CRITERIA);
   return {
     cron: config.monitorCron,
     query: config.searchQuery,
