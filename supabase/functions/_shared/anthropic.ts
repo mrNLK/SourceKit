@@ -1,5 +1,12 @@
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
+const DEFAULT_ANTHROPIC_MODEL =
+  Deno.env.get("ANTHROPIC_MODEL")?.trim() || "claude-3-5-haiku-latest";
+const FALLBACK_ANTHROPIC_MODELS: string[] = [
+  "claude-3-5-haiku-latest",
+  "claude-3-7-sonnet-latest",
+  "claude-sonnet-4-20250514",
+];
 
 interface AnthropicOptions {
   model?: string;
@@ -18,6 +25,45 @@ function headers(apiKey: string): Record<string, string> {
     "anthropic-version": ANTHROPIC_VERSION,
     "content-type": "application/json",
   };
+}
+
+function getModelCandidates(model?: string): string[] {
+  const candidates = [model?.trim(), DEFAULT_ANTHROPIC_MODEL, ...FALLBACK_ANTHROPIC_MODELS]
+    .filter((candidate): candidate is string => Boolean(candidate && candidate.length > 0));
+  return [...new Set(candidates)];
+}
+
+function parseAnthropicErrorMessage(errText: string): string {
+  const fallback = errText.trim();
+  if (!fallback) return "";
+  try {
+    const parsed = JSON.parse(errText);
+    const message = parsed?.error?.message || parsed?.message;
+    if (typeof message === "string" && message.trim().length > 0) {
+      return message.trim();
+    }
+  } catch {
+    // noop: return raw text fallback
+  }
+  return fallback;
+}
+
+function formatAnthropicError(status: number, errText: string): string {
+  const parsedMessage = parseAnthropicErrorMessage(errText);
+  if (!parsedMessage) return `Anthropic API error: ${status}`;
+  return `Anthropic API error: ${status} - ${parsedMessage}`;
+}
+
+function shouldRetryWithAnotherModel(status: number, errText: string): boolean {
+  if (status !== 400) return false;
+  const message = parseAnthropicErrorMessage(errText).toLowerCase();
+  if (!message.includes("model")) return false;
+  return (
+    message.includes("invalid") ||
+    message.includes("not found") ||
+    message.includes("not available") ||
+    message.includes("unsupported")
+  );
 }
 
 /** Strip prompt injection patterns from user-supplied text */
@@ -45,26 +91,40 @@ export async function anthropicCall(
 ): Promise<string> {
   const apiKey = getApiKey();
   const sanitizedPrompt = sanitizeInput(userPrompt);
-  const res = await fetch(ANTHROPIC_API, {
-    method: "POST",
-    headers: headers(apiKey),
-    body: JSON.stringify({
-      model: options?.model || "claude-haiku-4-5-20251001",
-      max_tokens: options?.maxTokens || 4096,
-      system,
-      messages: [{ role: "user", content: sanitizedPrompt }],
-    }),
-  });
+  const models = getModelCandidates(options?.model);
+  let lastModelError: { status: number; text: string } | null = null;
 
-  if (!res.ok) {
+  for (const model of models) {
+    const res = await fetch(ANTHROPIC_API, {
+      method: "POST",
+      headers: headers(apiKey),
+      body: JSON.stringify({
+        model,
+        max_tokens: options?.maxTokens || 4096,
+        system,
+        messages: [{ role: "user", content: sanitizedPrompt }],
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data.content?.[0]?.text || "";
+    }
+
     const errText = await res.text();
-    console.error("Anthropic API error:", res.status, errText);
     if (res.status === 429) throw new Error("RATE_LIMITED");
-    throw new Error(`Anthropic API error: ${res.status}`);
+    if (shouldRetryWithAnotherModel(res.status, errText)) {
+      lastModelError = { status: res.status, text: errText };
+      continue;
+    }
+    console.error("Anthropic API error:", res.status, errText);
+    throw new Error(formatAnthropicError(res.status, errText));
   }
 
-  const data = await res.json();
-  return data.content?.[0]?.text || "";
+  const status = lastModelError?.status ?? 400;
+  const text = lastModelError?.text ?? "No compatible Anthropic model available for this key.";
+  console.error("Anthropic model fallback exhausted:", status, text);
+  throw new Error(formatAnthropicError(status, text));
 }
 
 // Tool use completion
@@ -83,34 +143,48 @@ export async function anthropicToolCall(
 ): Promise<{ toolName: string; toolInput: Record<string, unknown> } | null> {
   const apiKey = getApiKey();
   const sanitizedPrompt = sanitizeInput(userPrompt);
-  const body: Record<string, unknown> = {
-    model: options?.model || "claude-haiku-4-5-20251001",
-    max_tokens: options?.maxTokens || 1024,
-    system,
-    messages: [{ role: "user", content: sanitizedPrompt }],
-    tools,
-  };
-  if (toolChoice) body.tool_choice = toolChoice;
+  const models = getModelCandidates(options?.model);
+  let lastModelError: { status: number; text: string } | null = null;
 
-  const res = await fetch(ANTHROPIC_API, {
-    method: "POST",
-    headers: headers(apiKey),
-    body: JSON.stringify(body),
-  });
+  for (const model of models) {
+    const body: Record<string, unknown> = {
+      model,
+      max_tokens: options?.maxTokens || 1024,
+      system,
+      messages: [{ role: "user", content: sanitizedPrompt }],
+      tools,
+    };
+    if (toolChoice) body.tool_choice = toolChoice;
 
-  if (!res.ok) {
+    const res = await fetch(ANTHROPIC_API, {
+      method: "POST",
+      headers: headers(apiKey),
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const toolBlock = data.content?.find(
+        (block: any) => block.type === "tool_use"
+      );
+      if (!toolBlock) return null;
+      return { toolName: toolBlock.name, toolInput: toolBlock.input };
+    }
+
     const errText = await res.text();
-    console.error("Anthropic API error:", res.status, errText);
     if (res.status === 429) throw new Error("RATE_LIMITED");
-    throw new Error(`Anthropic API error: ${res.status}`);
+    if (shouldRetryWithAnotherModel(res.status, errText)) {
+      lastModelError = { status: res.status, text: errText };
+      continue;
+    }
+    console.error("Anthropic API error:", res.status, errText);
+    throw new Error(formatAnthropicError(res.status, errText));
   }
 
-  const data = await res.json();
-  const toolBlock = data.content?.find(
-    (block: any) => block.type === "tool_use"
-  );
-  if (!toolBlock) return null;
-  return { toolName: toolBlock.name, toolInput: toolBlock.input };
+  const status = lastModelError?.status ?? 400;
+  const text = lastModelError?.text ?? "No compatible Anthropic model available for this key.";
+  console.error("Anthropic tool model fallback exhausted:", status, text);
+  throw new Error(formatAnthropicError(status, text));
 }
 
 // Streaming completion — returns a ReadableStream in OpenAI-compatible SSE format
@@ -122,23 +196,43 @@ export async function anthropicStream(
 ): Promise<ReadableStream> {
   const apiKey = getApiKey();
   const sanitizedPrompt = sanitizeInput(userPrompt);
-  const res = await fetch(ANTHROPIC_API, {
-    method: "POST",
-    headers: headers(apiKey),
-    body: JSON.stringify({
-      model: options?.model || "claude-haiku-4-5-20251001",
-      max_tokens: options?.maxTokens || 4096,
-      system,
-      messages: [{ role: "user", content: sanitizedPrompt }],
-      stream: true,
-    }),
-  });
+  const models = getModelCandidates(options?.model);
+  let res: Response | null = null;
+  let lastModelError: { status: number; text: string } | null = null;
 
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error("Anthropic streaming error:", res.status, errText);
-    if (res.status === 429) throw new Error("RATE_LIMITED");
-    throw new Error(`Anthropic API error: ${res.status}`);
+  for (const model of models) {
+    const candidate = await fetch(ANTHROPIC_API, {
+      method: "POST",
+      headers: headers(apiKey),
+      body: JSON.stringify({
+        model,
+        max_tokens: options?.maxTokens || 4096,
+        system,
+        messages: [{ role: "user", content: sanitizedPrompt }],
+        stream: true,
+      }),
+    });
+
+    if (candidate.ok) {
+      res = candidate;
+      break;
+    }
+
+    const errText = await candidate.text();
+    if (candidate.status === 429) throw new Error("RATE_LIMITED");
+    if (shouldRetryWithAnotherModel(candidate.status, errText)) {
+      lastModelError = { status: candidate.status, text: errText };
+      continue;
+    }
+    console.error("Anthropic streaming error:", candidate.status, errText);
+    throw new Error(formatAnthropicError(candidate.status, errText));
+  }
+
+  if (!res) {
+    const status = lastModelError?.status ?? 400;
+    const text = lastModelError?.text ?? "No compatible Anthropic model available for this key.";
+    console.error("Anthropic streaming model fallback exhausted:", status, text);
+    throw new Error(formatAnthropicError(status, text));
   }
 
   const reader = res.body!.getReader();
