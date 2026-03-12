@@ -71,14 +71,16 @@ async function getValidAccessToken(): Promise<string> {
 async function executeWebsetsApiRequest(
   action: string,
   params: Record<string, unknown>,
-  token: string,
+  userToken: string,
 ) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/exa-websets`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'apikey': SUPABASE_KEY,
-      'Authorization': `Bearer ${token}`,
+      // Authenticate Edge Function at gateway with anon key, pass user JWT separately.
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'x-user-jwt': `Bearer ${userToken}`,
     },
     body: JSON.stringify({ action, ...params }),
   })

@@ -16,13 +16,14 @@ function getSupabase() {
   )
 }
 
-async function getUserId(authHeader: string | null): Promise<string | null> {
-  if (!authHeader) return null
+async function getUserId(authHeader: string | null, userJwtHeader: string | null): Promise<string | null> {
+  const rawToken = userJwtHeader || authHeader
+  if (!rawToken) return null
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_ANON_KEY')!
   )
-  const token = authHeader.replace('Bearer ', '')
+  const token = rawToken.replace('Bearer ', '').trim()
   const { data: { user } } = await supabase.auth.getUser(token)
   return user?.id || null
 }
@@ -53,7 +54,10 @@ serve(async (req) => {
     }
 
     // Extract user for multi-tenant isolation
-    const userId = await getUserId(req.headers.get('Authorization'))
+    const userId = await getUserId(
+      req.headers.get('Authorization'),
+      req.headers.get('x-user-jwt')
+    )
 
     const headers: Record<string, string> = {
       'x-api-key': apiKey,
