@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Search, GitBranch, Target, Sparkles, Briefcase,
   ExternalLink, X, Plus, Pencil, Check, ChevronDown, ChevronUp, Copy, ArrowRight
@@ -37,6 +37,254 @@ export interface SearchStrategy {
   role_overview: string;
 }
 
+const ENRICHMENT_FORMATS = new Set<WebsetEEASignal["enrichment_format"]>(["text", "number", "options"]);
+
+function parseMaybeJsonArray(raw: unknown): unknown[] {
+  if (Array.isArray(raw)) return raw;
+
+  if (typeof raw === "string") {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && typeof parsed === "object") {
+        const nested = (parsed as Record<string, unknown>).eea_signals;
+        if (Array.isArray(nested)) return nested;
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  if (raw && typeof raw === "object") {
+    const record = raw as Record<string, unknown>;
+    const nestedSignals = record.eea_signals ?? record.signals;
+    if (Array.isArray(nestedSignals)) return nestedSignals;
+  }
+
+  return [];
+}
+
+function toWebsetSignal(raw: unknown): WebsetEEASignal | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const ws = raw as Partial<WebsetEEASignalStrategy>;
+  const signal = typeof ws.signal === "string" ? ws.signal.trim() : "";
+  const criterionSource = typeof ws.webset_criterion === "string" ? ws.webset_criterion : ws.criterion;
+  const websetCriterion = typeof criterionSource === "string" ? criterionSource.trim() : "";
+
+  if (!signal || !websetCriterion) return null;
+
+  const enrichmentDescription = typeof ws.enrichment_description === "string" && ws.enrichment_description.trim()
+    ? ws.enrichment_description.trim()
+    : `Evidence for: ${signal}`;
+
+  const format = typeof ws.enrichment_format === "string" && ENRICHMENT_FORMATS.has(ws.enrichment_format as WebsetEEASignal["enrichment_format"])
+    ? (ws.enrichment_format as WebsetEEASignal["enrichment_format"])
+    : "text";
+
+  const enrichmentOptions = Array.isArray(ws.enrichment_options)
+    ? ws.enrichment_options.filter((option): option is string => typeof option === "string" && option.trim().length > 0)
+    : undefined;
+
+  return {
+    id: generateSignalId(),
+    signal,
+    verification_method: typeof ws.verification_method === "string" && ws.verification_method.trim()
+      ? ws.verification_method.trim()
+      : `Verify via public web data: ${websetCriterion}`,
+    webset_criterion: websetCriterion,
+    enrichment_description: enrichmentDescription,
+    enrichment_format: format,
+    enrichment_options: format === "options" ? enrichmentOptions : undefined,
+    enabled: true,
+  };
+}
+
+interface SuggestedEEASignalTemplate {
+  key: string;
+  signal: string;
+  criterion: string;
+  verificationMethod: string;
+  enrichmentDescription: string;
+}
+
+const COMMON_EEA_SIGNAL_TEMPLATES: SuggestedEEASignalTemplate[] = [
+  {
+    key: "ownership",
+    signal: "Contribution ownership",
+    criterion: "Top contributor, maintainer, or recurring reviewer behavior in at least one core repo.",
+    verificationMethod: "Validate commit and review density plus maintainer traces in public repository history.",
+    enrichmentDescription: "Best ownership proof with repo link and contribution summary.",
+  },
+  {
+    key: "artifact",
+    signal: "Public technical artifact",
+    criterion: "At least one public technical artifact (paper, talk, deep-dive post, or high-signal PR thread) tied to role-relevant work.",
+    verificationMethod: "Collect artifact URLs and map each artifact to the candidate's technical contributions.",
+    enrichmentDescription: "Most relevant artifact URL and why it matches the role criteria.",
+  },
+  {
+    key: "recency",
+    signal: "Recent shipped impact",
+    criterion: "Shipped meaningful technical changes in the last 12 months.",
+    verificationMethod: "Inspect merged PRs, release notes, and commit recency tied to target surfaces.",
+    enrichmentDescription: "Most recent shipped impact summary and date.",
+  },
+];
+
+const ML_EEA_SIGNAL_TEMPLATES: SuggestedEEASignalTemplate[] = [
+  {
+    key: "ml-production",
+    signal: "Production ML system ownership",
+    criterion: "Evidence of shipping or operating a production inference/training system with measurable reliability or scale.",
+    verificationMethod: "Look for infra ownership patterns in repos, incident writeups, and system-level launch artifacts.",
+    enrichmentDescription: "Production ML ownership evidence with system scope.",
+  },
+  {
+    key: "ml-scale",
+    signal: "Model infrastructure depth",
+    criterion: "Core contribution to model infrastructure surfaces such as serving, training infra, or distributed acceleration.",
+    verificationMethod: "Check sustained commits/reviews on model infra repos and implementation details in technical artifacts.",
+    enrichmentDescription: "Primary model infra surface and contribution depth.",
+  },
+];
+
+const BACKEND_EEA_SIGNAL_TEMPLATES: SuggestedEEASignalTemplate[] = [
+  {
+    key: "backend-scale",
+    signal: "Distributed systems ownership",
+    criterion: "Direct ownership of reliability, latency, or throughput improvements in distributed backend systems.",
+    verificationMethod: "Verify change history tied to performance/reliability outcomes in distributed repos.",
+    enrichmentDescription: "Distributed-system ownership proof and subsystem touched.",
+  },
+  {
+    key: "backend-maintainer",
+    signal: "Maintainer-level backend signal",
+    criterion: "Maintainer/reviewer/RFC-author behavior on high-signal backend or infrastructure projects.",
+    verificationMethod: "Check maintainer files, review logs, RFCs, and release ownership traces.",
+    enrichmentDescription: "Maintainer or reviewer signal with supporting repo links.",
+  },
+];
+
+const FRONTEND_EEA_SIGNAL_TEMPLATES: SuggestedEEASignalTemplate[] = [
+  {
+    key: "frontend-framework",
+    signal: "Framework or tooling contribution",
+    criterion: "Core contribution to frontend framework/tooling ecosystem beyond one-off app-level commits.",
+    verificationMethod: "Validate recurring merged contributions and ownership in framework/tooling repositories.",
+    enrichmentDescription: "Framework/tooling repos with evidence of core contribution.",
+  },
+  {
+    key: "frontend-perf",
+    signal: "Frontend performance ownership",
+    criterion: "Proof of owning performance, build-system, or developer-experience improvements at platform scope.",
+    verificationMethod: "Find benchmark/perf-related PRs, release notes, and cross-team platform artifacts.",
+    enrichmentDescription: "Platform performance or DX ownership signal with measurable impact.",
+  },
+];
+
+const SECURITY_EEA_SIGNAL_TEMPLATES: SuggestedEEASignalTemplate[] = [
+  {
+    key: "security-cve",
+    signal: "Security remediation ownership",
+    criterion: "Direct contribution to CVE discovery, advisory response, or high-severity remediation work.",
+    verificationMethod: "Map candidate identity to advisories, patch timelines, or security-focused PR history.",
+    enrichmentDescription: "Security remediation proof and related advisory/CVE reference.",
+  },
+  {
+    key: "security-research",
+    signal: "Public security artifact",
+    criterion: "Public security research artifact such as a conference talk, writeup, audit, or exploit analysis.",
+    verificationMethod: "Confirm artifact authorship and alignment with target security domain.",
+    enrichmentDescription: "Most relevant public security artifact and topic.",
+  },
+];
+
+const SYSTEMS_EEA_SIGNAL_TEMPLATES: SuggestedEEASignalTemplate[] = [
+  {
+    key: "systems-real-world",
+    signal: "Real-world systems deployment",
+    criterion: "Evidence of systems deployed in production, field, or customer-facing environments.",
+    verificationMethod: "Use public release/deployment artifacts and contribution trails showing operational ownership.",
+    enrichmentDescription: "Deployment evidence and environment scope.",
+  },
+  {
+    key: "systems-stack-depth",
+    signal: "Core stack depth",
+    criterion: "Deep contribution to a critical subsystem (runtime, networking, orchestration, control plane, or similar).",
+    verificationMethod: "Validate deep-file ownership, review authority, and subsystem-level change history.",
+    enrichmentDescription: "Critical subsystem ownership and technical depth proof.",
+  },
+];
+
+function pickRoleEEATemplates(roleContext: string): SuggestedEEASignalTemplate[] {
+  const hasAny = (terms: string[]): boolean => terms.some((term) => roleContext.includes(term));
+
+  if (hasAny(["security", "appsec", "secops", "cve", "vulnerability", "threat"])) {
+    return SECURITY_EEA_SIGNAL_TEMPLATES;
+  }
+  if (hasAny(["frontend", "front-end", "react", "ui", "web", "design system"])) {
+    return FRONTEND_EEA_SIGNAL_TEMPLATES;
+  }
+  if (hasAny(["ml", "machine learning", "ai", "inference", "training", "llm", "model"])) {
+    return ML_EEA_SIGNAL_TEMPLATES;
+  }
+  if (hasAny(["robotics", "embedded", "firmware", "controls", "systems", "autonomy"])) {
+    return SYSTEMS_EEA_SIGNAL_TEMPLATES;
+  }
+  return BACKEND_EEA_SIGNAL_TEMPLATES;
+}
+
+function toSuggestedWebsetSignal(template: SuggestedEEASignalTemplate, repoHint: string): WebsetEEASignal {
+  const contextSuffix = repoHint ? ` Focus repos: ${repoHint}.` : "";
+  return {
+    id: generateSignalId(),
+    signal: template.signal,
+    verification_method: template.verificationMethod,
+    webset_criterion: `${template.criterion}${contextSuffix}`,
+    enrichment_description: template.enrichmentDescription,
+    enrichment_format: "text",
+    enabled: true,
+  };
+}
+
+function buildSuggestedEEASignals(
+  jobTitle: string,
+  searchQuery: string,
+  targetRepos: TargetRepo[],
+  skills: SearchStrategy["skills"]
+): WebsetEEASignal[] {
+  const roleContext = [
+    jobTitle,
+    searchQuery,
+    ...targetRepos.map((repo) => repo.repo),
+    ...skills.must_have,
+    ...skills.nice_to_have,
+  ]
+    .join(" ")
+    .toLowerCase();
+  const repoHint = targetRepos
+    .map((repo) => repo.repo.trim())
+    .filter((repo) => repo.length > 0)
+    .slice(0, 3)
+    .join(", ");
+
+  const selectedTemplates = [
+    COMMON_EEA_SIGNAL_TEMPLATES[0],
+    ...pickRoleEEATemplates(roleContext).slice(0, 2),
+    COMMON_EEA_SIGNAL_TEMPLATES[1],
+    COMMON_EEA_SIGNAL_TEMPLATES[2],
+  ];
+  const seen = new Set<string>();
+  const uniqueTemplates = selectedTemplates.filter((template) => {
+    if (seen.has(template.key)) return false;
+    seen.add(template.key);
+    return true;
+  });
+
+  return uniqueTemplates.map((template) => toSuggestedWebsetSignal(template, repoHint));
+}
+
 const CATEGORY_STYLES: Record<string, { label: string; bg: string; text: string; border: string }> = {
   direct_competitor: { label: "Competitor", bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/25" },
   adjacent: { label: "Adjacent", bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/25" },
@@ -72,25 +320,43 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
   const [localQuery, setLocalQuery] = useState(s.search_query);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["query", "repos", "companies", "skills", "eea", "overview"]));
 
-  // Convert legacy EEA signals from strategy response to Webset-compatible format
-  const initialWebsetSignals = useMemo<WebsetEEASignal[]>(() => {
-    if (!s.eea_signals || s.eea_signals.length === 0) return [];
-    return s.eea_signals.map((sig) => {
-      const ws = sig as WebsetEEASignalStrategy;
-      return {
-        id: generateSignalId(),
-        signal: ws.signal,
-        verification_method: ws.verification_method || `Verify via public web data: ${ws.criterion}`,
-        webset_criterion: ws.webset_criterion || ws.criterion,
-        enrichment_description: ws.enrichment_description || `Evidence for: ${ws.signal}`,
-        enrichment_format: ws.enrichment_format || "text",
-        enrichment_options: ws.enrichment_options,
-        enabled: true,
-      };
-    });
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps -- only on mount
+  const strategySeed = `${s.role_overview}::${s.search_query}::${jobTitle}::${companyName}`;
 
-  const [websetSignals, setWebsetSignals] = useState<WebsetEEASignal[]>(initialWebsetSignals);
+  const parseStrategySignals = (): WebsetEEASignal[] => {
+    const rawSignals = parseMaybeJsonArray(s.eea_signals);
+    if (rawSignals.length === 0) return [];
+
+    const normalized: WebsetEEASignal[] = [];
+    for (const raw of rawSignals) {
+      const signal = toWebsetSignal(raw);
+      if (signal) normalized.push(signal);
+    }
+    return normalized;
+  };
+
+  const buildInitialSignalState = (): { signals: WebsetEEASignal[]; source: "model" | "suggested" } => {
+    const strategySignals = parseStrategySignals();
+    if (strategySignals.length > 0) {
+      return { signals: strategySignals, source: "model" };
+    }
+    return {
+      signals: buildSuggestedEEASignals(jobTitle, s.search_query, s.target_repos, s.skills),
+      source: "suggested",
+    };
+  };
+
+  const initialSignalState = useMemo<{ signals: WebsetEEASignal[]; source: "model" | "suggested" }>(
+    buildInitialSignalState,
+    [] // eslint-disable-line react-hooks/exhaustive-deps -- initialize once, sync on strategy seed changes below
+  );
+  const [websetSignals, setWebsetSignals] = useState<WebsetEEASignal[]>(initialSignalState.signals);
+  const [eeaSignalSource, setEeaSignalSource] = useState<"model" | "suggested">(initialSignalState.source);
+
+  useEffect(() => {
+    const nextSignalState = buildInitialSignalState();
+    setWebsetSignals(nextSignalState.signals);
+    setEeaSignalSource(nextSignalState.source);
+  }, [strategySeed]); // eslint-disable-line react-hooks/exhaustive-deps -- reset only when strategy context changes
 
   const toggleSection = (id: string) => setExpandedSections(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
 
@@ -267,9 +533,22 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
         <SectionHeader id="eea" icon={Sparkles} title="EEA Signals" count={websetSignals.filter(ws => ws.enabled).length} />
         {expandedSections.has("eea") && (
           <div className="mt-2 space-y-4">
+            {eeaSignalSource === "suggested" && (
+              <div className="rounded-lg border border-sky-500/35 bg-sky-500/10 p-3">
+                <p className="text-xs font-display font-semibold text-sky-300">
+                  Suggested EEA signals were added automatically for this search.
+                </p>
+                <p className="mt-1 text-[11px] font-body text-sky-200/85">
+                  Edit the criteria, disable weak checks, then create the Webset from the final 3-5 signals.
+                </p>
+              </div>
+            )}
             <EEASignalEditor
               signals={websetSignals}
-              onChange={setWebsetSignals}
+              onChange={(signals) => {
+                setWebsetSignals(signals);
+                setEeaSignalSource("model");
+              }}
               roleCategory={jobTitle || s.search_query}
             />
             {websetSignals.filter(ws => ws.enabled).length > 0 && (
