@@ -12,6 +12,11 @@ import DeveloperProfile from "./pages/DeveloperProfile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { Analytics } from "@vercel/analytics/react";
+import { lazy, Suspense } from "react";
+
+// Recruiter OS — lazy-loaded route group
+const RecruiterLayout = lazy(() => import("./recruiter/RecruiterLayout"));
+import { recruiterRoutes } from "./recruiter/routes";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +73,17 @@ const App = () => {
                 <>
                   <Route path="/" element={<Index />} />
                   <Route path="/developer/:id" element={<DeveloperProfile />} />
+                  <Route path="/recruiter/*" element={
+                    <Suspense fallback={
+                      <div className="min-h-screen bg-background flex items-center justify-center">
+                        <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+                      </div>
+                    }>
+                      <RecruiterLayout />
+                    </Suspense>
+                  }>
+                    {recruiterRoutes}
+                  </Route>
                   <Route path="/auth" element={<Navigate to="/" replace />} />
                   <Route path="*" element={<NotFound />} />
                 </>
