@@ -22,14 +22,25 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { SourceKitMark } from "@/components/brand/SourceKitMark";
 import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { buildManualCrmCsv, buildManualEmailHandoff } from "@/lib/bd-sourcing/manual-handoff";
 import { buildFirstTouchEmail } from "@/lib/bd-sourcing/templates";
 import type { BdScoreBucket, BdScoreResult, BdTargetLifecycleState, BdTargetView } from "@/types/bd-sourcing";
 
 type QueueStatus = "New" | "Reviewed" | "In Review";
+type SellKitOnboardingField =
+  | "idealCompany"
+  | "buyerTitles"
+  | "offerLine"
+  | "buyingSignals"
+  | "emailVoice";
+
+type SellKitOnboardingAnswers = Record<SellKitOnboardingField, string>;
 
 type VisualTarget = BdTargetView & {
   added: string;
@@ -42,6 +53,60 @@ type VisualTarget = BdTargetView & {
   location: string;
   tenure: string;
 };
+
+const onboardingStorageKey = "sellkit:onboarding:v1";
+
+const emptyOnboardingAnswers: SellKitOnboardingAnswers = {
+  idealCompany: "",
+  buyerTitles: "",
+  offerLine: "",
+  buyingSignals: "",
+  emailVoice: "",
+};
+
+const onboardingFields: Array<{
+  id: SellKitOnboardingField;
+  label: string;
+  prompt: string;
+  placeholder: string;
+  rows: number;
+}> = [
+  {
+    id: "idealCompany",
+    label: "1. Ideal target company",
+    prompt: "Size, funding stage, industries in or out, and US-only or global.",
+    placeholder: "Example: 1,000+ employee B2B software companies, US first, growth to public, avoid agencies.",
+    rows: 4,
+  },
+  {
+    id: "buyerTitles",
+    label: "2. Buyer titles",
+    prompt: "Strong yes titles and close-but-no titles.",
+    placeholder: "Example: yes to VP Data, CTO, Head of Platform; no to recruiters or junior ops.",
+    rows: 4,
+  },
+  {
+    id: "offerLine",
+    label: "3. One-line offer",
+    prompt: "What SellKit should say she is selling.",
+    placeholder: "Example: access to expert operators and fractional consultants for strategic projects.",
+    rows: 2,
+  },
+  {
+    id: "buyingSignals",
+    label: "4. Buying signals",
+    prompt: "Rank the strongest triggers and define what a good signal looks like.",
+    placeholder: "Example: strongest is a new Head of Data in the last 90 days, then hiring spike, then expansion.",
+    rows: 4,
+  },
+  {
+    id: "emailVoice",
+    label: "5. Email voice",
+    prompt: "Paste one or two real emails, subject style, length, and whether to mention the signal.",
+    placeholder: "Paste examples or write: short, plain, direct, mention the specific signal in sentence one.",
+    rows: 5,
+  },
+];
 
 const workflowSteps = [
   { label: "1. Discovery", count: "1,842", state: "done" },
@@ -82,6 +147,34 @@ const operatorInitials = operatorProfile.fullName
   .join("")
   .slice(0, 2)
   .toUpperCase();
+
+function loadSellKitOnboardingAnswers(): SellKitOnboardingAnswers {
+  if (typeof window === "undefined") return emptyOnboardingAnswers;
+
+  try {
+    const stored = window.localStorage.getItem(onboardingStorageKey);
+    if (!stored) return emptyOnboardingAnswers;
+    const parsed = JSON.parse(stored) as Partial<SellKitOnboardingAnswers>;
+
+    return {
+      idealCompany: parsed.idealCompany ?? "",
+      buyerTitles: parsed.buyerTitles ?? "",
+      offerLine: parsed.offerLine ?? "",
+      buyingSignals: parsed.buyingSignals ?? "",
+      emailVoice: parsed.emailVoice ?? "",
+    };
+  } catch {
+    return emptyOnboardingAnswers;
+  }
+}
+
+function countOnboardingAnswers(answers: SellKitOnboardingAnswers): number {
+  return Object.values(answers).filter((value) => value.trim().length > 0).length;
+}
+
+function saveSellKitOnboardingAnswers(answers: SellKitOnboardingAnswers) {
+  window.localStorage.setItem(onboardingStorageKey, JSON.stringify(answers));
+}
 
 function scoreFor(composite: number, bucket: BdScoreBucket = "reach_now"): BdScoreResult {
   return {
@@ -341,6 +434,13 @@ export default function BdSourcingTab() {
   const [selectedId, setSelectedId] = useState("sarah-chen");
   const [emailCopied, setEmailCopied] = useState(false);
   const [crmCsvExported, setCrmCsvExported] = useState(false);
+  const [onboardingAnswers, setOnboardingAnswers] = useState<SellKitOnboardingAnswers>(() =>
+    loadSellKitOnboardingAnswers(),
+  );
+  const [onboardingOpen, setOnboardingOpen] = useState(() => {
+    const savedAnswers = loadSellKitOnboardingAnswers();
+    return countOnboardingAnswers(savedAnswers) < onboardingFields.length;
+  });
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -352,6 +452,8 @@ export default function BdSourcingTab() {
 
   const selected = targets.find((target) => target.id === selectedId) ?? targets[0];
   const approvedCount = targets.filter((target) => target.lifecycleState === "approved").length;
+  const onboardingAnsweredCount = countOnboardingAnswers(onboardingAnswers);
+  const onboardingComplete = onboardingAnsweredCount === onboardingFields.length;
   const selectedInitials = selected.contact.fullName
     .split(" ")
     .map((part) => part[0])
@@ -415,6 +517,19 @@ export default function BdSourcingTab() {
     setSelectedId("sarah-chen");
     setEmailCopied(false);
     setCrmCsvExported(false);
+  };
+
+  const updateOnboardingAnswer = (field: SellKitOnboardingField, value: string) => {
+    setOnboardingAnswers((current) => ({ ...current, [field]: value }));
+  };
+
+  const saveOnboarding = () => {
+    saveSellKitOnboardingAnswers(onboardingAnswers);
+    setOnboardingOpen(false);
+    toast({
+      title: onboardingComplete ? "Onboarding complete" : "Onboarding progress saved",
+      description: "Mariah can edit these answers from the SellKit header.",
+    });
   };
 
   const copyEmailDraft = async () => {
@@ -509,6 +624,90 @@ export default function BdSourcingTab() {
       </header>
 
       <main className="px-2 pb-7 pt-4 sm:px-4">
+        <section className="mb-3 rounded-md border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-semibold text-slate-900">Mariah onboarding</h2>
+                <Badge
+                  variant="outline"
+                  className={
+                    onboardingComplete
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-amber-200 bg-amber-50 text-amber-700"
+                  }
+                >
+                  {onboardingAnsweredCount}/5 answered
+                </Badge>
+                <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                  Human approval before send
+                </Badge>
+              </div>
+              <p className="mt-1 text-sm text-slate-600">
+                Captures target profile, buyers, offer, signals, and email voice for the draft queue.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setOnboardingOpen((open) => !open)}>
+              {onboardingOpen ? "Hide" : "Edit Onboarding"}
+            </Button>
+          </div>
+
+          {onboardingOpen && (
+            <div className="border-t border-slate-200 px-4 py-4">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="grid gap-4 md:grid-cols-2">
+                  {onboardingFields.map((field) => (
+                    <div key={field.id} className={field.id === "emailVoice" ? "md:col-span-2" : undefined}>
+                      <Label htmlFor={`sellkit-${field.id}`} className="text-sm font-semibold text-slate-900">
+                        {field.label}
+                      </Label>
+                      <p className="mt-1 min-h-8 text-xs leading-5 text-slate-500">{field.prompt}</p>
+                      {field.id === "offerLine" ? (
+                        <Input
+                          id={`sellkit-${field.id}`}
+                          value={onboardingAnswers[field.id]}
+                          onChange={(event) => updateOnboardingAnswer(field.id, event.target.value)}
+                          placeholder={field.placeholder}
+                          className="mt-2 bg-white"
+                        />
+                      ) : (
+                        <Textarea
+                          id={`sellkit-${field.id}`}
+                          value={onboardingAnswers[field.id]}
+                          onChange={(event) => updateOnboardingAnswer(field.id, event.target.value)}
+                          placeholder={field.placeholder}
+                          rows={field.rows}
+                          className="mt-2 resize-y bg-white"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <aside className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="text-sm font-semibold text-slate-900">V1 operating mode</h3>
+                  <div className="mt-4 space-y-3 text-sm text-slate-600">
+                    <p className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                      Provider keys stay server-side in Supabase.
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                      SellKit prepares drafts and exports only after approval.
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                      No Microsoft, Salesforce, or LinkedIn write access is required for V1.
+                    </p>
+                  </div>
+                  <Button className="mt-5 w-full bg-[#163B63] text-white hover:bg-[#102D4B]" onClick={saveOnboarding}>
+                    Save Progress
+                  </Button>
+                </aside>
+              </div>
+            </div>
+          )}
+        </section>
+
         <section className="mb-3 grid grid-cols-1 gap-3 rounded-none bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200 lg:grid-cols-[1fr_auto]">
           <div className="grid gap-2 md:grid-cols-5">
             {workflowSteps.map((step, index) => (
@@ -676,9 +875,9 @@ export default function BdSourcingTab() {
                 <div className="flex items-center gap-3">
                   <span className="grid h-9 w-9 place-items-center rounded-full bg-emerald-600 text-white"><CheckCircle2 className="h-5 w-5" /></span>
                   <div>
-                    <p className="text-sm font-semibold">CRM Gate</p>
-                    <p className="text-sm text-slate-600">Clear in uploaded CRM data</p>
-                    <p className="text-xs text-slate-500">No active suppression or owner conflict</p>
+                    <p className="text-sm font-semibold">Review Gate</p>
+                    <p className="text-sm text-slate-600">Human approval required</p>
+                    <p className="text-xs text-slate-500">No email or CRM write before approval</p>
                   </div>
                 </div>
               </div>

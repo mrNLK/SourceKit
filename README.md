@@ -89,8 +89,8 @@ V1 is manual-first because Microsoft Graph and Salesforce policy approval is unk
 
 What is implemented:
 
-- Deterministic scoring, uploaded CRM exclusion logic, local suppression checks, target state machine, and template-bound email drafting.
-- A review queue UI with signal evidence, verified-email status, CRM gate status, copyable email drafts, `.eml` download, CRM CSV export, and Sales Navigator note text.
+- Deterministic scoring, human review gating, optional CRM/dedup helpers, target state machine, and template-bound email drafting.
+- A review queue UI with Mariah onboarding, signal evidence, verified-email status, review gate status, copyable email drafts, `.eml` download, CRM CSV export, and Sales Navigator note text.
 - Supabase migration for `bd_companies`, `bd_contacts`, `bd_signals`, `bd_targets`, `bd_outreach_touches`, `bd_email_messages`, `bd_salesforce_links`, `bd_suppressions`, `bd_scores`, and `bd_audit_logs`.
 - A `bd-sourcing` Edge Function with safe action routing and server-side Parallel Fast Entity Search at `/v1beta/findall/entity-search`.
 - Server-side Exa Company Search for structured company seeds and Exa Agent for async multi-hop target discovery with structured output.
@@ -103,8 +103,10 @@ Manual setup before first real run:
 3. Add Apollo and Clay keys, then confirm the exact people-match and email-verification fields.
 4. Add Findem credentials or export/import flow for hiring, executive-change, and funding signals.
 5. Fill `BD_PHYSICAL_ADDRESS`, `BD_UNSUBSCRIBE_BASE_URL`, `BD_OPERATOR_NAME`, and `BD_OPERATOR_EMAIL`.
-6. Upload CRM/customer/prospect suppression data by CSV for dedup checks. Salesforce API access is not required for v1.
+6. Complete the SellKit onboarding prompts for target companies, buyer titles, offer, buying signals, and email voice.
 7. Keep `BD_INTEGRATION_MODE=manual`, `APOLLO_SEQUENCE_ENABLED=false`, and `INSTANTLY_SEQUENCE_ENABLED=false` until integrations are explicitly approved.
+
+No CRM/customer/prospect suppression upload is required for v1 because a human approves every draft before any handoff or export.
 
 Optional future setup, only if company policy allows it:
 
