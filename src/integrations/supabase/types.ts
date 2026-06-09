@@ -341,6 +341,42 @@ export type Database = {
         }
         Relationships: []
       }
+      sellkit_onboarding_profiles: {
+        Row: {
+          buyer_titles: string
+          buying_signals: string
+          completed_at: string | null
+          created_at: string
+          email_voice: string
+          ideal_company: string
+          offer_line: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          buyer_titles?: string
+          buying_signals?: string
+          completed_at?: string | null
+          created_at?: string
+          email_voice?: string
+          ideal_company?: string
+          offer_line?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          buyer_titles?: string
+          buying_signals?: string
+          completed_at?: string | null
+          created_at?: string
+          email_voice?: string
+          ideal_company?: string
+          offer_line?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       shortlisted_candidates: {
         Row: {
           candidate_data: Json | null

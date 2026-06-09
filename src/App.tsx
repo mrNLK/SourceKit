@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -12,6 +12,7 @@ import DeveloperProfile from "./pages/DeveloperProfile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { Analytics } from "@vercel/analytics/react";
+import { postAuthRedirectStorageKey, sanitizeRedirectPath } from "./lib/auth-redirect";
 
 const queryClient = new QueryClient();
 const BdSourcingApp = lazy(() => import("./components/bd-sourcing/BdSourcingTab"));
@@ -21,6 +22,20 @@ const AppFallback = () => (
     <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
   </div>
 );
+
+const AuthRedirect = () => {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  return <Navigate to={sanitizeRedirectPath(params.get("redirect"), "/")} replace />;
+};
+
+const SellKitAuthGate = ({ redirectPath }: { redirectPath: string }) => {
+  useEffect(() => {
+    window.localStorage.setItem(postAuthRedirectStorageKey, redirectPath);
+  }, [redirectPath]);
+
+  return <Navigate to={`/auth?redirect=${encodeURIComponent(redirectPath)}`} replace />;
+};
 
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -43,6 +58,21 @@ const App = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!session) return;
+
+    const redirectPath = sanitizeRedirectPath(
+      window.localStorage.getItem(postAuthRedirectStorageKey),
+      "",
+    );
+    if (!redirectPath) return;
+
+    window.localStorage.removeItem(postAuthRedirectStorageKey);
+    if (window.location.pathname !== redirectPath) {
+      window.location.assign(redirectPath);
+    }
+  }, [session]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -63,18 +93,20 @@ const App = () => {
                 <Route
                   key={path}
                   path={path}
-                  element={
+                  element={session ? (
                     <Suspense fallback={<AppFallback />}>
-                      <BdSourcingApp />
+                      <BdSourcingApp userId={session.user.id} />
                     </Suspense>
-                  }
+                  ) : (
+                    <SellKitAuthGate redirectPath={path} />
+                  )}
                 />
               ))}
               {session ? (
                 <>
                   <Route path="/" element={<Index />} />
                   <Route path="/developer/:id" element={<DeveloperProfile />} />
-                  <Route path="/auth" element={<Navigate to="/" replace />} />
+                  <Route path="/auth" element={<AuthRedirect />} />
                   <Route path="*" element={<NotFound />} />
                 </>
               ) : (

@@ -1,15 +1,39 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SourceKitMark } from "@/components/brand/SourceKitMark";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { postAuthRedirectStorageKey, sanitizeRedirectPath } from "@/lib/auth-redirect";
+
+type AuthMode = "sign-in" | "sign-up";
+type AuthAction = "google" | "email-sign-in" | "email-sign-up" | null;
 
 const Auth = () => {
-  const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<AuthMode>("sign-in");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [loadingAction, setLoadingAction] = useState<AuthAction>(null);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
+  const isLoading: boolean = loadingAction !== null;
+  const isEmailSignInLoading: boolean = loadingAction === "email-sign-in";
+  const isEmailSignUpLoading: boolean = loadingAction === "email-sign-up";
+  const isGoogleLoading: boolean = loadingAction === "google";
+  const redirectPath = sanitizeRedirectPath(searchParams.get("redirect"), "/");
+
+  const handleGoogleSignIn = async (): Promise<void> => {
+    setLoadingAction("google");
     setError(null);
+    setMessage(null);
+    if (redirectPath !== "/") {
+      window.localStorage.setItem(postAuthRedirectStorageKey, redirectPath);
+    } else {
+      window.localStorage.removeItem(postAuthRedirectStorageKey);
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -19,17 +43,67 @@ const Auth = () => {
     if (error) {
       setError(error.message || "Sign-in failed");
     }
-    setLoading(false);
+    setLoadingAction(null);
+  };
+
+  const handleEmailAuth = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    setError(null);
+    setMessage(null);
+
+    const normalizedEmail: string = email.trim().toLowerCase();
+    if (!normalizedEmail || !password) {
+      setError("Email and password are required.");
+      return;
+    }
+    if (redirectPath !== "/") {
+      window.localStorage.setItem(postAuthRedirectStorageKey, redirectPath);
+    } else {
+      window.localStorage.removeItem(postAuthRedirectStorageKey);
+    }
+
+    if (mode === "sign-in") {
+      setLoadingAction("email-sign-in");
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
+      if (signInError) {
+        setError(signInError.message || "Email/password sign-in failed");
+      }
+      setLoadingAction(null);
+      return;
+    }
+
+    setLoadingAction("email-sign-up");
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth`,
+      },
+    });
+    if (signUpError) {
+      setError(signUpError.message || "Account creation failed");
+      setLoadingAction(null);
+      return;
+    }
+    if (data.session) {
+      setMessage("Account created. You are signed in.");
+    } else {
+      setMessage("Account created. Check your email to confirm, then sign in.");
+    }
+    setLoadingAction(null);
   };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-8 text-center">
+      <div className="w-full max-w-sm space-y-6 text-center">
         <div className="flex flex-col items-center gap-4">
-          <SourceKitMark className="w-12 h-12 text-primary" />
+          <SourceKitMark className="w-12 h-12 text-foreground" />
           <div className="text-lg tracking-tight">
-            <span className="text-foreground font-semibold">Source</span>
-            <span className="text-muted-foreground font-medium">Kit</span>
+            <span className="text-primary font-semibold">Source</span>
+            <span className="text-foreground font-medium">Kit</span>
           </div>
           <p className="text-sm text-muted-foreground">Sign in to start sourcing</p>
         </div>
@@ -38,10 +112,87 @@ const Auth = () => {
           <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-2">{error}</p>
         )}
 
+        {message && (
+          <p className="text-sm text-primary bg-primary/10 rounded-lg px-4 py-2">{message}</p>
+        )}
+
+        <div className="grid grid-cols-2 gap-2 rounded-lg border border-border p-1">
+          <Button
+            type="button"
+            variant={mode === "sign-in" ? "default" : "ghost"}
+            disabled={isLoading}
+            onClick={() => {
+              setMode("sign-in");
+              setError(null);
+              setMessage(null);
+            }}
+            className="w-full"
+          >
+            Sign in
+          </Button>
+          <Button
+            type="button"
+            variant={mode === "sign-up" ? "default" : "ghost"}
+            disabled={isLoading}
+            onClick={() => {
+              setMode("sign-up");
+              setError(null);
+              setMessage(null);
+            }}
+            className="w-full"
+          >
+            Create account
+          </Button>
+        </div>
+
+        <form className="space-y-4 text-left" onSubmit={handleEmailAuth}>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              disabled={isLoading}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+              placeholder="Enter your password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              disabled={isLoading}
+              required
+            />
+          </div>
+          <Button type="submit" disabled={isLoading} className="w-full" size="lg">
+            {mode === "sign-in"
+              ? (isEmailSignInLoading ? "Signing in..." : "Sign in with email")
+              : (isEmailSignUpLoading ? "Creating account..." : "Create account")}
+          </Button>
+        </form>
+
+        <div className="relative py-1">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-border" />
+          </div>
+          <span className="relative bg-background px-2 text-xs uppercase tracking-wide text-muted-foreground">
+            Or
+          </span>
+        </div>
+
         <Button
           onClick={handleGoogleSignIn}
-          disabled={loading}
+          disabled={isLoading}
           className="w-full gap-2"
+          variant="outline"
           size="lg"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -62,7 +213,7 @@ const Auth = () => {
               fill="#EA4335"
             />
           </svg>
-          {loading ? "Signing in..." : "Continue with Google"}
+          {isGoogleLoading ? "Signing in..." : "Continue with Google"}
         </Button>
       </div>
     </div>

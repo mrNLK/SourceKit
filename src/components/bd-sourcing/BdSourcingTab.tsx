@@ -30,17 +30,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { buildManualCrmCsv, buildManualEmailHandoff } from "@/lib/bd-sourcing/manual-handoff";
 import { buildFirstTouchEmail } from "@/lib/bd-sourcing/templates";
+import {
+  countSellKitOnboardingAnswers,
+  emptySellKitOnboardingAnswers,
+  loadSellKitOnboardingProfile,
+  saveSellKitOnboardingProfile,
+  type SellKitOnboardingAnswers,
+  type SellKitOnboardingField,
+} from "@/services/sellkitOnboarding";
 import type { BdScoreBucket, BdScoreResult, BdTargetLifecycleState, BdTargetView } from "@/types/bd-sourcing";
 
 type QueueStatus = "New" | "Reviewed" | "In Review";
-type SellKitOnboardingField =
-  | "idealCompany"
-  | "buyerTitles"
-  | "offerLine"
-  | "buyingSignals"
-  | "emailVoice";
-
-type SellKitOnboardingAnswers = Record<SellKitOnboardingField, string>;
 
 type VisualTarget = BdTargetView & {
   added: string;
@@ -55,14 +55,6 @@ type VisualTarget = BdTargetView & {
 };
 
 const onboardingStorageKey = "sellkit:onboarding:v1";
-
-const emptyOnboardingAnswers: SellKitOnboardingAnswers = {
-  idealCompany: "",
-  buyerTitles: "",
-  offerLine: "",
-  buyingSignals: "",
-  emailVoice: "",
-};
 
 const onboardingFields: Array<{
   id: SellKitOnboardingField;
@@ -149,11 +141,11 @@ const operatorInitials = operatorProfile.fullName
   .toUpperCase();
 
 function loadSellKitOnboardingAnswers(): SellKitOnboardingAnswers {
-  if (typeof window === "undefined") return emptyOnboardingAnswers;
+  if (typeof window === "undefined") return emptySellKitOnboardingAnswers;
 
   try {
     const stored = window.localStorage.getItem(onboardingStorageKey);
-    if (!stored) return emptyOnboardingAnswers;
+    if (!stored) return emptySellKitOnboardingAnswers;
     const parsed = JSON.parse(stored) as Partial<SellKitOnboardingAnswers>;
 
     return {
@@ -164,15 +156,11 @@ function loadSellKitOnboardingAnswers(): SellKitOnboardingAnswers {
       emailVoice: parsed.emailVoice ?? "",
     };
   } catch {
-    return emptyOnboardingAnswers;
+    return emptySellKitOnboardingAnswers;
   }
 }
 
-function countOnboardingAnswers(answers: SellKitOnboardingAnswers): number {
-  return Object.values(answers).filter((value) => value.trim().length > 0).length;
-}
-
-function saveSellKitOnboardingAnswers(answers: SellKitOnboardingAnswers) {
+function saveSellKitOnboardingAnswersLocally(answers: SellKitOnboardingAnswers) {
   window.localStorage.setItem(onboardingStorageKey, JSON.stringify(answers));
 }
 
@@ -428,18 +416,24 @@ function factorValue(value: number, max: number): string {
   return `${value} / ${max}`;
 }
 
-export default function BdSourcingTab() {
+type BdSourcingTabProps = {
+  userId?: string;
+};
+
+export default function BdSourcingTab({ userId }: BdSourcingTabProps = {}) {
   const { toast } = useToast();
   const [targets, setTargets] = useState<VisualTarget[]>(() => buildVisualTargets());
   const [selectedId, setSelectedId] = useState("sarah-chen");
   const [emailCopied, setEmailCopied] = useState(false);
   const [crmCsvExported, setCrmCsvExported] = useState(false);
+  const [onboardingLoading, setOnboardingLoading] = useState(Boolean(userId));
+  const [onboardingSaving, setOnboardingSaving] = useState(false);
   const [onboardingAnswers, setOnboardingAnswers] = useState<SellKitOnboardingAnswers>(() =>
     loadSellKitOnboardingAnswers(),
   );
   const [onboardingOpen, setOnboardingOpen] = useState(() => {
     const savedAnswers = loadSellKitOnboardingAnswers();
-    return countOnboardingAnswers(savedAnswers) < onboardingFields.length;
+    return countSellKitOnboardingAnswers(savedAnswers) < onboardingFields.length;
   });
 
   useEffect(() => {
@@ -450,9 +444,44 @@ export default function BdSourcingTab() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!userId) {
+      setOnboardingLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setOnboardingLoading(true);
+    loadSellKitOnboardingProfile(userId)
+      .then((remoteAnswers) => {
+        if (cancelled || !remoteAnswers) return;
+        setOnboardingAnswers(remoteAnswers);
+        saveSellKitOnboardingAnswersLocally(remoteAnswers);
+        setOnboardingOpen(countSellKitOnboardingAnswers(remoteAnswers) < onboardingFields.length);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        toast({
+          title: "Could not load onboarding",
+          description: "Using the local draft for now. Try saving again after sign-in settles.",
+          variant: "destructive",
+        });
+      })
+      .finally(() => {
+        if (!cancelled) setOnboardingLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [toast, userId]);
+
   const selected = targets.find((target) => target.id === selectedId) ?? targets[0];
   const approvedCount = targets.filter((target) => target.lifecycleState === "approved").length;
-  const onboardingAnsweredCount = countOnboardingAnswers(onboardingAnswers);
+  const onboardingAnsweredCount = countSellKitOnboardingAnswers(onboardingAnswers);
   const onboardingComplete = onboardingAnsweredCount === onboardingFields.length;
   const selectedInitials = selected.contact.fullName
     .split(" ")
@@ -523,13 +552,34 @@ export default function BdSourcingTab() {
     setOnboardingAnswers((current) => ({ ...current, [field]: value }));
   };
 
-  const saveOnboarding = () => {
-    saveSellKitOnboardingAnswers(onboardingAnswers);
+  const saveOnboarding = async () => {
+    saveSellKitOnboardingAnswersLocally(onboardingAnswers);
     setOnboardingOpen(false);
-    toast({
-      title: onboardingComplete ? "Onboarding complete" : "Onboarding progress saved",
-      description: "Mariah can edit these answers from the SellKit header.",
-    });
+
+    if (!userId) {
+      toast({
+        title: onboardingComplete ? "Onboarding complete" : "Onboarding progress saved",
+        description: "Saved in this browser. Sign in to save it to Mariah's account.",
+      });
+      return;
+    }
+
+    setOnboardingSaving(true);
+    try {
+      await saveSellKitOnboardingProfile(userId, onboardingAnswers);
+      toast({
+        title: onboardingComplete ? "Onboarding complete" : "Onboarding progress saved",
+        description: "Saved to Mariah's SellKit account.",
+      });
+    } catch {
+      toast({
+        title: "Saved locally only",
+        description: "Supabase did not accept the update. The browser draft is still preserved.",
+        variant: "destructive",
+      });
+    } finally {
+      setOnboardingSaving(false);
+    }
   };
 
   const copyEmailDraft = async () => {
@@ -642,12 +692,24 @@ export default function BdSourcingTab() {
                 <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
                   Human approval before send
                 </Badge>
+                {userId && (
+                  <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                    Saved to account
+                  </Badge>
+                )}
               </div>
               <p className="mt-1 text-sm text-slate-600">
-                Captures target profile, buyers, offer, signals, and email voice for the draft queue.
+                {onboardingLoading
+                  ? "Loading saved answers for this signed-in account."
+                  : "Captures target profile, buyers, offer, signals, and email voice for the draft queue."}
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setOnboardingOpen((open) => !open)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setOnboardingOpen((open) => !open)}
+              disabled={onboardingLoading}
+            >
               {onboardingOpen ? "Hide" : "Edit Onboarding"}
             </Button>
           </div>
@@ -692,15 +754,19 @@ export default function BdSourcingTab() {
                     </p>
                     <p className="flex items-start gap-2">
                       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                      SellKit prepares drafts and exports only after approval.
+                      Onboarding saves to this signed-in account.
                     </p>
                     <p className="flex items-start gap-2">
                       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                       No Microsoft, Salesforce, or LinkedIn write access is required for V1.
                     </p>
                   </div>
-                  <Button className="mt-5 w-full bg-[#163B63] text-white hover:bg-[#102D4B]" onClick={saveOnboarding}>
-                    Save Progress
+                  <Button
+                    className="mt-5 w-full bg-[#163B63] text-white hover:bg-[#102D4B]"
+                    onClick={saveOnboarding}
+                    disabled={onboardingLoading || onboardingSaving}
+                  >
+                    {onboardingSaving ? "Saving..." : "Save Progress"}
                   </Button>
                 </aside>
               </div>
