@@ -101,9 +101,9 @@ describe("BD sourcing deterministic rules", () => {
       workEmail: "jordan@example.com",
       emailVerificationStatus: "verified",
       signalReference: "AtlasGrid opened three senior digital roles.",
-      ctaBookingLink: "https://bookings.example.com/operator",
+      ctaBookingLink: "",
       operatorName: "Operator",
-      operatorEmail: "operator@example.com",
+      operatorEmail: "",
       physicalAddress: "123 Market St, San Francisco, CA",
       unsubscribeUrl: "https://example.com/unsubscribe",
     });
@@ -111,6 +111,8 @@ describe("BD sourcing deterministic rules", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.textBody).not.toContain("roles..");
+      expect(result.textBody).toContain("Would it be useful to grab 20 minutes next week?");
+      expect(result.textBody).not.toContain("bookings.example.com");
     }
   });
 

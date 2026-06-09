@@ -140,7 +140,7 @@ export interface FirstTouchEmailInput {
   workEmail?: string | null;
   emailVerificationStatus: BdEmailVerificationStatus;
   signalReference: string;
-  ctaBookingLink: string;
+  ctaBookingLink?: string | null;
   operatorName: string;
   operatorEmail: string;
   physicalAddress: string;

@@ -17,12 +17,16 @@ export function buildFirstTouchEmail(input: FirstTouchEmailInput): FirstTouchEma
 
   const signalSentence = /[.!?]$/.test(signalReference) ? signalReference : `${signalReference}.`;
   const subject = `Quick thought for ${input.company}`;
+  const bookingLink = input.ctaBookingLink?.trim();
+  const ctaLine = bookingLink
+    ? `Would it be useful to grab 20 minutes? Here is my calendar: ${bookingLink}`
+    : "Would it be useful to grab 20 minutes next week?";
   const textBody = [
     `Hi ${input.firstName},`,
     "",
     `I noticed ${signalSentence} It made me think there may be a timely reason to compare notes on how your team is approaching this.`,
     "",
-    `Would it be useful to grab 20 minutes? Here is my calendar: ${input.ctaBookingLink}`,
+    ctaLine,
     "",
     "Best,",
     input.operatorName,

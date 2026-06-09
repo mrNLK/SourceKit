@@ -32,9 +32,10 @@ function csvCell(value: string | number | null | undefined): string {
 }
 
 export function buildManualEmailHandoff(input: ManualEmailHandoffInput): ManualEmailHandoff {
+  const fromLines = input.from.trim() ? [`From: ${input.from}`] : [];
   const copyText = [
     `To: ${input.to}`,
-    `From: ${input.from}`,
+    ...fromLines,
     `Subject: ${input.subject}`,
     "",
     input.textBody,
@@ -42,7 +43,7 @@ export function buildManualEmailHandoff(input: ManualEmailHandoffInput): ManualE
 
   const emlContent = [
     `To: ${input.to}`,
-    `From: ${input.from}`,
+    ...fromLines,
     `Subject: ${input.subject}`,
     "Content-Type: text/plain; charset=utf-8",
     "",

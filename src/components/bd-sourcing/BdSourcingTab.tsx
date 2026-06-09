@@ -67,6 +67,22 @@ const scoreFactors = [
   ["Technographic fit", "Good"],
 ] as const;
 
+const operatorProfile = {
+  fullName: import.meta.env.VITE_SELLKIT_OPERATOR_NAME?.trim() || "Mariah Rubino",
+  email: import.meta.env.VITE_SELLKIT_OPERATOR_EMAIL?.trim() || "",
+  bookingUrl: import.meta.env.VITE_SELLKIT_BOOKING_URL?.trim() || "",
+  physicalAddress:
+    import.meta.env.VITE_SELLKIT_PHYSICAL_ADDRESS?.trim() || "Physical address required before sending",
+};
+
+const operatorFirstName = operatorProfile.fullName.split(" ")[0] || operatorProfile.fullName;
+const operatorInitials = operatorProfile.fullName
+  .split(" ")
+  .map((part) => part[0])
+  .join("")
+  .slice(0, 2)
+  .toUpperCase();
+
 function scoreFor(composite: number, bucket: BdScoreBucket = "reach_now"): BdScoreResult {
   return {
     companyFit: Math.min(100, composite + 4),
@@ -350,10 +366,10 @@ export default function BdSourcingTab() {
         workEmail: selected.contact.workEmail,
         emailVerificationStatus: selected.contact.emailVerificationStatus,
         signalReference: selected.signal.summary,
-        ctaBookingLink: "https://bookings.example.com/operator",
-        operatorName: "Alex",
-        operatorEmail: "operator@example.com",
-        physicalAddress: "123 Market St, San Francisco, CA",
+        ctaBookingLink: operatorProfile.bookingUrl,
+        operatorName: operatorFirstName,
+        operatorEmail: operatorProfile.email,
+        physicalAddress: operatorProfile.physicalAddress,
         unsubscribeUrl: `https://sourcekit.example/unsubscribe/${selected.id}`,
       }),
     [selected],
@@ -485,8 +501,8 @@ export default function BdSourcingTab() {
           </div>
           <Bell className="h-5 w-5 text-[#667085]" />
           <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-[#163B63] text-xs font-semibold text-white">AJ</div>
-            <span className="text-sm font-medium">Alex Johnson</span>
+            <div className="grid h-9 w-9 place-items-center rounded-full bg-[#163B63] text-xs font-semibold text-white">{operatorInitials}</div>
+            <span className="text-sm font-medium">{operatorProfile.fullName}</span>
             <ChevronDown className="h-4 w-4 text-[#667085]" />
           </div>
         </div>
