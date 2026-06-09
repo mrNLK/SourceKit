@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +14,13 @@ import NotFound from "./pages/NotFound";
 import { Analytics } from "@vercel/analytics/react";
 
 const queryClient = new QueryClient();
+const BdSourcingApp = lazy(() => import("./components/bd-sourcing/BdSourcingTab"));
+
+const AppFallback = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+  </div>
+);
 
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -52,6 +59,17 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {["/sellkit", "/bd-sourcing"].map((path) => (
+                <Route
+                  key={path}
+                  path={path}
+                  element={
+                    <Suspense fallback={<AppFallback />}>
+                      <BdSourcingApp />
+                    </Suspense>
+                  }
+                />
+              ))}
               {session ? (
                 <>
                   <Route path="/" element={<Index />} />
