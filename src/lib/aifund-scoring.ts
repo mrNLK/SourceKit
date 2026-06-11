@@ -165,3 +165,36 @@ export function rankCandidates<T extends { latestScore: AiFundEvaluationScore | 
 
   return withScores.map((c, i) => ({ ...c, rank: i + 1 }));
 }
+
+export function comparePriorityScores(
+  left: AiFundEvaluationScore | null,
+  right: AiFundEvaluationScore | null
+): number {
+  const leftEv = left?.expectedValue ?? null;
+  const rightEv = right?.expectedValue ?? null;
+  if (leftEv === null && rightEv === null) {
+    const leftComposite = left?.compositeScore ?? null;
+    const rightComposite = right?.compositeScore ?? null;
+    if (leftComposite === null && rightComposite === null) return 0;
+    if (leftComposite === null) return 1;
+    if (rightComposite === null) return -1;
+    return rightComposite - leftComposite;
+  }
+  if (leftEv === null) return 1;
+  if (rightEv === null) return -1;
+  if (rightEv !== leftEv) return rightEv - leftEv;
+
+  const leftProbability = left?.closabilityProbabilityPct ?? null;
+  const rightProbability = right?.closabilityProbabilityPct ?? null;
+  if (leftProbability === null && rightProbability === null) return 0;
+  if (leftProbability === null) return 1;
+  if (rightProbability === null) return -1;
+  if (rightProbability !== leftProbability) return rightProbability - leftProbability;
+
+  const leftComposite = left?.compositeScore ?? null;
+  const rightComposite = right?.compositeScore ?? null;
+  if (leftComposite === null && rightComposite === null) return 0;
+  if (leftComposite === null) return 1;
+  if (rightComposite === null) return -1;
+  return rightComposite - leftComposite;
+}
