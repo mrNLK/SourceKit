@@ -1507,7 +1507,9 @@ export default function BdSourcingTab({ userId }: BdSourcingTabProps = {}) {
   };
 
   const exportCrmCsv = () => {
-    const approvedTargets = targets.filter((target) => target.lifecycleState === "approved");
+    const approvedTargets = targets.filter(
+      (target) => isApprovedOrLater(target.lifecycleState) && target.lifecycleState !== "lost",
+    );
     const csv = buildManualCrmCsv(approvedTargets.map((target) => ({
       fullName: target.contact.fullName,
       firstName: target.contact.firstName ?? target.contact.fullName.split(" ")[0] ?? "",
