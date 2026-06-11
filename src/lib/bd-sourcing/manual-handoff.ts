@@ -26,8 +26,14 @@ export interface ManualCrmExportTarget {
 }
 
 function csvCell(value: string | number | null | undefined): string {
-  const text = String(value ?? "");
-  if (!/[",\n]/.test(text)) return text;
+  let text = String(value ?? "");
+  // Spreadsheet apps treat leading = + - @ (and whitespace-shifted variants)
+  // as formula triggers; provider-supplied text flows into this export, so
+  // neutralize them with a leading apostrophe.
+  if (/^[=+\-@\t\r\n]/.test(text)) {
+    text = `'${text}`;
+  }
+  if (!/[",\n\r]/.test(text)) return text;
   return `"${text.replace(/"/g, '""')}"`;
 }
 
