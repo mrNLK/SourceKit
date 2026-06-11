@@ -140,6 +140,7 @@ export interface FirstTouchEmailInput {
   workEmail?: string | null;
   emailVerificationStatus: BdEmailVerificationStatus;
   signalReference: string;
+  operatorContext?: string | null;
   ctaBookingLink?: string | null;
   operatorName: string;
   operatorEmail: string;
@@ -158,6 +159,7 @@ export type FirstTouchEmailResult =
       htmlBody: string;
       unsubscribeUrl: string;
       physicalAddress: string;
+      operatorContextBlock: string | null;
     }
   | {
       ok: false;

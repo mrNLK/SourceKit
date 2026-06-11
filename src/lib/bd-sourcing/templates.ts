@@ -1,4 +1,5 @@
 import type { FirstTouchEmailInput, FirstTouchEmailResult } from "@/types/bd-sourcing";
+import { buildOperatorContextBlock } from "@/lib/bd-sourcing/operator-context";
 
 function escapeHtml(value: string): string {
   return value
@@ -30,12 +31,12 @@ export function buildFirstTouchEmail(input: FirstTouchEmailInput): FirstTouchEma
     "",
     "Best,",
     input.operatorName,
-    "",
-    input.physicalAddress,
-    `Unsubscribe: ${input.unsubscribeUrl}`,
-  ].join("\n");
+  ];
+  const footerLines = [input.physicalAddress.trim(), input.unsubscribeUrl.trim() ? `Unsubscribe: ${input.unsubscribeUrl.trim()}` : ""]
+    .filter(Boolean);
+  const fullTextBody = footerLines.length > 0 ? [...textBody, "", ...footerLines].join("\n") : textBody.join("\n");
 
-  const htmlBody = textBody
+  const htmlBody = fullTextBody
     .split("\n")
     .map((line) => (line ? `<p>${escapeHtml(line)}</p>` : "<br />"))
     .join("");
@@ -46,10 +47,11 @@ export function buildFirstTouchEmail(input: FirstTouchEmailInput): FirstTouchEma
     to: input.workEmail,
     from: input.operatorEmail,
     subject,
-    textBody,
+    textBody: fullTextBody,
     htmlBody,
     unsubscribeUrl: input.unsubscribeUrl,
     physicalAddress: input.physicalAddress,
+    operatorContextBlock: buildOperatorContextBlock(input.operatorContext),
   };
 }
 

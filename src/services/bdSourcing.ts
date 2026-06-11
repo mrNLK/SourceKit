@@ -6,7 +6,9 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 export type BdSourcingAction =
   | "discover"
   | "parallel_entity_search"
+  | "parallel_findall_preview"
   | "exa_company_search"
+  | "exa_people_search"
   | "exa_agent_run"
   | "exa_agent_get_run"
   | "dedup"
@@ -64,13 +66,23 @@ export const bdSourcingApi = {
   discoverTargets: (payload: Record<string, unknown>) => invokeBdSourcingAction("discover", payload),
   searchParallelEntities: (payload: { entityType: "people" | "companies"; objective: string; matchLimit?: number }) =>
     invokeBdSourcingAction("parallel_entity_search", payload),
-  searchExaCompanies: (payload: { query: string; numResults?: number }) =>
+  previewParallelFindAll: (payload: {
+    entityType?: "people" | "companies";
+    objective: string;
+    matchConditions?: Array<{ name?: string; description: string }>;
+    matchLimit?: number;
+  }) => invokeBdSourcingAction("parallel_findall_preview", payload),
+  searchExaCompanies: (payload: { query: string; additionalQueries?: string[]; numResults?: number }) =>
     invokeBdSourcingAction("exa_company_search", payload),
+  searchExaPeople: (payload: { query: string; additionalQueries?: string[]; numResults?: number }) =>
+    invokeBdSourcingAction("exa_people_search", payload),
   createExaAgentRun: (payload: { query: string; maxItems?: number; effort?: "low" | "medium" | "high" | "xhigh" | "auto" }) =>
     invokeBdSourcingAction("exa_agent_run", payload),
   getExaAgentRun: (runId: string) => invokeBdSourcingAction("exa_agent_get_run", { runId }),
   runDedup: (targetId: string) => invokeBdSourcingAction("dedup", { targetId }),
   runEnrichment: (targetId: string) => invokeBdSourcingAction("enrich", { targetId }),
+  enrichWorkEmail: (targetId: string) =>
+    invokeBdSourcingAction("enrich", { targetId, provider: "apollo", fields: ["work_email"] }),
   scoreTarget: (targetId: string) => invokeBdSourcingAction("score", { targetId }),
   draftEmail: (targetId: string) => invokeBdSourcingAction("draft_email", { targetId }),
   approveTarget: (targetId: string) => invokeBdSourcingAction("approve", { targetId }),
