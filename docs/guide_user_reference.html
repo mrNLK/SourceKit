@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SourceKit User Reference Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,300..800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="./assets/logos/sourcekit-mark-new.svg">
+<style>
+  :root{
+    --font-sans:"DM Sans","Avenir Next","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --bg:#C4CAD6;
+    --panel:#E9EDF4;
+    --panel-2:#E2E7EF;
+    --panel-3:#D1D6E0;
+    --line:#C7CEDA;
+    --line-2:#B8BFCC;
+    --text:#0F172A;
+    --muted:#475569;
+    --subtle:#6B7280;
+    --accent:#0F172A;
+    --green:#00D5C1;
+    --orange:#F97316;
+    --blue:#006EE6;
+    --purple:#8B5CF6;
+    --red:#EF4444;
+    --shadow:0 8px 24px rgba(15,23,42,.08);
+    --radius-xl:16px;
+    --radius-lg:12px;
+    --radius-md:8px;
+    --max:1080px;
+    --nav-h:52px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    color:var(--text);
+    font-family:var(--font-sans);
+    background:linear-gradient(180deg,#B8BFCC 0%,#C4CAD6 45%,#D1D6E0 100%);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  a{color:inherit;text-decoration:none}
+
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:40;
+    height:var(--nav-h);
+    background:rgba(233,237,244,.85);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:calc(var(--max) + 48px);
+    margin:0 auto;
+    height:100%;
+    padding:0 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand-logo-full{width:132px;height:auto;display:block}
+  .brand-copy{display:flex;flex-direction:column;gap:1px}
+  .brand-text{font-size:.9rem;font-weight:700;letter-spacing:-.02em}
+  .brand-sub{font-size:.65rem;color:var(--subtle);font-family:"JetBrains Mono",monospace;margin-top:1px}
+  .topnav{display:flex;gap:1px}
+  .topnav a{
+    padding:6px 10px;border-radius:6px;font-size:.82rem;color:var(--subtle);
+    transition:all .15s;
+  }
+  .topnav a:hover{color:var(--muted);background:#DDE3ED}
+  .topnav a.active{color:var(--text);background:#DDE3ED}
+  .topnav a:focus-visible,
+  .mobile-tabs a:focus-visible,
+  .sidebar a:focus-visible,
+  .cta-btn:focus-visible,
+  .walk-node:focus-visible,
+  .mini-details summary:focus-visible{
+    outline:2px solid var(--blue);
+    outline-offset:2px;
+  }
+
+  .shell{
+    max-width:calc(var(--max) + 48px);
+    margin:0 auto;
+    padding:14px 24px 48px;
+  }
+  .mobile-tabs{
+    display:none;gap:4px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;padding-bottom:2px
+  }
+  .mobile-tabs::-webkit-scrollbar{display:none}
+  .mobile-tabs a{
+    white-space:nowrap;padding:6px 10px;border-radius:6px;border:1px solid var(--line);
+    background:var(--panel);color:var(--subtle);font-size:.8rem;
+  }
+  .mobile-tabs a.active{background:#E2E7EF;border-color:#B8BFCC;color:var(--text)}
+
+  .docs-layout{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:0 28px;
+    align-items:start;
+  }
+  .sidebar{
+    position:sticky;
+    top:calc(var(--nav-h) + 14px);
+    height:fit-content;
+    max-height:calc(100vh - var(--nav-h) - 28px);
+    overflow-y:auto;
+    padding:14px 12px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    background:var(--panel);
+    scrollbar-width:thin;
+    scrollbar-color:var(--line) transparent;
+  }
+  .sidebar::-webkit-scrollbar{width:4px}
+  .sidebar::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+  .sidebar-group{margin-bottom:12px}
+  .sidebar-group:last-child{margin-bottom:0}
+  .sidebar-label{
+    font:.62rem/1 "JetBrains Mono",monospace;
+    color:var(--subtle);text-transform:uppercase;
+    letter-spacing:.1em;padding:0 10px;margin-bottom:6px;
+  }
+  .sidebar a{
+    display:block;padding:7px 10px;border-radius:6px;
+    font-size:.82rem;color:var(--muted);
+    transition:all .15s;margin-bottom:2px;
+    text-decoration:none;
+  }
+  .sidebar a:hover{background:var(--panel-3);color:var(--text)}
+  .sidebar a.active{background:var(--panel-3);color:var(--text);font-weight:600}
+  .sidebar .sub-link{padding-left:22px;font-size:.78rem}
+  .sidebar-divider{
+    height:1px;background:var(--line);margin:8px 10px;
+  }
+  .docs-content{min-width:0}
+
+  main{display:grid;gap:14px;min-width:0}
+  section{
+    scroll-margin-top:calc(var(--nav-h) + 12px);
+    border:1px solid var(--line);
+    border-radius:var(--radius-xl);
+    background:var(--panel);
+    box-shadow:var(--shadow);
+    padding:24px;
+    width:100%;
+    min-width:0;
+  }
+  .section-head{margin-bottom:16px}
+  .section-title{
+    margin:0;
+    font-size:1.14rem;
+    font-weight:700;
+    letter-spacing:-.03em;
+  }
+  .section-desc{
+    margin:6px 0 0;
+    max-width:72ch;
+    color:var(--subtle);
+    font-size:.86rem;
+    line-height:1.55;
+  }
+  .section-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:8px;
+  }
+  .section-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:4px 8px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--subtle);
+    font:.62rem/1 "JetBrains Mono",monospace;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+  }
+  .section-chip img{
+    width:14px;
+    height:14px;
+    object-fit:contain;
+    flex:0 0 auto;
+  }
+  .section-chip .logo-dot{
+    width:14px;
+    height:14px;
+    font-size:.44rem;
+  }
+  .section-chip.brand-sourcekit{
+    border-color:rgba(0,110,230,.38) !important;
+    background:rgba(0,110,230,.09) !important;
+    color:#005CC1 !important;
+  }
+  .section-chip.brand-exa{
+    border-color:rgba(59,130,246,.36) !important;
+    background:rgba(59,130,246,.09) !important;
+    color:#1D4ED8 !important;
+  }
+  .section-chip.brand-claude{
+    border-color:rgba(249,115,22,.36) !important;
+    background:rgba(249,115,22,.09) !important;
+    color:#C2410C !important;
+  }
+  .section-chip.brand-harmonic{
+    border-color:rgba(239,93,69,.36) !important;
+    background:rgba(239,93,69,.09) !important;
+    color:#C2410C !important;
+  }
+  .section-chip.brand-parallel{
+    border-color:rgba(124,58,237,.36) !important;
+    background:rgba(124,58,237,.09) !important;
+    color:#6D28D9 !important;
+  }
+  .section-chip.brand-github{
+    border-color:rgba(17,158,47,.36) !important;
+    background:rgba(17,158,47,.09) !important;
+    color:#047857 !important;
+  }
+  section.section-tone-orange{border-top:3px solid var(--orange)}
+  section.section-tone-blue{border-top:3px solid var(--blue)}
+  section.section-tone-green{border-top:3px solid var(--green)}
+  section.section-tone-purple{border-top:3px solid var(--purple)}
+  section.section-tone-red{border-top:3px solid var(--red)}
+  section.section-tone-slate{border-top:3px solid #334155}
+
+  .hero{
+    background:linear-gradient(180deg,#DDE3ED 0%,#E9EDF4 100%);
+    padding:32px 28px;
+  }
+  .eyebrow{
+    display:inline-flex;
+    padding:4px 8px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--subtle);
+    font:600 .66rem/1 "JetBrains Mono",monospace;
+    margin-bottom:12px;
+  }
+  h1{
+    margin:0 0 10px;
+    font-size:clamp(1.6rem,3.3vw,2.3rem);
+    line-height:1.06;
+    letter-spacing:-.04em;
+    font-weight:800;
+  }
+  .lede{
+    margin:0 0 14px;
+    max-width:64ch;
+    color:var(--muted);
+    line-height:1.58;
+    font-size:.93rem;
+  }
+  .hero-tags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px;
+  }
+  .hero-tag{
+    padding:4px 8px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:var(--panel);
+    font:.62rem/1 "JetBrains Mono",monospace;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .hero-ctas{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:12px 0 2px;
+  }
+  .cta-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:8px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--panel);
+    color:var(--text);
+    font:600 .74rem/1 "JetBrains Mono",monospace;
+    letter-spacing:.02em;
+    text-transform:uppercase;
+  }
+  .cta-btn:hover{border-color:var(--line-2)}
+  .cta-btn.primary{
+    background:linear-gradient(180deg,#147ef5,#006EE6);
+    border-color:#005cc1;
+    color:#f8fbff;
+  }
+  .cta-btn.primary:hover{filter:brightness(.98)}
+  .logo-strip{
+    margin-top:14px;
+    display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:6px;
+  }
+  .logo-tile{
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--panel);
+    display:flex;
+    align-items:center;
+    gap:7px;
+    padding:8px 9px;
+  }
+  .logo-tile .logo-mark{
+    width:16px;
+    height:16px;
+    object-fit:contain;
+    flex:0 0 auto;
+  }
+  .logo-name{
+    font:.64rem/1 "JetBrains Mono",monospace;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    white-space:nowrap;
+  }
+  .logo-tile.sourcekit{border-color:rgba(0,110,230,.35);background:linear-gradient(180deg,rgba(0,110,230,.1),rgba(0,213,193,.05))}
+  .logo-tile-wordmark{justify-content:center;gap:0}
+  .logo-tile-wordmark .logo-mark-word{width:auto;max-width:112px;height:22px}
+  .logo-tile-wordmark .logo-name{display:none}
+  .logo-tile.exa{border-color:rgba(59,130,246,.35);background:linear-gradient(180deg,rgba(59,130,246,.09),rgba(59,130,246,.03))}
+  .logo-tile.claude{border-color:rgba(249,115,22,.35);background:linear-gradient(180deg,rgba(249,115,22,.1),rgba(249,115,22,.03))}
+  .logo-tile.harmonic{border-color:rgba(239,93,69,.35);background:linear-gradient(180deg,rgba(239,93,69,.1),rgba(239,93,69,.03))}
+  .logo-tile.parallel{border-color:rgba(124,58,237,.35);background:linear-gradient(180deg,rgba(124,58,237,.11),rgba(124,58,237,.03))}
+  .logo-tile.github{border-color:rgba(17,158,47,.35);background:linear-gradient(180deg,rgba(17,158,47,.12),rgba(17,158,47,.03))}
+  .logo-dot{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    font:700 .58rem/1 "JetBrains Mono",monospace;
+    color:#fff;
+    background:#111827;
+    flex:0 0 auto;
+  }
+
+  .vp-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+  }
+  .vp-card{
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    background:var(--panel-2);
+    padding:14px;
+  }
+  .vp-metric{
+    margin:0 0 4px;
+    font-size:1.5rem;
+    line-height:1;
+    letter-spacing:-.03em;
+    font-weight:800;
+  }
+  .vp-label{
+    margin:0 0 5px;
+    color:var(--subtle);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font:.62rem/1 "JetBrains Mono",monospace;
+  }
+  .vp-copy{margin:0;color:var(--muted);font-size:.82rem;line-height:1.48}
+  .quick-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+  }
+  .quick-card{
+    border:1px solid var(--line);
+    border-left:3px solid transparent;
+    border-radius:var(--radius-md);
+    background:var(--panel-2);
+    padding:12px;
+    display:grid;
+    gap:7px;
+  }
+  .quick-card.tone-green{border-left-color:var(--green);background:linear-gradient(180deg,rgba(0,213,193,.1),rgba(0,213,193,.03))}
+  .quick-card.tone-blue{border-left-color:var(--blue);background:linear-gradient(180deg,rgba(59,130,246,.1),rgba(59,130,246,.03))}
+  .quick-card.tone-purple{border-left-color:var(--purple);background:linear-gradient(180deg,rgba(139,92,246,.1),rgba(139,92,246,.03))}
+  .quick-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:6px;
+  }
+  .quick-title{
+    margin:0;
+    font-size:.84rem;
+    line-height:1.2;
+    letter-spacing:-.01em;
+  }
+  .quick-badge{
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:var(--panel);
+    padding:2px 6px;
+    color:var(--subtle);
+    font:.56rem/1 "JetBrains Mono",monospace;
+    white-space:nowrap;
+  }
+  .quick-card.tone-green .quick-badge{
+    border-color:rgba(0,213,193,.35);
+    background:rgba(0,213,193,.1);
+    color:#047857;
+  }
+  .quick-card.tone-blue .quick-badge{
+    border-color:rgba(59,130,246,.35);
+    background:rgba(59,130,246,.1);
+    color:#1D4ED8;
+  }
+  .quick-card.tone-purple .quick-badge{
+    border-color:rgba(124,58,237,.35);
+    background:rgba(124,58,237,.1);
+    color:#6D28D9;
+  }
+  .quick-row{
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--panel);
+    padding:7px 8px;
+  }
+  .quick-label{
+    margin:0 0 2px;
+    color:var(--subtle);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font:.58rem/1 "JetBrains Mono",monospace;
+  }
+  .quick-copy{margin:0;color:var(--muted);font-size:.75rem;line-height:1.44}
+
+  .walk-track{
+    display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .walk-node{
+    text-align:left;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px;
+    background:var(--panel-2);
+    cursor:pointer;
+    transition:border-color .15s,transform .15s,background .15s;
+  }
+  .walk-node:hover{border-color:var(--line-2);transform:translateY(-1px)}
+  .walk-node.is-active{
+    border-color:var(--text);
+    background:var(--panel);
+  }
+  .walk-step{
+    display:block;
+    color:var(--subtle);
+    font:.62rem/1 "JetBrains Mono",monospace;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin-bottom:5px;
+  }
+  .walk-title{
+    display:block;
+    font-size:.79rem;
+    line-height:1.3;
+    font-weight:700;
+    color:var(--text);
+  }
+  .walk-panels{
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    overflow:hidden;
+    background:var(--panel-2);
+  }
+  .walk-panel{display:none;padding:16px}
+  .walk-panel.is-active{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}
+  .walk-kicker{
+    color:var(--subtle);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font:.62rem/1 "JetBrains Mono",monospace;
+    margin-bottom:6px;
+  }
+  .walk-head{
+    margin:0 0 6px;
+    font-size:.98rem;
+    line-height:1.25;
+    letter-spacing:-.02em;
+  }
+  .walk-copy{margin:0;color:var(--muted);font-size:.84rem;line-height:1.52}
+  .mini-list{
+    margin:0;
+    padding-left:14px;
+    display:grid;
+    gap:3px;
+    color:var(--muted);
+    font-size:.78rem;
+    line-height:1.43;
+  }
+  .mini-details{
+    margin-top:8px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:var(--panel);
+    padding:6px 8px;
+  }
+  .mini-details summary{
+    cursor:pointer;
+    color:var(--subtle);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font:.58rem/1 "JetBrains Mono",monospace;
+  }
+  .mini-details p{
+    margin:6px 0 0;
+    color:var(--muted);
+    font-size:.75rem;
+    line-height:1.42;
+  }
+  .walk-meta{
+    border-left:1px solid var(--line);
+    padding-left:14px;
+    display:grid;
+    gap:10px;
+    align-content:start;
+  }
+  .meta-box{
+    border:1px solid var(--line);
+    background:var(--panel);
+    border-radius:8px;
+    padding:10px;
+  }
+  .meta-label{
+    margin:0 0 4px;
+    color:var(--subtle);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font:.6rem/1 "JetBrains Mono",monospace;
+  }
+  .meta-copy{margin:0;color:var(--muted);font-size:.78rem;line-height:1.48}
+
+  .feature-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .feature-card{
+    border:1px solid var(--line);
+    border-left:3px solid transparent;
+    border-radius:var(--radius-md);
+    background:var(--panel-2);
+    padding:14px;
+  }
+  .feature-card.tone-orange{border-left-color:var(--orange)}
+  .feature-card.tone-blue{border-left-color:var(--blue)}
+  .feature-card.tone-green{border-left-color:var(--green)}
+  .feature-card.tone-purple{border-left-color:var(--purple)}
+  .feature-card.tone-red{border-left-color:var(--red)}
+  .feature-card.tone-slate{border-left-color:#334155}
+  .feature-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .feature-main{display:flex;align-items:center;gap:8px;min-width:0}
+  .feature-logo{width:17px;height:17px;object-fit:contain;flex:0 0 auto}
+  .feature-dot{
+    width:17px;
+    height:17px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    font:700 .58rem/1 "JetBrains Mono",monospace;
+    color:#fff;
+    background:#111827;
+    flex:0 0 auto;
+  }
+  .feature-title{margin:0;font-size:.95rem;letter-spacing:-.01em}
+  .feature-tag{
+    padding:3px 6px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--subtle);
+    font:.6rem/1 "JetBrains Mono",monospace;
+  }
+  .feature-card.tone-orange .feature-tag{
+    border-color:rgba(249,115,22,.35);
+    background:rgba(249,115,22,.1);
+    color:#C2410C;
+  }
+  .feature-card.tone-blue .feature-tag{
+    border-color:rgba(59,130,246,.35);
+    background:rgba(59,130,246,.1);
+    color:#1D4ED8;
+  }
+  .feature-card.tone-green .feature-tag{
+    border-color:rgba(0,213,193,.35);
+    background:rgba(0,213,193,.1);
+    color:#047857;
+  }
+  .feature-card.tone-purple .feature-tag{
+    border-color:rgba(124,58,237,.35);
+    background:rgba(124,58,237,.1);
+    color:#6D28D9;
+  }
+  .feature-card.tone-red .feature-tag{
+    border-color:rgba(239,93,69,.35);
+    background:rgba(239,93,69,.1);
+    color:#C2410C;
+  }
+  .feature-card.tone-slate .feature-tag{
+    border-color:rgba(51,65,85,.35);
+    background:rgba(51,65,85,.1);
+    color:#334155;
+  }
+  .feature-list{
+    margin:0;
+    padding-left:16px;
+    color:var(--muted);
+    font-size:.82rem;
+    line-height:1.48;
+    display:grid;
+    gap:4px;
+  }
+
+  .best-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .best-col{
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    background:var(--panel-2);
+    padding:14px;
+  }
+  .best-head{
+    margin:0 0 10px;
+    font:.68rem/1 "JetBrains Mono",monospace;
+    text-transform:uppercase;
+    letter-spacing:.09em;
+    color:var(--subtle);
+  }
+  .best-item{
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--panel);
+    padding:9px 10px;
+  }
+  .best-item + .best-item{margin-top:7px}
+  .best-title{margin:0 0 3px;font-size:.83rem;letter-spacing:-.01em}
+  .best-copy{margin:0;color:var(--muted);font-size:.77rem;line-height:1.45}
+
+  .signals-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .signal-card{
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    background:var(--panel-2);
+    padding:12px;
+    display:grid;
+    gap:8px;
+  }
+  .signal-role{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .signal-role-title{
+    margin:0;
+    font-size:.86rem;
+    letter-spacing:-.01em;
+  }
+  .signal-role-tag{
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:var(--panel);
+    color:var(--subtle);
+    padding:3px 7px;
+    font:.58rem/1 "JetBrains Mono",monospace;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+  .signal-list{
+    margin:0;
+    padding-left:16px;
+    color:var(--muted);
+    font-size:.78rem;
+    line-height:1.46;
+    display:grid;
+    gap:4px;
+  }
+  .signal-value-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+  }
+  .signal-value-card{
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:linear-gradient(180deg,rgba(0,110,230,.08),rgba(0,110,230,.02));
+    padding:10px 11px;
+  }
+  .signal-value-head{
+    margin:0 0 3px;
+    color:#005CC1;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font:.62rem/1 "JetBrains Mono",monospace;
+  }
+  .signal-value-copy{
+    margin:0;
+    color:var(--muted);
+    font-size:.77rem;
+    line-height:1.46;
+  }
+
+  .eea-grid{
+    display:grid;
+    grid-template-columns:1.15fr .85fr;
+    gap:8px;
+  }
+  .eea-card{
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    background:var(--panel-2);
+    padding:14px;
+  }
+  .eea-card-head{
+    margin:0 0 10px;
+    color:var(--subtle);
+    text-transform:uppercase;
+    letter-spacing:.09em;
+    font:.66rem/1 "JetBrains Mono",monospace;
+  }
+  .criteria-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+  }
+  .criteria-role{
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--panel);
+    padding:9px 10px;
+  }
+  .criteria-title{
+    margin:0 0 5px;
+    font-size:.82rem;
+    letter-spacing:-.01em;
+  }
+  .criteria-list{
+    margin:0;
+    padding-left:14px;
+    color:var(--muted);
+    font-size:.75rem;
+    line-height:1.42;
+    display:grid;
+    gap:3px;
+  }
+  .webset-steps{
+    display:grid;
+    gap:7px;
+  }
+  .webset-step{
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--panel);
+    padding:9px 10px;
+  }
+  .webset-step-head{
+    margin:0 0 3px;
+    font-size:.8rem;
+    letter-spacing:-.01em;
+  }
+  .webset-step-copy{
+    margin:0;
+    color:var(--muted);
+    font-size:.75rem;
+    line-height:1.43;
+  }
+
+  .recipes-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .recipe{
+    border:1px solid var(--line);
+    border-left:3px solid transparent;
+    border-radius:var(--radius-md);
+    background:var(--panel-2);
+    padding:14px;
+    display:grid;
+    gap:8px;
+  }
+  .recipe.tone-blue{border-left-color:var(--blue);background:linear-gradient(180deg,rgba(59,130,246,.09),rgba(59,130,246,.03))}
+  .recipe.tone-orange{border-left-color:var(--orange);background:linear-gradient(180deg,rgba(249,115,22,.11),rgba(249,115,22,.03))}
+  .recipe.tone-purple{border-left-color:var(--purple);background:linear-gradient(180deg,rgba(139,92,246,.1),rgba(139,92,246,.03))}
+  .recipe.tone-red{border-left-color:var(--red);background:linear-gradient(180deg,rgba(239,68,68,.1),rgba(239,68,68,.03))}
+  .recipe-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .recipe-main{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    min-width:0;
+  }
+  .recipe-logo{
+    width:20px;
+    height:20px;
+    object-fit:contain;
+    flex:0 0 auto;
+  }
+  .recipe-badge{
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:var(--panel);
+    padding:3px 7px;
+    color:var(--subtle);
+    font:.6rem/1 "JetBrains Mono",monospace;
+    white-space:nowrap;
+  }
+  .recipe-title{
+    margin:0;
+    font-size:.94rem;
+    letter-spacing:-.02em;
+  }
+  .recipe-row{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:8px}
+  .recipe-label{
+    margin:0 0 3px;
+    color:var(--subtle);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font:.6rem/1 "JetBrains Mono",monospace;
+  }
+  .recipe-copy{margin:0;color:var(--muted);font-size:.78rem;line-height:1.46}
+  .recipe-kpis{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:6px;
+  }
+  .recipe-kpi{
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:var(--panel);
+    padding:6px 7px;
+  }
+  .recipe-kpi-label{
+    margin:0 0 2px;
+    color:var(--subtle);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font:.58rem/1 "JetBrains Mono",monospace;
+  }
+  .recipe-kpi-value{
+    margin:0;
+    color:var(--text);
+    font-size:.75rem;
+    line-height:1.3;
+    font-weight:700;
+  }
+
+  .template-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .template{
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    background:var(--panel-2);
+    overflow:hidden;
+  }
+  .template-head{
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+  }
+  .template-title{margin:0;font-size:.83rem;letter-spacing:-.01em}
+  .template-body{padding:10px 12px}
+  .template code{
+    display:block;
+    white-space:pre-wrap;
+    color:var(--text);
+    font:500 .73rem/1.45 "JetBrains Mono",monospace;
+  }
+  #templates{
+    border-color:#aeb8ce;
+    background:
+      radial-gradient(1200px 360px at 20% -40%, rgba(229,110,76,.18), transparent 60%),
+      radial-gradient(900px 320px at 90% -30%, rgba(46,78,224,.16), transparent 58%),
+      linear-gradient(180deg,#d8dde8 0%,#d3d9e5 100%);
+  }
+  #templates .section-desc{color:#5a6478}
+  #templates .section-chip{
+    border-color:#aeb8ce;
+    background:rgba(244,247,255,.65);
+    color:#5f687a;
+  }
+  #templates .template-grid{gap:10px}
+  #templates .template{
+    border-color:#aeb8ce;
+    border-radius:14px;
+    background:#eef2f9;
+    box-shadow:0 10px 26px rgba(15,23,42,.07);
+  }
+  #templates .template-head{
+    padding:13px 14px;
+    border-bottom:1px solid #aeb8ce;
+    background:linear-gradient(180deg,rgba(255,255,255,.52),rgba(255,255,255,.2));
+  }
+  #templates .template-title{
+    font-size:.86rem;
+    letter-spacing:-.01em;
+  }
+  #templates .feature-tag{
+    border-color:#aeb8ce;
+    background:#e2e8f7;
+    color:#606a7d;
+  }
+  #templates .template-body{padding:0}
+  #templates .template code{
+    min-height:238px;
+    padding:14px 14px 15px;
+    background:#303743;
+    color:#e6edf8;
+    border-top:1px solid rgba(255,255,255,.06);
+    border-left:1px solid #7f8ca4;
+    border-right:1px solid #7f8ca4;
+    border-bottom:1px solid #7f8ca4;
+    font-size:.69rem;
+    line-height:1.48;
+  }
+  #templates .template:nth-child(1) .template-head{
+    background:
+      linear-gradient(180deg,rgba(59,130,246,.16),rgba(59,130,246,.05)),
+      linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.2));
+  }
+  #templates .template:nth-child(2) .template-head{
+    background:
+      linear-gradient(180deg,rgba(229,110,76,.18),rgba(229,110,76,.06)),
+      linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.2));
+  }
+  .worked-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .worked-card{
+    border:1px solid var(--line);
+    border-left:3px solid transparent;
+    border-radius:var(--radius-md);
+    background:var(--panel-2);
+    padding:13px;
+    display:grid;
+    gap:8px;
+  }
+  .worked-card.tone-blue{border-left-color:var(--blue);background:linear-gradient(180deg,rgba(59,130,246,.1),rgba(59,130,246,.03))}
+  .worked-card.tone-orange{border-left-color:var(--orange);background:linear-gradient(180deg,rgba(249,115,22,.1),rgba(249,115,22,.03))}
+  .worked-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .worked-title{
+    margin:0;
+    font-size:.9rem;
+    letter-spacing:-.01em;
+  }
+  .criteria-compare{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+  }
+  .compare-box{
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--panel);
+    padding:7px 8px;
+  }
+  .compare-box.bad{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.06)}
+  .compare-box.good{border-color:rgba(0,213,193,.4);background:rgba(0,213,193,.07)}
+  .compare-label{
+    margin:0 0 2px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font:.58rem/1 "JetBrains Mono",monospace;
+    color:var(--subtle);
+  }
+  .compare-copy{margin:0;color:var(--muted);font-size:.74rem;line-height:1.42}
+  .trust-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+  }
+  .trust-col{
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    background:var(--panel-2);
+    padding:12px;
+  }
+  .trust-head{
+    margin:0 0 7px;
+    color:var(--subtle);
+    text-transform:uppercase;
+    letter-spacing:.09em;
+    font:.64rem/1 "JetBrains Mono",monospace;
+  }
+  .trust-list{
+    margin:0;
+    padding-left:15px;
+    color:var(--muted);
+    font-size:.78rem;
+    line-height:1.44;
+    display:grid;
+    gap:4px;
+  }
+  .actions-grid{
+    display:grid;
+    grid-template-columns:1fr auto auto;
+    gap:8px;
+    align-items:center;
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    background:linear-gradient(180deg,rgba(0,213,193,.08),rgba(0,213,193,.03));
+    padding:12px;
+  }
+  .actions-copy{
+    margin:0;
+    color:var(--muted);
+    font-size:.82rem;
+    line-height:1.45;
+  }
+
+  .footer-note{
+    border:1px dashed var(--line-2);
+    border-radius:10px;
+    background:var(--panel-2);
+    padding:10px 12px;
+    color:var(--muted);
+    font-size:.79rem;
+    line-height:1.45;
+  }
+
+  @media (max-width:980px){
+    .docs-layout{grid-template-columns:1fr}
+    .sidebar{display:none}
+    .topnav{display:none}
+    .mobile-tabs{display:flex}
+  }
+  @media (max-width:900px){
+    .walk-track{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .walk-panel.is-active{grid-template-columns:1fr}
+    .walk-meta{border-left:none;border-top:1px solid var(--line);padding-left:0;padding-top:12px}
+    .vp-grid,.quick-grid,.signals-grid,.feature-grid,.best-grid,.eea-grid,.criteria-grid,.recipes-grid,.template-grid,.worked-grid,.trust-grid,.signal-value-grid{grid-template-columns:1fr}
+    .recipe-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .criteria-compare{grid-template-columns:1fr}
+    .actions-grid{grid-template-columns:1fr}
+    .logo-strip{grid-template-columns:repeat(3,minmax(0,1fr))}
+  }
+  @media (max-width:640px){
+    .topbar-inner{padding:0 12px}
+    .brand-text{font-size:.84rem}
+    .brand-sub{font-size:.6rem}
+    .shell{padding:10px 12px 40px}
+    section{padding:18px}
+    .hero{padding:22px}
+    .mobile-tabs{padding-right:10px}
+    .mobile-tabs a{padding:8px 11px;min-height:40px;display:inline-flex;align-items:center}
+    .cta-btn{min-height:40px;padding:9px 12px}
+    .walk-node{min-height:72px}
+    .walk-track{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .recipe-kpis{grid-template-columns:1fr}
+    .logo-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .topnav{display:none}
+  }
+  @media (max-width:380px){
+    .shell{padding:10px 10px 36px}
+    section{padding:16px}
+    .hero{padding:18px}
+    .logo-strip{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <img class="brand-logo-full" src="./assets/logos/sourcekit-full.svg" alt="SourceKit logo">
+        <div class="brand-copy">
+          <div class="brand-text">Docs</div>
+          <div class="brand-sub">User reference guide</div>
+        </div>
+      </div>
+      <nav class="topnav" id="topnav" aria-label="Primary sections"></nav>
+    </div>
+  </header>
+
+  <div class="shell">
+    <div class="mobile-tabs" id="mobile-tabs" aria-label="Section shortcuts"></div>
+
+    <div class="docs-layout">
+      <nav class="sidebar" id="doc-sidebar">
+        <div class="sidebar-group">
+          <a href="#overview" class="active">Overview</a>
+          <a href="#quick-start">Quick start</a>
+          <a href="#value">Value proposition</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-group">
+          <div class="sidebar-label">Core Flow</div>
+          <a href="#walkthrough">End-to-end walkthrough</a>
+          <a href="#features">Feature reference</a>
+          <a href="#eea-suggested">Suggested EEA signals</a>
+          <a href="#best">Operator playbook</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-group">
+          <div class="sidebar-label">Frameworks</div>
+          <a href="#eea-websets">EEA + Webset guidance</a>
+          <a href="#use-cases">Use case recipes</a>
+          <a href="#worked-examples">Worked examples</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-group">
+          <div class="sidebar-label">Assets</div>
+          <a href="#trust">Trust boundaries</a>
+          <a href="#templates">Starter templates</a>
+          <a href="#actions">Next actions</a>
+        </div>
+      </nav>
+      <div class="docs-content">
+      <main>
+        <section class="hero" id="overview">
+          <div class="eyebrow">Shareable product description</div>
+          <h1>SourceKit finds engineers by what they've built.</h1>
+          <p class="lede">SourceKit is an evidence-first sourcing system for technical hiring. You start with a role or JD, SourceKit turns it into a discovery plan, verifies signal across GitHub and market context, then returns a ranked pipeline that is ready for outreach.</p>
+          <div class="hero-tags">
+            <span class="hero-tag">artifact-first discovery</span>
+            <span class="hero-tag">EEA criteria support</span>
+            <span class="hero-tag">persistent Websets</span>
+            <span class="hero-tag">parallel company graph</span>
+            <span class="hero-tag">ranked candidate pipeline</span>
+          </div>
+          <div class="hero-ctas">
+            <a class="cta-btn primary" href="#quick-start">Run your first search</a>
+            <button class="cta-btn" type="button" data-copy-target="role-intake-template">Copy role intake template</button>
+          </div>
+          <div class="logo-strip" aria-label="Core stack logos">
+            <div class="logo-tile sourcekit logo-tile-wordmark"><img class="logo-mark logo-mark-word" src="./assets/logos/sourcekit-full.svg" alt="SourceKit"><span class="logo-name">SourceKit</span></div>
+            <div class="logo-tile exa logo-tile-wordmark"><img class="logo-mark logo-mark-word" src="./assets/logos/exa-full.svg" alt="Exa"><span class="logo-name">Exa</span></div>
+            <div class="logo-tile claude logo-tile-wordmark"><img class="logo-mark logo-mark-word" src="./assets/logos/claude-full.svg" alt="Claude"><span class="logo-name">Claude</span></div>
+            <div class="logo-tile harmonic logo-tile-wordmark"><img class="logo-mark logo-mark-word" src="./assets/logos/harmonic-full.svg" alt="Harmonic"><span class="logo-name">Harmonic</span></div>
+            <div class="logo-tile parallel logo-tile-wordmark"><img class="logo-mark logo-mark-word" src="./assets/logos/parallel-full.svg" alt="Parallel"><span class="logo-name">Parallel</span></div>
+            <div class="logo-tile github logo-tile-wordmark"><img class="logo-mark logo-mark-word" src="./assets/logos/github-full.svg" alt="GitHub"><span class="logo-name">GitHub</span></div>
+          </div>
+        </section>
+
+        <section id="quick-start" class="section-tone-green">
+          <div class="section-head">
+            <div class="section-meta">
+              <span class="section-chip"><img src="./assets/logos/sourcekit-mark-new.svg" alt="">Quick Start</span>
+              <span class="section-chip">10 minutes</span>
+            </div>
+            <h2 class="section-title">Quick start paths</h2>
+            <p class="section-desc">Pick one input path, get ranked candidates, and take one clear first action.</p>
+          </div>
+          <div class="quick-grid">
+            <article class="quick-card tone-green">
+              <div class="quick-top"><h3 class="quick-title">Role + Company</h3><span class="quick-badge">Fastest</span></div>
+              <div class="quick-row"><p class="quick-label">Input</p><p class="quick-copy">`Staff Backend Engineer` + target company context.</p></div>
+              <div class="quick-row"><p class="quick-label">Expected output</p><p class="quick-copy">Repo set, shortlist of contributor-led candidates, score distribution.</p></div>
+              <div class="quick-row"><p class="quick-label">First action</p><p class="quick-copy">Edit top repos before running outreach.</p></div>
+            </article>
+            <article class="quick-card tone-blue">
+              <div class="quick-top"><h3 class="quick-title">Full JD</h3><span class="quick-badge">Most complete</span></div>
+              <div class="quick-row"><p class="quick-label">Input</p><p class="quick-copy">Paste full JD with stack, seniority, and constraints.</p></div>
+              <div class="quick-row"><p class="quick-label">Expected output</p><p class="quick-copy">Criteria draft + market-adjacent discovery + stronger filtering.</p></div>
+              <div class="quick-row"><p class="quick-label">First action</p><p class="quick-copy">Convert top criteria to binary EEA checks.</p></div>
+            </article>
+            <article class="quick-card tone-purple">
+              <div class="quick-top"><h3 class="quick-title">Job URL</h3><span class="quick-badge">Operational</span></div>
+              <div class="quick-row"><p class="quick-label">Input</p><p class="quick-copy">Paste Lever/Greenhouse/Ashby link.</p></div>
+              <div class="quick-row"><p class="quick-label">Expected output</p><p class="quick-copy">Autoparsed scope, ranked candidates, Webset-ready criteria.</p></div>
+              <div class="quick-row"><p class="quick-label">First action</p><p class="quick-copy">Promote durable searches into a weekly Webset.</p></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="eea-suggested" class="section-tone-purple">
+          <div class="section-head">
+            <div class="section-meta">
+              <span class="section-chip"><img src="./assets/logos/sourcekit-mark-new.svg" alt="">Auto-suggested EEA</span>
+              <span class="section-chip"><img src="./assets/logos/exa-mark.svg" alt="">Every search run</span>
+            </div>
+            <h2 class="section-title">Suggested EEA signals are added for every search</h2>
+            <p class="section-desc">If strategy output has no usable EEA criteria, SourceKit seeds 3-5 draft checks you can edit before creating a Webset. This keeps every search evidence-first by default.</p>
+          </div>
+          <div class="signals-grid">
+            <article class="signal-card">
+              <div class="signal-role"><h3 class="signal-role-title">Founding ML Engineer</h3><span class="signal-role-tag">ML + infra</span></div>
+              <ul class="signal-list">
+                <li>Contribution ownership in core repos (maintainer/reviewer/top contributor).</li>
+                <li>Production ML system ownership with reliability/scale evidence.</li>
+                <li>Model-infrastructure depth across training/serving/tooling surfaces.</li>
+                <li>Public technical artifact tied to shipped ML work.</li>
+              </ul>
+            </article>
+            <article class="signal-card">
+              <div class="signal-role"><h3 class="signal-role-title">Staff Backend (Distributed)</h3><span class="signal-role-tag">Systems</span></div>
+              <ul class="signal-list">
+                <li>Contribution ownership in distributed systems repos.</li>
+                <li>Reliability/latency/throughput improvement ownership.</li>
+                <li>Maintainer/reviewer/RFC-author behavior on infra projects.</li>
+                <li>Recent shipped impact in the last 12 months.</li>
+              </ul>
+            </article>
+            <article class="signal-card">
+              <div class="signal-role"><h3 class="signal-role-title">Security Engineer</h3><span class="signal-role-tag">Security</span></div>
+              <ul class="signal-list">
+                <li>Security remediation ownership (CVE/advisory/critical patch).</li>
+                <li>Public security artifact (talk, writeup, audit, or analysis).</li>
+                <li>Contribution ownership in security-focused repositories.</li>
+                <li>Recent shipped security impact with public proof.</li>
+              </ul>
+            </article>
+            <article class="signal-card">
+              <div class="signal-role"><h3 class="signal-role-title">Staff Frontend Platform</h3><span class="signal-role-tag">Frontend</span></div>
+              <ul class="signal-list">
+                <li>Framework/tooling contribution beyond app-level changes.</li>
+                <li>Platform performance or build-system ownership evidence.</li>
+                <li>Contribution ownership in shared frontend surfaces.</li>
+                <li>Public artifact showing cross-team DX impact.</li>
+              </ul>
+            </article>
+          </div>
+          <div class="signal-value-grid">
+            <article class="signal-value-card">
+              <p class="signal-value-head">Value: Faster setup</p>
+              <p class="signal-value-copy">Operators start from concrete criteria in every run instead of writing EEA checks from scratch.</p>
+            </article>
+            <article class="signal-value-card">
+              <p class="signal-value-head">Value: Lower noise</p>
+              <p class="signal-value-copy">Binary evidence criteria reduce false positives before scoring and outreach effort accumulates.</p>
+            </article>
+            <article class="signal-value-card">
+              <p class="signal-value-head">Value: Better spend</p>
+              <p class="signal-value-copy">Verification-first criteria keep enrichment and outreach spend focused on candidates with proof.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="value" class="section-tone-blue">
+          <div class="section-head">
+            <div class="section-meta">
+              <span class="section-chip"><img src="./assets/logos/exa-mark.svg" alt="">Value</span>
+            </div>
+            <h2 class="section-title">Value proposition</h2>
+            <p class="section-desc">Why teams use SourceKit instead of title search and static LinkedIn filters.</p>
+          </div>
+          <div class="vp-grid">
+            <article class="vp-card">
+              <p class="vp-label">Hidden gem rate</p>
+              <p class="vp-metric">~40%</p>
+              <p class="vp-copy">Top candidates often have limited profile visibility. Artifact-led discovery surfaces strong builders before they become heavily recruited.</p>
+            </article>
+            <article class="vp-card">
+              <p class="vp-label">Pipeline behavior</p>
+              <p class="vp-metric">Always on</p>
+              <p class="vp-copy">Websets convert one strong search into a persistent, auto-updating candidate stream with verified entrants.</p>
+            </article>
+            <article class="vp-card">
+              <p class="vp-label">Screening logic</p>
+              <p class="vp-metric">Binary proof</p>
+              <p class="vp-copy">Criteria can be framed as pass/fail against public evidence, reducing soft interpretation and resume-style noise.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="walkthrough" class="section-tone-orange">
+          <div class="section-head">
+            <div class="section-meta">
+              <span class="section-chip"><img src="./assets/logos/claude-mark.svg" alt="">Planning flow</span>
+              <span class="section-chip">6 stages</span>
+            </div>
+            <h2 class="section-title">End-to-end walkthrough</h2>
+            <p class="section-desc">The operating flow from intake to pipeline. Click each stage to view what to do, what the system does, and what success looks like.</p>
+          </div>
+          <div class="walk-track" role="tablist" aria-label="SourceKit end-to-end flow">
+            <button class="walk-node is-active" type="button" role="tab" id="walk-tab-input" aria-controls="walk-panel-input" aria-selected="true" tabindex="0" data-walk-trigger="input"><span class="walk-step">Stage 1</span><span class="walk-title">Input role context</span></button>
+            <button class="walk-node" type="button" role="tab" id="walk-tab-strategy" aria-controls="walk-panel-strategy" aria-selected="false" tabindex="-1" data-walk-trigger="strategy"><span class="walk-step">Stage 2</span><span class="walk-title">Build strategy</span></button>
+            <button class="walk-node" type="button" role="tab" id="walk-tab-discover" aria-controls="walk-panel-discover" aria-selected="false" tabindex="-1" data-walk-trigger="discover"><span class="walk-step">Stage 3</span><span class="walk-title">Run discovery</span></button>
+            <button class="walk-node" type="button" role="tab" id="walk-tab-score" aria-controls="walk-panel-score" aria-selected="false" tabindex="-1" data-walk-trigger="score"><span class="walk-step">Stage 4</span><span class="walk-title">Score candidates</span></button>
+            <button class="walk-node" type="button" role="tab" id="walk-tab-pipeline" aria-controls="walk-panel-pipeline" aria-selected="false" tabindex="-1" data-walk-trigger="pipeline"><span class="walk-step">Stage 5</span><span class="walk-title">Triage pipeline</span></button>
+            <button class="walk-node" type="button" role="tab" id="walk-tab-monitor" aria-controls="walk-panel-monitor" aria-selected="false" tabindex="-1" data-walk-trigger="monitor"><span class="walk-step">Stage 6</span><span class="walk-title">Monitor and export</span></button>
+          </div>
+
+          <div class="walk-panels">
+            <article class="walk-panel is-active" id="walk-panel-input" role="tabpanel" aria-labelledby="walk-tab-input" data-walk-panel="input">
+              <div>
+                <div class="walk-kicker">Operator action</div>
+                <h3 class="walk-head">Start from role input, full JD, or job URL.</h3>
+                <ul class="mini-list">
+                  <li>Input: role statement, full JD, or job URL.</li>
+                  <li>Action: keep stack and constraints explicit.</li>
+                  <li>Output: cleaner repo targeting at planning step.</li>
+                </ul>
+                <details class="mini-details"><summary>Details</summary><p>Specificity at intake is the highest leverage quality control for the entire run.</p></details>
+              </div>
+              <div class="walk-meta">
+                <div class="meta-box"><p class="meta-label">System output</p><p class="meta-copy">Normalized role context for planning APIs.</p></div>
+                <div class="meta-box"><p class="meta-label">Success signal</p><p class="meta-copy">Role statement is precise enough to eliminate generic repo suggestions.</p></div>
+              </div>
+            </article>
+
+            <article class="walk-panel" id="walk-panel-strategy" role="tabpanel" aria-labelledby="walk-tab-strategy" data-walk-panel="strategy" hidden>
+              <div>
+                <div class="walk-kicker">Operator action</div>
+                <h3 class="walk-head">Review and refine repo list, target companies, and EEA criteria.</h3>
+                <ul class="mini-list">
+                  <li>Input: generated repo list and criteria draft.</li>
+                  <li>Action: remove weak repos, tighten criteria.</li>
+                  <li>Output: smaller but higher-signal search universe.</li>
+                </ul>
+                <details class="mini-details"><summary>Details</summary><p>Repo and criteria edits are more impactful than downstream reranking.</p></details>
+              </div>
+              <div class="walk-meta">
+                <div class="meta-box"><p class="meta-label">System output</p><p class="meta-copy">A search plan with repos, criteria, and market targets.</p></div>
+                <div class="meta-box"><p class="meta-label">Success signal</p><p class="meta-copy">Each criterion can be verified from a public artifact.</p></div>
+              </div>
+            </article>
+
+            <article class="walk-panel" id="walk-panel-discover" role="tabpanel" aria-labelledby="walk-tab-discover" data-walk-panel="discover" hidden>
+              <div>
+                <div class="walk-kicker">Operator action</div>
+                <h3 class="walk-head">Launch multi-API discovery to expand recall without losing relevance.</h3>
+                <ul class="mini-list">
+                  <li>Input: approved strategy from stage 2.</li>
+                  <li>Action: run Exa, GitHub, and adjacency discovery.</li>
+                  <li>Output: broader candidate pool with artifact evidence.</li>
+                </ul>
+                <details class="mini-details"><summary>Details</summary><p>This stage finds hidden builders without relaxing criteria quality.</p></details>
+              </div>
+              <div class="walk-meta">
+                <div class="meta-box"><p class="meta-label">System output</p><p class="meta-copy">Candidate pool with artifacts, contribution history, and ecosystem context.</p></div>
+                <div class="meta-box"><p class="meta-label">Success signal</p><p class="meta-copy">Pool includes both obvious and under-recruited builders.</p></div>
+              </div>
+            </article>
+
+            <article class="walk-panel" id="walk-panel-score" role="tabpanel" aria-labelledby="walk-tab-score" data-walk-panel="score" hidden>
+              <div>
+                <div class="walk-kicker">Operator action</div>
+                <h3 class="walk-head">Use Builder Score and EEA checks to rank by technical signal.</h3>
+                <ul class="mini-list">
+                  <li>Input: candidate evidence from discovery layer.</li>
+                  <li>Action: apply score threshold + EEA checks.</li>
+                  <li>Output: shortlist based on shipped work evidence.</li>
+                </ul>
+                <details class="mini-details"><summary>Details</summary><p>Use thresholds to keep review load stable across high-volume searches.</p></details>
+              </div>
+              <div class="walk-meta">
+                <div class="meta-box"><p class="meta-label">System output</p><p class="meta-copy">0-100 candidate ranking with evidence context.</p></div>
+                <div class="meta-box"><p class="meta-label">Success signal</p><p class="meta-copy">Top cohort has visible maintainership or shipped ownership proof.</p></div>
+              </div>
+            </article>
+
+            <article class="walk-panel" id="walk-panel-pipeline" role="tabpanel" aria-labelledby="walk-tab-pipeline" data-walk-panel="pipeline" hidden>
+              <div>
+                <div class="walk-kicker">Operator action</div>
+                <h3 class="walk-head">Move verified matches through sourced, contacted, and screened stages.</h3>
+                <ul class="mini-list">
+                  <li>Input: scored shortlist.</li>
+                  <li>Action: triage in batches by signal strength.</li>
+                  <li>Output: outreach-ready set with context preserved.</li>
+                </ul>
+                <details class="mini-details"><summary>Details</summary><p>Batch movement keeps throughput predictable while maintaining quality gates.</p></details>
+              </div>
+              <div class="walk-meta">
+                <div class="meta-box"><p class="meta-label">System output</p><p class="meta-copy">Operational recruiting board with structured candidate states.</p></div>
+                <div class="meta-box"><p class="meta-label">Success signal</p><p class="meta-copy">Outreach set remains high-signal after first pass screen.</p></div>
+              </div>
+            </article>
+
+            <article class="walk-panel" id="walk-panel-monitor" role="tabpanel" aria-labelledby="walk-tab-monitor" data-walk-panel="monitor" hidden>
+              <div>
+                <div class="walk-kicker">Operator action</div>
+                <h3 class="walk-head">Promote repeatable searches to Websets and export downstream.</h3>
+                <ul class="mini-list">
+                  <li>Input: high-performing criteria set.</li>
+                  <li>Action: create weekly Webset + export channel.</li>
+                  <li>Output: always-on candidate flow.</li>
+                </ul>
+                <details class="mini-details"><summary>Details</summary><p>Websets are highest ROI when role definitions stay stable for multiple weeks.</p></details>
+              </div>
+              <div class="walk-meta">
+                <div class="meta-box"><p class="meta-label">System output</p><p class="meta-copy">Persistent pipeline with refresh cadence and export support.</p></div>
+                <div class="meta-box"><p class="meta-label">Success signal</p><p class="meta-copy">Qualified new entrants appear without rerunning one-off searches.</p></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="features" class="section-tone-blue">
+          <div class="section-head">
+            <div class="section-meta">
+              <span class="section-chip"><img src="./assets/logos/exa-mark.svg" alt="">Discovery layer</span>
+              <span class="section-chip"><img src="./assets/logos/parallel-mark-purple.svg" alt="">Company graph</span>
+              <span class="section-chip"><img src="./assets/logos/harmonic_logo.png" alt="">Context layer</span>
+            </div>
+            <h2 class="section-title">Feature reference</h2>
+            <p class="section-desc">Core capabilities and where they create leverage in the workflow.</p>
+          </div>
+          <div class="feature-grid">
+            <article class="feature-card tone-orange">
+              <div class="feature-top"><div class="feature-main"><img class="feature-logo" src="./assets/logos/claude-mark.svg" alt="Claude"><h3 class="feature-title">Role to Search Strategy</h3></div><span class="feature-tag">Planning</span></div>
+              <ul class="feature-list">
+                <li>Accepts role text, full JD, or job URL.</li>
+                <li>Generates repo targets, company targets, and criteria draft.</li>
+                <li>Supports manual refinement before execution.</li>
+              </ul>
+            </article>
+            <article class="feature-card tone-blue">
+              <div class="feature-top"><div class="feature-main"><img class="feature-logo" src="./assets/logos/exa-mark.svg" alt="Exa"><h3 class="feature-title">Multi-API Discovery Layer</h3></div><span class="feature-tag">Discovery</span></div>
+              <ul class="feature-list">
+                <li>Combines Exa, Parallel, and GitHub signals.</li>
+                <li>Expands discovery through technical and market adjacency.</li>
+                <li>Returns artifact-backed candidate context.</li>
+              </ul>
+            </article>
+            <article class="feature-card tone-green">
+              <div class="feature-top"><div class="feature-main"><img class="feature-logo" src="./assets/logos/sourcekit-mark-new.svg" alt="SourceKit"><h3 class="feature-title">Builder Score Evaluation</h3></div><span class="feature-tag">Scoring</span></div>
+              <ul class="feature-list">
+                <li>Scores candidates 0-100 across contribution dimensions.</li>
+                <li>Weights recency, commit velocity, stack match, and impact.</li>
+                <li>Produces ranked shortlist with evidence markers.</li>
+              </ul>
+            </article>
+            <article class="feature-card tone-purple">
+              <div class="feature-top"><div class="feature-main"><img class="feature-logo" src="./assets/logos/github-green.svg" alt="GitHub"><h3 class="feature-title">Pipeline Workflow</h3></div><span class="feature-tag">Execution</span></div>
+              <ul class="feature-list">
+                <li>Stage-based candidate movement for sourcing operations.</li>
+                <li>Supports compare, summarize, and batch actions.</li>
+                <li>Designed for recruiter throughput after technical filtering.</li>
+              </ul>
+            </article>
+            <article class="feature-card tone-blue">
+              <div class="feature-top"><div class="feature-main"><img class="feature-logo" src="./assets/logos/exa-mark.svg" alt="Exa"><h3 class="feature-title">Exa Websets</h3></div><span class="feature-tag">Persistent search</span></div>
+              <ul class="feature-list">
+                <li>Creates auto-updating candidate collections from criteria.</li>
+                <li>Appends new verified matches on schedule.</li>
+                <li>Supports enrich, monitor, and override workflows.</li>
+              </ul>
+            </article>
+            <article class="feature-card tone-red">
+              <div class="feature-top"><div class="feature-main"><img class="feature-logo" src="./assets/logos/harmonic_logo.png" alt="Harmonic"><h3 class="feature-title">Exports and Integrations</h3></div><span class="feature-tag">Output</span></div>
+              <ul class="feature-list">
+                <li>Exports via API and CSV for downstream workflows.</li>
+                <li>Feeds Clay/Parallel-style sequencing and enrichment flows.</li>
+                <li>Keeps artifact-level signal attached to candidate records.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section id="best" class="section-tone-purple">
+          <div class="section-head">
+            <div class="section-meta">
+              <span class="section-chip"><img src="./assets/logos/sourcekit-mark-new.svg" alt="">Operator playbook</span>
+            </div>
+            <h2 class="section-title">How to get maximum value</h2>
+            <p class="section-desc">Operational habits that improve quality and reduce wasted effort.</p>
+          </div>
+          <div class="best-grid">
+            <div class="best-col">
+              <p class="best-head">Do this</p>
+              <div class="best-item">
+                <h3 class="best-title">Use precise role framing.</h3>
+                <p class="best-copy">Specific role language drives better repo targeting and less scoring noise.</p>
+              </div>
+              <div class="best-item">
+                <h3 class="best-title">Edit the repo list every run.</h3>
+                <p class="best-copy">Repo quality is the biggest upstream lever for candidate quality.</p>
+              </div>
+              <div class="best-item">
+                <h3 class="best-title">Define 3-5 verifiable EEA markers.</h3>
+                <p class="best-copy">Use objective proof signals before enrichment and outreach.</p>
+              </div>
+              <div class="best-item">
+                <h3 class="best-title">Convert durable roles to Websets.</h3>
+                <p class="best-copy">Let the best searches compound through weekly or daily monitoring.</p>
+              </div>
+            </div>
+            <div class="best-col">
+              <p class="best-head">Avoid this</p>
+              <div class="best-item">
+                <h3 class="best-title">Generic criteria text.</h3>
+                <p class="best-copy">Criteria like "strong engineer" will inflate false positives.</p>
+              </div>
+              <div class="best-item">
+                <h3 class="best-title">Title-only filtering.</h3>
+                <p class="best-copy">Front-loading title filters reintroduces profile bias and misses builders.</p>
+              </div>
+              <div class="best-item">
+                <h3 class="best-title">Enriching before verification.</h3>
+                <p class="best-copy">Verify first, enrich survivors second to protect spend and quality.</p>
+              </div>
+              <div class="best-item">
+                <h3 class="best-title">Single-market assumptions.</h3>
+                <p class="best-copy">Use adjacency signals to reach less saturated ecosystems.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="eea-websets" class="section-tone-red">
+          <div class="section-head">
+            <div class="section-meta">
+              <span class="section-chip"><img src="./assets/logos/harmonic_logo.png" alt="">Criteria quality</span>
+              <span class="section-chip"><img src="./assets/logos/parallel-mark-purple.svg" alt="">Adjacency graph</span>
+              <span class="section-chip"><img src="./assets/logos/exa-mark.svg" alt="">Webset operations</span>
+            </div>
+            <h2 class="section-title">Sample EEA criteria + Webset guidance</h2>
+            <p class="section-desc">Practical examples you can reuse. Keep criteria verifiable from public artifacts and keep Websets strict at admission.</p>
+          </div>
+          <div class="eea-grid">
+            <article class="eea-card">
+              <p class="eea-card-head">Sample EEA criteria by role</p>
+              <div class="criteria-grid">
+                <div class="criteria-role">
+                  <h3 class="criteria-title">Founding ML Engineer</h3>
+                  <ul class="criteria-list">
+                    <li>Top-10 contributor to frontier ML infra repo.</li>
+                    <li>Shipped production inference or training system.</li>
+                    <li>Publication or conference artifact in ML systems.</li>
+                  </ul>
+                </div>
+                <div class="criteria-role">
+                  <h3 class="criteria-title">Staff Backend (Distributed)</h3>
+                  <ul class="criteria-list">
+                    <li>50+ commits to distributed systems project.</li>
+                    <li>Maintainer/reviewer or RFC ownership signal.</li>
+                    <li>Evidence of production-scale reliability work.</li>
+                  </ul>
+                </div>
+                <div class="criteria-role">
+                  <h3 class="criteria-title">Security Engineer</h3>
+                  <ul class="criteria-list">
+                    <li>CVE discovery, advisory, or remediation ownership.</li>
+                    <li>Security commits to relevant OSS repos.</li>
+                    <li>Public proof: talks, writeups, or audits.</li>
+                  </ul>
+                </div>
+                <div class="criteria-role">
+                  <h3 class="criteria-title">Staff Frontend Platform</h3>
+                  <ul class="criteria-list">
+                    <li>Core contributions to framework/tooling ecosystem.</li>
+                    <li>Perf or build-system optimization ownership.</li>
+                    <li>Cross-team DX/platform impact evidence.</li>
+                  </ul>
+                </div>
+              </div>
+            </article>
+            <article class="eea-card">
+              <p class="eea-card-head">Webset operating playbook</p>
+              <div class="webset-steps">
+                <div class="webset-step">
+                  <h3 class="webset-step-head">1) Set strict admission criteria</h3>
+                  <p class="webset-step-copy">Use 3-5 binary checks. Avoid soft language like "strong" or "solid."</p>
+                </div>
+                <div class="webset-step">
+                  <h3 class="webset-step-head">2) Verify first, enrich second</h3>
+                  <p class="webset-step-copy">Run criteria filters before adding contact or publication enrichments.</p>
+                </div>
+                <div class="webset-step">
+                  <h3 class="webset-step-head">3) Use weekly cadence by default</h3>
+                  <p class="webset-step-copy">Daily is best for urgent hiring; weekly is cleaner for most durable roles.</p>
+                </div>
+                <div class="webset-step">
+                  <h3 class="webset-step-head">4) Replace stale criteria quickly</h3>
+                  <p class="webset-step-copy">If false positives rise, tighten criteria before scaling outreach volume.</p>
+                </div>
+                <div class="webset-step">
+                  <h3 class="webset-step-head">5) Track conversion by criteria set</h3>
+                  <p class="webset-step-copy">Keep the criteria version with each cohort to learn which definition works.</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="use-cases" class="section-tone-blue">
+          <div class="section-head">
+            <div class="section-meta">
+              <span class="section-chip"><img src="./assets/logos/sourcekit-mark-new.svg" alt="">Use case library</span>
+            </div>
+            <h2 class="section-title">Use case recipes</h2>
+            <p class="section-desc">Example patterns teams can run immediately.</p>
+          </div>
+          <div class="recipes-grid">
+            <article class="recipe tone-blue">
+              <div class="recipe-head">
+                <div class="recipe-main">
+                  <img class="recipe-logo" src="./assets/logos/exa-mark.svg" alt="Exa">
+                  <h3 class="recipe-title">Founding ML Engineer (stealth startup)</h3>
+                </div>
+                <span class="recipe-badge">ML Infra</span>
+              </div>
+              <div class="recipe-row"><p class="recipe-label">Search setup</p><p class="recipe-copy">Seed with model infra repos (`vllm`, `transformers`, `triton`) and narrow to startup/early-team surfaces.</p></div>
+              <div class="recipe-row"><p class="recipe-label">EEA criteria</p><p class="recipe-copy">Top contributor rank, shipped production inference/training system, and paper/talk signal in relevant venues.</p></div>
+              <div class="recipe-row"><p class="recipe-label">Expected output</p><p class="recipe-copy">High-signal shortlist of builders with maintainer velocity and low profile saturation.</p></div>
+              <div class="recipe-kpis">
+                <div class="recipe-kpi"><p class="recipe-kpi-label">Target repos</p><p class="recipe-kpi-value">10-20</p></div>
+                <div class="recipe-kpi"><p class="recipe-kpi-label">Score bar</p><p class="recipe-kpi-value">85+</p></div>
+                <div class="recipe-kpi"><p class="recipe-kpi-label">Webset cadence</p><p class="recipe-kpi-value">Weekly</p></div>
+              </div>
+            </article>
+            <article class="recipe tone-orange">
+              <div class="recipe-head">
+                <div class="recipe-main">
+                  <img class="recipe-logo" src="./assets/logos/claude-mark.svg" alt="Claude">
+                  <h3 class="recipe-title">Forward Deployed Engineer</h3>
+                </div>
+                <span class="recipe-badge">Deployment</span>
+              </div>
+              <div class="recipe-row"><p class="recipe-label">Search setup</p><p class="recipe-copy">Target distributed systems repos plus customer deployment indicators and implementation depth constraints.</p></div>
+              <div class="recipe-row"><p class="recipe-label">EEA criteria</p><p class="recipe-copy">Production ownership proof, systems reliability changes, and evidence of customer-facing technical delivery.</p></div>
+              <div class="recipe-row"><p class="recipe-label">Expected output</p><p class="recipe-copy">Candidates with both backend depth and field execution signal, not pure platform-only profiles.</p></div>
+              <div class="recipe-kpis">
+                <div class="recipe-kpi"><p class="recipe-kpi-label">Primary stack</p><p class="recipe-kpi-value">Go + Python</p></div>
+                <div class="recipe-kpi"><p class="recipe-kpi-label">Score bar</p><p class="recipe-kpi-value">82+</p></div>
+                <div class="recipe-kpi"><p class="recipe-kpi-label">Pipeline stage</p><p class="recipe-kpi-value">Contact fast</p></div>
+              </div>
+            </article>
+            <article class="recipe tone-purple">
+              <div class="recipe-head">
+                <div class="recipe-main">
+                  <img class="recipe-logo" src="./assets/logos/sourcekit-mark-new.svg" alt="SourceKit">
+                  <h3 class="recipe-title">Staff Frontend Platform Engineer</h3>
+                </div>
+                <span class="recipe-badge">Frontend Platform</span>
+              </div>
+              <div class="recipe-row"><p class="recipe-label">Search setup</p><p class="recipe-copy">Focus on framework core repos, perf tooling ecosystems, and maintainership markers over title matching.</p></div>
+              <div class="recipe-row"><p class="recipe-label">EEA criteria</p><p class="recipe-copy">Core contribution to framework/tooling, performance ownership, and cross-team DX impact evidence.</p></div>
+              <div class="recipe-row"><p class="recipe-label">Expected output</p><p class="recipe-copy">Platform-minded ICs who improve system-level frontend velocity across teams.</p></div>
+              <div class="recipe-kpis">
+                <div class="recipe-kpi"><p class="recipe-kpi-label">Signal type</p><p class="recipe-kpi-value">Maintainer</p></div>
+                <div class="recipe-kpi"><p class="recipe-kpi-label">Score bar</p><p class="recipe-kpi-value">80+</p></div>
+                <div class="recipe-kpi"><p class="recipe-kpi-label">Key proof</p><p class="recipe-kpi-value">Tooling commits</p></div>
+              </div>
+            </article>
+            <article class="recipe tone-red">
+              <div class="recipe-head">
+                <div class="recipe-main">
+                  <img class="recipe-logo" src="./assets/logos/harmonic_logo.png" alt="Harmonic">
+                  <h3 class="recipe-title">Security Engineer (product + OSS)</h3>
+                </div>
+                <span class="recipe-badge">Security</span>
+              </div>
+              <div class="recipe-row"><p class="recipe-label">Search setup</p><p class="recipe-copy">Define criteria around CVE discovery, advisories, and security-centric repos with active remediation work.</p></div>
+              <div class="recipe-row"><p class="recipe-label">EEA criteria</p><p class="recipe-copy">CVE or advisory contribution, sustained security commits, and public research artifact (talk or writeup).</p></div>
+              <div class="recipe-row"><p class="recipe-label">Expected output</p><p class="recipe-copy">Candidates with proof of practical offensive/defensive capability and product-grade security ownership.</p></div>
+              <div class="recipe-kpis">
+                <div class="recipe-kpi"><p class="recipe-kpi-label">Signal source</p><p class="recipe-kpi-value">CVE + commits</p></div>
+                <div class="recipe-kpi"><p class="recipe-kpi-label">Score bar</p><p class="recipe-kpi-value">83+</p></div>
+                <div class="recipe-kpi"><p class="recipe-kpi-label">Review mode</p><p class="recipe-kpi-value">Strict verify</p></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="worked-examples" class="section-tone-green">
+          <div class="section-head">
+            <div class="section-meta">
+              <span class="section-chip"><img src="./assets/logos/exa-mark.svg" alt="">Worked examples</span>
+              <span class="section-chip">Concrete inputs</span>
+            </div>
+            <h2 class="section-title">Worked examples (realistic)</h2>
+            <p class="section-desc">Concrete repo targets, criteria thresholds, and expected pipeline output to calibrate your first runs.</p>
+          </div>
+          <div class="worked-grid">
+            <article class="worked-card tone-blue">
+              <div class="worked-head">
+                <h3 class="worked-title">Example 1: Founding ML Infra Engineer</h3>
+                <span class="recipe-badge">Expected 35-60 candidates</span>
+              </div>
+              <div class="recipe-row"><p class="recipe-label">Repo targets</p><p class="recipe-copy">`vllm`, `transformers`, `triton`, `deepspeed`, `llama.cpp`, `ray`.</p></div>
+              <div class="recipe-row"><p class="recipe-label">Score threshold</p><p class="recipe-copy">Builder Score >= 85 and at least 2 EEA criteria met.</p></div>
+              <div class="criteria-compare">
+                <div class="compare-box bad"><p class="compare-label">Bad criteria</p><p class="compare-copy">"Strong ML engineer, startup mindset, good communicator."</p></div>
+                <div class="compare-box good"><p class="compare-label">Better criteria</p><p class="compare-copy">Top-10 contributor rank OR production inference ownership + public technical artifact.</p></div>
+              </div>
+            </article>
+            <article class="worked-card tone-orange">
+              <div class="worked-head">
+                <h3 class="worked-title">Example 2: Staff Backend (Distributed Systems)</h3>
+                <span class="recipe-badge">Expected 45-80 candidates</span>
+              </div>
+              <div class="recipe-row"><p class="recipe-label">Repo targets</p><p class="recipe-copy">`kubernetes`, `temporal`, `envoy`, `vitess`, `cockroachdb`, `grpc`.</p></div>
+              <div class="recipe-row"><p class="recipe-label">Score threshold</p><p class="recipe-copy">Builder Score >= 82 with production ownership proof.</p></div>
+              <div class="criteria-compare">
+                <div class="compare-box bad"><p class="compare-label">Bad criteria</p><p class="compare-copy">"Great backend developer from top company."</p></div>
+                <div class="compare-box good"><p class="compare-label">Better criteria</p><p class="compare-copy">50+ commits + maintainer/reviewer signal + reliability/latency or scaling evidence.</p></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="trust" class="section-tone-slate">
+          <div class="section-head">
+            <div class="section-meta">
+              <span class="section-chip"><img src="./assets/logos/github-green.svg" alt="">Trust boundary</span>
+            </div>
+            <h2 class="section-title">Best for, not ideal for, and limits</h2>
+            <p class="section-desc">Set expectations early so teams use SourceKit where it performs best.</p>
+          </div>
+          <div class="trust-grid">
+            <article class="trust-col">
+              <h3 class="trust-head">Best for</h3>
+              <ul class="trust-list">
+                <li>Technical roles with strong public artifact signal.</li>
+                <li>Teams prioritizing objective proof over profile polish.</li>
+                <li>Durable searches that benefit from weekly Websets.</li>
+              </ul>
+            </article>
+            <article class="trust-col">
+              <h3 class="trust-head">Not ideal for</h3>
+              <ul class="trust-list">
+                <li>Roles with little or no public technical footprint.</li>
+                <li>Hiring where title pedigree is the primary requirement.</li>
+                <li>One-off searches with no criteria refinement cycle.</li>
+              </ul>
+            </article>
+            <article class="trust-col">
+              <h3 class="trust-head">What it does not do</h3>
+              <ul class="trust-list">
+                <li>Does not replace interview evaluation or references.</li>
+                <li>Does not guarantee intent-to-join or compensation fit.</li>
+                <li>Does not rely on self-reported profile claims alone.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section id="templates" class="section-tone-purple">
+          <div class="section-head">
+            <div class="section-meta">
+              <span class="section-chip"><img src="./assets/logos/claude-mark.svg" alt="">Prompting</span>
+              <span class="section-chip"><img src="./assets/logos/parallel-mark-purple.svg" alt="">Company mapping</span>
+              <span class="section-chip"><img src="./assets/logos/exa-mark.svg" alt="">Webset setup</span>
+            </div>
+            <h2 class="section-title">Starter templates</h2>
+            <p class="section-desc">Copy-ready prompts for new searches and Webset setup.</p>
+          </div>
+          <div class="template-grid">
+            <article class="template">
+              <div class="template-head">
+                <h3 class="template-title">Role intake template</h3>
+                <span class="feature-tag">Search setup</span>
+              </div>
+              <div class="template-body">
+                <code id="role-intake-template">Role: Staff Backend Engineer (distributed systems)
+Primary work: high-throughput APIs and workflow orchestration
+Must-have evidence:
+- 50+ meaningful commits to relevant repos
+- ownership signal (maintainer/reviewer/RFC)
+- production-scale system evidence
+Target company surfaces: Infra-heavy startups + OSS-adjacent teams</code>
+              </div>
+            </article>
+            <article class="template">
+              <div class="template-head">
+                <h3 class="template-title">Webset criteria template</h3>
+                <span class="feature-tag">Persistent pipeline</span>
+              </div>
+              <div class="template-body">
+                <code>Build a weekly Webset for Founding ML Engineers.
+Admit only if candidate matches at least 2/3:
+1) top contributor to frontier ML repo
+2) shipped production ML system
+3) publication/talk evidence in relevant venues
+Add enrichments: email, current company, GitHub stats.</code>
+              </div>
+            </article>
+          </div>
+          <p class="footer-note">This draft remains separate from the current live docs. Promote after review.</p>
+        </section>
+
+        <section id="actions" class="section-tone-green">
+          <div class="section-head">
+            <div class="section-meta">
+              <span class="section-chip"><img src="./assets/logos/sourcekit-mark-new.svg" alt="">Next actions</span>
+            </div>
+            <h2 class="section-title">Run this now</h2>
+            <p class="section-desc">Take one action to validate the workflow with your current role.</p>
+          </div>
+          <div class="actions-grid">
+            <p class="actions-copy">Start with one role, tighten criteria after first results, and convert the winning search into a weekly Webset.</p>
+            <a class="cta-btn primary" href="#quick-start">Run your first search</a>
+            <button class="cta-btn" type="button" data-copy-target="role-intake-template">Copy role intake template</button>
+          </div>
+        </section>
+      </main>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  var primaryNavItems = [
+    { href: "#overview", label: "Overview" },
+    { href: "#quick-start", label: "Quick start" },
+    { href: "#eea-suggested", label: "EEA signals" },
+    { href: "#value", label: "Value" },
+    { href: "#walkthrough", label: "Walkthrough" },
+    { href: "#features", label: "Features" },
+    { href: "#use-cases", label: "Use cases" },
+    { href: "#templates", label: "Templates" },
+    { href: "#actions", label: "Actions" }
+  ];
+  var mobileNavItems = [
+    { href: "#overview", label: "Overview" },
+    { href: "#quick-start", label: "Quick start" },
+    { href: "#eea-suggested", label: "EEA signals" },
+    { href: "#value", label: "Value" },
+    { href: "#walkthrough", label: "Walkthrough" },
+    { href: "#features", label: "Features" },
+    { href: "#best", label: "Best" },
+    { href: "#eea-websets", label: "EEA" },
+    { href: "#use-cases", label: "Use cases" },
+    { href: "#worked-examples", label: "Examples" },
+    { href: "#trust", label: "Trust" },
+    { href: "#templates", label: "Templates" },
+    { href: "#actions", label: "Actions" }
+  ];
+
+  function renderNav(containerId, items) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = "";
+    items.forEach(function(item, index){
+      var link = document.createElement("a");
+      link.href = item.href;
+      link.textContent = item.label;
+      if (index === 0) link.classList.add("active");
+      container.appendChild(link);
+    });
+  }
+
+  renderNav("topnav", primaryNavItems);
+  renderNav("mobile-tabs", mobileNavItems);
+
+  var sidebar = document.getElementById("doc-sidebar");
+  if (sidebar) {
+    var links = sidebar.querySelectorAll('a[href^="#"]');
+    var sections = [];
+    links.forEach(function(link){
+      var id = link.getAttribute("href").slice(1);
+      var section = document.getElementById(id);
+      if (section && sections.indexOf(section) === -1) sections.push(section);
+    });
+    function setActive(id){
+      links.forEach(function(link){
+        var match = link.getAttribute("href").slice(1) === id;
+        link.classList.toggle("active", match);
+      });
+      document.querySelectorAll('.topnav a[href^="#"]').forEach(function(link){
+        var active = link.getAttribute("href").slice(1) === id;
+        link.classList.toggle("active", active);
+      });
+      document.querySelectorAll('.mobile-tabs a[href^="#"]').forEach(function(link){
+        var active = link.getAttribute("href").slice(1) === id;
+        link.classList.toggle("active", active);
+      });
+    }
+    var initialSectionId = window.location.hash ? window.location.hash.slice(1) : (sections[0] ? sections[0].id : "");
+    if (initialSectionId) setActive(initialSectionId);
+    if ("IntersectionObserver" in window) {
+      var observer = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if (entry.isIntersecting) setActive(entry.target.id);
+        });
+      }, {rootMargin:"-24% 0px -60% 0px",threshold:0});
+      sections.forEach(function(section){ observer.observe(section); });
+    }
+  }
+
+  var walkNodes = Array.from(document.querySelectorAll("[data-walk-trigger]"));
+  var walkPanels = Array.from(document.querySelectorAll("[data-walk-panel]"));
+  function activateWalk(id, moveFocus){
+    walkNodes.forEach(function(node){
+      var active = node.getAttribute("data-walk-trigger") === id;
+      node.classList.toggle("is-active", active);
+      node.setAttribute("aria-selected", active ? "true" : "false");
+      node.setAttribute("tabindex", active ? "0" : "-1");
+      if (active && moveFocus) node.focus();
+    });
+    walkPanels.forEach(function(panel){
+      var active = panel.getAttribute("data-walk-panel") === id;
+      panel.classList.toggle("is-active", active);
+      panel.hidden = !active;
+    });
+  }
+  walkNodes.forEach(function(node, index){
+    node.addEventListener("click", function(){
+      activateWalk(node.getAttribute("data-walk-trigger"), false);
+    });
+    node.addEventListener("keydown", function(event){
+      if (!walkNodes.length) return;
+      var nextIndex = null;
+      if (event.key === "ArrowRight" || event.key === "ArrowDown") nextIndex = (index + 1) % walkNodes.length;
+      if (event.key === "ArrowLeft" || event.key === "ArrowUp") nextIndex = (index - 1 + walkNodes.length) % walkNodes.length;
+      if (event.key === "Home") nextIndex = 0;
+      if (event.key === "End") nextIndex = walkNodes.length - 1;
+      if (nextIndex === null) return;
+      event.preventDefault();
+      activateWalk(walkNodes[nextIndex].getAttribute("data-walk-trigger"), true);
+    });
+  });
+  if (walkNodes.length) activateWalk(walkNodes[0].getAttribute("data-walk-trigger"), false);
+
+  function copyText(value) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(value);
+    }
+    return new Promise(function(resolve, reject){
+      var area = document.createElement("textarea");
+      area.value = value;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      try {
+        if (document.execCommand("copy")) resolve();
+        else reject(new Error("copy failed"));
+      } catch (error) {
+        reject(error);
+      } finally {
+        document.body.removeChild(area);
+      }
+    });
+  }
+
+  document.querySelectorAll("[data-copy-target]").forEach(function(button){
+    button.addEventListener("click", function(){
+      var targetId = button.getAttribute("data-copy-target");
+      var source = targetId ? document.getElementById(targetId) : null;
+      if (!source) return;
+      var originalLabel = button.textContent;
+      copyText(source.textContent.trim()).then(function(){
+        button.textContent = "Copied";
+        window.setTimeout(function(){ button.textContent = originalLabel; }, 1400);
+      }).catch(function(){
+        button.textContent = "Copy failed";
+        window.setTimeout(function(){ button.textContent = originalLabel; }, 1600);
+      });
+    });
+  });
+
+  function applySectionChipBrandStyles() {
+    document.querySelectorAll(".section-chip").forEach(function(chip){
+      var img = chip.querySelector("img");
+      if (!img) return;
+      var src = (img.getAttribute("src") || "").toLowerCase();
+      if (!src) return;
+      if (src.indexOf("sourcekit") !== -1) chip.classList.add("brand-sourcekit");
+      else if (src.indexOf("exa") !== -1) chip.classList.add("brand-exa");
+      else if (src.indexOf("claude") !== -1) chip.classList.add("brand-claude");
+      else if (src.indexOf("harmonic") !== -1) chip.classList.add("brand-harmonic");
+      else if (src.indexOf("parallel") !== -1) chip.classList.add("brand-parallel");
+      else if (src.indexOf("github") !== -1) chip.classList.add("brand-github");
+    });
+  }
+
+  applySectionChipBrandStyles();
+})();
+</script>
+</body>
+</html>

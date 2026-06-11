@@ -1,0 +1,144 @@
+/* SourceKit Recruiter OS — Design Tokens
+   Applied via .recruiter-os class on the layout root */
+
+.recruiter-os {
+  --ros-bg-primary: #0a0a0f;
+  --ros-bg-secondary: #111118;
+  --ros-bg-tertiary: #1a1a24;
+  --ros-bg-card: #14141e;
+  --ros-bg-hover: #1e1e2a;
+
+  --ros-accent: #00e5a0;
+  --ros-accent-hover: #00cc8e;
+  --ros-accent-muted: rgba(0, 229, 160, 0.15);
+
+  --ros-text-primary: #f0f0f5;
+  --ros-text-secondary: #8888a0;
+  --ros-text-muted: #55556a;
+
+  --ros-border: #2a2a3a;
+  --ros-border-active: #00e5a0;
+
+  --ros-tier-1: #00e5a0;
+  --ros-tier-2: #6366f1;
+  --ros-borderline: #eab308;
+  --ros-below-bar: #ef4444;
+  --ros-false-positive: #6b7280;
+  --ros-nurture: #8b5cf6;
+  --ros-ats-synced: #3b82f6;
+
+  --ros-score-high: #00e5a0;
+  --ros-score-medium: #eab308;
+  --ros-score-low: #ef4444;
+
+  --ros-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --ros-shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  --ros-duration-fast: 150ms;
+  --ros-duration-normal: 250ms;
+  --ros-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Recruiter OS overrides dark theme variables within its scope */
+.recruiter-os {
+  --background: 240 20% 4%;
+  --foreground: 240 5% 95%;
+  --card: 240 15% 8%;
+  --card-foreground: 240 5% 95%;
+  --popover: 240 15% 8%;
+  --popover-foreground: 240 5% 95%;
+  --primary: 162 100% 45%;
+  --primary-foreground: 240 20% 4%;
+  --secondary: 240 12% 10%;
+  --secondary-foreground: 240 5% 65%;
+  --muted: 240 10% 13%;
+  --muted-foreground: 240 5% 55%;
+  --accent: 162 100% 45%;
+  --accent-foreground: 240 20% 4%;
+  --border: 240 12% 16%;
+  --input: 240 12% 16%;
+  --ring: 162 100% 45%;
+}
+
+/* Fade-in animation for cards and sections */
+@keyframes ros-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ros-fade-in {
+  animation: ros-fade-in var(--ros-duration-normal) var(--ros-ease) both;
+}
+
+/* Staggered fade-in for lists */
+.ros-stagger > * {
+  animation: ros-fade-in var(--ros-duration-normal) var(--ros-ease) both;
+}
+.ros-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.ros-stagger > *:nth-child(2) { animation-delay: 50ms; }
+.ros-stagger > *:nth-child(3) { animation-delay: 100ms; }
+.ros-stagger > *:nth-child(4) { animation-delay: 150ms; }
+.ros-stagger > *:nth-child(5) { animation-delay: 200ms; }
+.ros-stagger > *:nth-child(6) { animation-delay: 250ms; }
+.ros-stagger > *:nth-child(7) { animation-delay: 300ms; }
+.ros-stagger > *:nth-child(8) { animation-delay: 350ms; }
+
+/* Dense table styling for recruiter views */
+.ros-table {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+.ros-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ros-text-muted);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--ros-border);
+  position: sticky;
+  top: 0;
+  background: var(--ros-bg-secondary);
+  z-index: 10;
+}
+
+.ros-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(42, 42, 58, 0.5);
+  white-space: nowrap;
+}
+
+.ros-table tbody tr {
+  transition: background-color var(--ros-duration-fast) ease;
+}
+
+.ros-table tbody tr:hover {
+  background-color: var(--ros-bg-hover);
+}
+
+/* Scrollbar styling for recruiter views */
+.recruiter-os ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.recruiter-os ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.recruiter-os ::-webkit-scrollbar-thumb {
+  background: var(--ros-border);
+  border-radius: 3px;
+}
+
+.recruiter-os ::-webkit-scrollbar-thumb:hover {
+  background: var(--ros-text-muted);
+}

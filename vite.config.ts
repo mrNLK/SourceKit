@@ -25,6 +25,13 @@ export default defineConfig(({ mode }) => ({
           "query-vendor": ["@tanstack/react-query"],
           "ui-vendor": ["lucide-react"],
         },
+        chunkFileNames(chunkInfo) {
+          // Recruiter OS gets its own chunk namespace
+          if (chunkInfo.name?.startsWith('recruiter') || chunkInfo.facadeModuleId?.includes('/recruiter/')) {
+            return 'assets/recruiter-[name]-[hash].js';
+          }
+          return 'assets/[name]-[hash].js';
+        },
       },
     },
   },

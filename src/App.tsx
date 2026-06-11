@@ -13,6 +13,10 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { Analytics } from "@vercel/analytics/react";
 import { postAuthRedirectStorageKey, sanitizeRedirectPath } from "./lib/auth-redirect";
+import { recruiterRoutes } from "./recruiter/routes";
+
+// Recruiter OS — lazy-loaded route group
+const RecruiterLayout = lazy(() => import("./recruiter/RecruiterLayout"));
 
 const queryClient = new QueryClient();
 const BdSourcingApp = lazy(() => import("./components/bd-sourcing/BdSourcingTab"));
@@ -37,6 +41,12 @@ const SellKitAuthGate = ({ redirectPath }: { redirectPath: string }) => {
   return <Navigate to={`/auth?redirect=${encodeURIComponent(redirectPath)}`} replace />;
 };
 
+const applyLightThemePreference = (): void => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("sourcekit-theme", "light");
+  document.documentElement.classList.remove("dark");
+};
+
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +55,9 @@ const App = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setLoading(false);
+      if (event === "SIGNED_IN") {
+        applyLightThemePreference();
+      }
       if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
         queryClient.invalidateQueries({ queryKey: ["settings"] });
       }
@@ -52,6 +65,9 @@ const App = () => {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session) {
+        applyLightThemePreference();
+      }
       setLoading(false);
     });
 
@@ -106,7 +122,15 @@ const App = () => {
                 <>
                   <Route path="/" element={<Index />} />
                   <Route path="/developer/:id" element={<DeveloperProfile />} />
+                  <Route path="/recruiter/*" element={
+                    <Suspense fallback={<AppFallback />}>
+                      <RecruiterLayout />
+                    </Suspense>
+                  }>
+                    {recruiterRoutes}
+                  </Route>
                   <Route path="/auth" element={<AuthRedirect />} />
+
                   <Route path="*" element={<NotFound />} />
                 </>
               ) : (
