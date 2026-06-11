@@ -1,0 +1,2038 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SourceKit Comprehensive Workflow Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #c4cad6;
+        --paper: #f6f8fc;
+        --panel: #e9edf4;
+        --panel-2: #dde5f0;
+        --line: #c4ccda;
+        --line-2: #b2bdcf;
+        --ink: #0f172a;
+        --muted: #3f4f66;
+        --subtle: #5d6f89;
+        --brand: #006ee6;
+        --brand-soft: #d8e8ff;
+        --mint: #00d5c1;
+        --mint-soft: #d8faf3;
+        --warn: #ea580c;
+        --warn-soft: #ffeddc;
+        --shadow-lg: 0 18px 42px rgba(15, 23, 42, 0.1);
+        --shadow-md: 0 10px 24px rgba(15, 23, 42, 0.08);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(900px 500px at -10% -20%, #eef4ff 0%, transparent 60%),
+          radial-gradient(1200px 680px at 110% 0%, #d8fff8 0%, transparent 62%),
+          linear-gradient(180deg, #d4dae5 0%, #c4cad6 100%);
+        color: var(--ink);
+        font-family: "DM Sans", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .doc { width: 100%; margin: 0; }
+
+      .page {
+        background: linear-gradient(180deg, var(--panel) 0%, var(--paper) 100%);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        margin: 10px;
+        padding: 20px 16px 24px;
+        page-break-after: always;
+        break-after: page;
+        box-shadow: var(--shadow-md);
+        position: relative;
+      }
+
+      .page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .cover {
+        min-height: 8.4in;
+        background:
+          linear-gradient(145deg, #eef4ff 0%, #dce6f7 45%, #d0d9e9 100%);
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        overflow: hidden;
+      }
+
+      .cover::before,
+      .cover::after {
+        content: "";
+        position: absolute;
+        border-radius: 999px;
+        pointer-events: none;
+      }
+
+      .cover::before {
+        width: 360px;
+        height: 360px;
+        right: -120px;
+        top: -120px;
+        background: radial-gradient(circle, rgba(0, 110, 230, 0.18) 0%, rgba(0, 110, 230, 0) 72%);
+      }
+
+      .cover::after {
+        width: 320px;
+        height: 320px;
+        left: -140px;
+        bottom: -140px;
+        background: radial-gradient(circle, rgba(0, 213, 193, 0.16) 0%, rgba(0, 213, 193, 0) 74%);
+      }
+
+      h1 {
+        margin: 0;
+        font-family: "Space Grotesk", "DM Sans", sans-serif;
+        letter-spacing: -0.02em;
+        font-size: 40px;
+        line-height: 1.02;
+      }
+
+      h2 {
+        margin: 0 0 10px;
+        font-family: "Space Grotesk", "DM Sans", sans-serif;
+        letter-spacing: -0.015em;
+        font-size: 26px;
+        line-height: 1.2;
+      }
+
+      h3 {
+        margin: 0 0 8px;
+        font-family: "Space Grotesk", "DM Sans", sans-serif;
+        font-size: 17px;
+      }
+
+      h4 {
+        margin: 0 0 6px;
+        font-family: "Space Grotesk", "DM Sans", sans-serif;
+        font-size: 14px;
+        letter-spacing: -0.01em;
+      }
+
+      .eyebrow {
+        margin: 0 0 6px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #0b4c95;
+      }
+
+      p {
+        margin: 0 0 10px;
+        color: var(--muted);
+        line-height: 1.48;
+        font-size: 14px;
+      }
+
+      .line strong { color: var(--ink); }
+
+      .mono {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--ink);
+      }
+
+      code {
+        font-family: "JetBrains Mono", monospace;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        padding: 2px 5px;
+        border-radius: 4px;
+        color: var(--ink);
+        font-size: 12px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .cover-logo {
+        height: 46px;
+        width: auto;
+      }
+
+      .pill {
+        border: 1px solid #a8b9d5;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 11px;
+        font-family: "JetBrains Mono", monospace;
+        background: rgba(255, 255, 255, 0.84);
+        color: var(--muted);
+      }
+
+      .subtitle {
+        font-size: 19px;
+        color: var(--muted);
+        margin-top: 8px;
+        max-width: 78ch;
+      }
+
+      .cover-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .mini-card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 13px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+      }
+
+      .logo-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .logo-chip {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: linear-gradient(180deg, #ffffff 0%, #f6f8fc 100%);
+        width: 102px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .logo-chip img {
+        max-height: 22px;
+        max-width: 84px;
+        width: auto;
+      }
+
+      .step-page {
+        background: linear-gradient(180deg, #eff4fb 0%, #e7edf6 35%, #f7f9fc 100%);
+      }
+
+      .step-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .step-pill {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: #0b4c95;
+        background: var(--brand-soft);
+        border: 1px solid rgba(0, 110, 230, 0.24);
+        border-radius: 999px;
+        padding: 5px 9px;
+        white-space: nowrap;
+      }
+
+      .shot {
+        margin: 14px 0 10px;
+      }
+
+      .shot img {
+        width: 100%;
+        height: 334px;
+        object-fit: contain;
+        object-position: top left;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(240, 246, 255, 0.9) 100%);
+        border: 1px solid var(--line-2);
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        display: block;
+        padding: 12px;
+      }
+
+      .shot figcaption {
+        margin-top: 6px;
+        color: var(--subtle);
+        font-size: 12px;
+      }
+
+      .callout-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .capture-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.2fr;
+        gap: 10px;
+        margin: 12px 0 2px;
+      }
+
+      .capture-card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+        padding: 10px 12px;
+      }
+
+      .capture-card p {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .capture-label {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #0b4c95;
+        margin-bottom: 6px;
+      }
+
+      .capture-card.path {
+        background: linear-gradient(180deg, rgba(0, 110, 230, 0.08), rgba(0, 110, 230, 0.03));
+      }
+
+      .path-chip {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--ink);
+        word-break: break-all;
+      }
+
+      .callout {
+        border: 1px solid;
+        border-radius: 12px;
+        padding: 10px 12px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+      }
+
+      .callout-title {
+        font-family: "Space Grotesk", "DM Sans", sans-serif;
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 6px;
+      }
+
+      .callout ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .callout li {
+        margin-bottom: 6px;
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      .callout p {
+        margin: 0;
+        font-size: 13px;
+      }
+
+      .callout.api {
+        background: linear-gradient(180deg, rgba(0, 110, 230, 0.11), rgba(0, 110, 230, 0.07));
+        border-color: rgba(0, 110, 230, 0.32);
+      }
+
+      .callout.tip {
+        background: linear-gradient(180deg, rgba(0, 213, 193, 0.13), rgba(0, 213, 193, 0.08));
+        border-color: rgba(0, 213, 193, 0.32);
+      }
+
+      .section-intro {
+        margin-bottom: 12px;
+      }
+
+      .table-wrap {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th, td {
+        text-align: left;
+        vertical-align: top;
+        padding: 10px;
+        font-size: 12px;
+        border-top: 1px solid var(--line);
+      }
+
+      thead th {
+        border-top: 0;
+        background: linear-gradient(180deg, #e5ecf7 0%, #dde6f2 100%);
+        color: var(--ink);
+        font-weight: 700;
+        font-family: "Space Grotesk", "DM Sans", sans-serif;
+        letter-spacing: 0.01em;
+      }
+
+      tbody tr:nth-child(even) td {
+        background: #fbfdff;
+      }
+
+      .provider-page {
+        background: linear-gradient(180deg, #ecf2fb 0%, #f6f8fc 100%);
+      }
+
+      .provider-head {
+        border: 1px solid var(--line);
+        border-left: 6px solid var(--provider-accent);
+        border-radius: 14px;
+        background: #fff;
+        padding: 12px 12px 11px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        box-shadow: 0 5px 16px rgba(15, 23, 42, 0.05);
+      }
+
+      .brand-lockup {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .provider-logo {
+        width: 96px;
+        height: 30px;
+        object-fit: contain;
+        object-position: left center;
+      }
+
+      .mark-wrap {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: linear-gradient(180deg, #f8fafc 0%, #edf2f8 100%);
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .provider-mark {
+        max-width: 34px;
+        max-height: 34px;
+        object-fit: contain;
+      }
+
+      .status {
+        display: inline-block;
+        border-radius: 999px;
+        border: 1px solid;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        font-family: "JetBrains Mono", monospace;
+        line-height: 1.3;
+      }
+
+      .status-live {
+        color: #065f46;
+        background: #dbf6ec;
+        border-color: #86efac;
+      }
+
+      .status-planned {
+        color: #1d4ed8;
+        background: #deebff;
+        border-color: #93c5fd;
+      }
+
+      .status-partial {
+        color: #92400e;
+        background: #ffedd5;
+        border-color: #fdba74;
+      }
+
+      .plan-step-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .step-pill.inline {
+        display: inline-flex;
+        width: fit-content;
+      }
+
+      .warn {
+        border: 1px solid rgba(234, 88, 12, 0.33);
+        background: linear-gradient(180deg, var(--warn-soft) 0%, #fff6ee 100%);
+        border-radius: 14px;
+        padding: 13px;
+      }
+
+      .warn ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .warn li {
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .logo-system {
+        display: grid;
+        gap: 12px;
+      }
+
+      .brand-hero {
+        border: 1px solid #b5c2d8;
+        border-radius: 16px;
+        background:
+          radial-gradient(400px 200px at 80% -40%, rgba(0, 110, 230, 0.12) 0%, rgba(0, 110, 230, 0) 72%),
+          radial-gradient(420px 220px at -15% 110%, rgba(0, 213, 193, 0.14) 0%, rgba(0, 213, 193, 0) 74%),
+          linear-gradient(180deg, #ffffff 0%, #f1f6ff 100%);
+        padding: 14px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+      }
+
+      .brand-hero-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .approved-badge {
+        border-radius: 999px;
+        border: 1px solid #94a8ca;
+        background: rgba(255, 255, 255, 0.86);
+        padding: 5px 10px;
+        font-size: 10px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #0b4c95;
+        font-family: "JetBrains Mono", monospace;
+        white-space: nowrap;
+      }
+
+      .brand-hero-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 10px;
+      }
+
+      .brand-cell {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.84);
+        min-height: 94px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 7px;
+        padding: 10px;
+      }
+
+      .brand-cell img {
+        max-height: 38px;
+        max-width: 220px;
+        width: auto;
+        object-fit: contain;
+      }
+
+      .brand-cell mark {
+        background: rgba(0, 110, 230, 0.14);
+        color: #0b4c95;
+        border-radius: 6px;
+        padding: 1px 4px;
+      }
+
+      .brand-caption {
+        font-size: 11px;
+        color: var(--subtle);
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      .partners-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .partner-card {
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        padding: 10px 11px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+      }
+
+      .partner-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .partner-title {
+        margin: 0;
+        font-size: 14px;
+        font-family: "Space Grotesk", "DM Sans", sans-serif;
+      }
+
+      .token {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #f4f7fc;
+        padding: 2px 7px;
+        color: var(--subtle);
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      .partner-logos {
+        display: grid;
+        grid-template-columns: 1.35fr 0.65fr;
+        gap: 8px;
+      }
+
+      .logo-tile {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #ffffff;
+        min-height: 70px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 7px;
+      }
+
+      .logo-tile img {
+        max-height: 24px;
+        max-width: 150px;
+        object-fit: contain;
+      }
+
+      .logo-tile.mark img {
+        max-height: 26px;
+        max-width: 40px;
+      }
+
+      .logo-tile.placeholder {
+        background: #f8fbff;
+      }
+
+      .logo-tile .mono {
+        font-size: 10px;
+        color: var(--subtle);
+      }
+
+      .guideline-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .guide-card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+        padding: 10px 11px;
+      }
+
+      .guide-card h4 {
+        margin: 0 0 7px;
+        font-size: 13px;
+      }
+
+      .guide-list {
+        margin: 0;
+        padding-left: 17px;
+      }
+
+      .guide-list li {
+        font-size: 12px;
+        margin-bottom: 5px;
+        color: var(--muted);
+      }
+
+      .guide-card.ok h4 {
+        color: #065f46;
+      }
+
+      .guide-card.no h4 {
+        color: #92400e;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="doc">
+      <section class="page cover">
+        <div class="topbar">
+          <img src="../../docs/assets/logos/sourcekit-full.svg" alt="SourceKit" class="cover-logo" />
+          <div class="pill">Version March 20, 2026</div>
+        </div>
+
+        <div>
+          <p class="eyebrow">External Recruiter Documentation</p>
+          <h1>SourceKit Comprehensive Workflow Guide</h1>
+          <p class="subtitle">Full sourcing workflow + complete API functionality map with live product screenshots</p>
+        </div>
+
+        <div class="cover-grid">
+          <article class="mini-card">
+            <h3>What This Guide Covers</h3>
+            <p>End-to-end recruiter workflow from role brief to persistent Webset pipeline, plus all major API integrations and their exact responsibilities.</p>
+            <p><strong>App</strong> <code>https://getsourcekit.vercel.app</code></p>
+          </article>
+
+          <article class="mini-card">
+            <h3>Provider Stack</h3>
+            <div class="logo-strip">
+              <div class="logo-chip"><img src="../../docs/assets/logos/exa-full.svg" alt="Exa" /></div>
+              <div class="logo-chip"><img src="../../docs/assets/logos/parallel-full.svg" alt="Parallel" /></div>
+              <div class="logo-chip"><img src="../../docs/assets/logos/github-full.svg" alt="GitHub" /></div>
+              <div class="logo-chip"><img src="../../docs/assets/logos/claude-full.svg" alt="Claude" /></div>
+              <div class="logo-chip"><img src="../../docs/assets/logos/harmonic-full.svg" alt="Harmonic" /></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="page">
+        <div class="section-intro">
+          <h2>Edge Function To Provider Matrix</h2>
+          <p>SourceKit routes provider integrations through Supabase Edge Functions to keep API keys server-side.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Edge Function</th>
+                <th>Primary Responsibility</th>
+                <th>External APIs Used</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+      <tr>
+        <td><span class="mono">research-role</span></td>
+        <td>Role/JD -> strategy JSON</td>
+        <td>Anthropic + Harmonic</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">github-search</span></td>
+        <td>Primary ranked search pipeline</td>
+        <td>GitHub + Exa + Anthropic</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">search-candidates</span></td>
+        <td>Blended discovery endpoint</td>
+        <td>Exa + Parallel</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">find-similar-candidates</span></td>
+        <td>Lateral candidate expansion</td>
+        <td>Exa findSimilar</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">exa-websets</span></td>
+        <td>Webset CRUD + monitors + items</td>
+        <td>Exa Websets + Supabase mappings</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">import-candidates</span></td>
+        <td>Bulk candidate URL import</td>
+        <td>Exa Webset imports</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">webset-webhook</span></td>
+        <td>Webhook event ingestion</td>
+        <td>Exa webset events -> Supabase</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">parse-jd</span></td>
+        <td>JD text extraction</td>
+        <td>Parallel extract (+ HTML fallback)</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">company-intel</span></td>
+        <td>Poach-company intelligence</td>
+        <td>Parallel Task API</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">map-company-talent</span></td>
+        <td>Engineer map for a target company</td>
+        <td>Parallel FindAll API</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">github-profile</span></td>
+        <td>Candidate profile detail API</td>
+        <td>GitHub API</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">enrich-linkedin</span></td>
+        <td>LinkedIn URL enrichment</td>
+        <td>Exa + Anthropic</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">generate-outreach</span></td>
+        <td>Recruiter outreach drafts</td>
+        <td>Anthropic</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">harmonic-search</span></td>
+        <td>Company graph search</td>
+        <td>Harmonic</td>
+      </tr>
+    
+
+      <tr>
+        <td><span class="mono">harmonic-enrich</span></td>
+        <td>Company/person enrichment</td>
+        <td>Harmonic + Supabase cache</td>
+      </tr>
+    
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      
+    <section class="page">
+      <div class="section-intro">
+        <p class="eyebrow">Screenshot System</p>
+        <h2>Capture Targets, Areas, and Output Paths</h2>
+        <p>This guide uses a stable screenshot library so the walkthrough can be refreshed without reworking the layout. Each step below maps the exact screen to frame, the UI area to emphasize, and the saved output asset path.</p>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th>Target</th>
+              <th>Area To Frame</th>
+              <th>Output Asset</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+      <tr>
+        <td>
+          <div class="plan-step-wrap">
+            <span class="step-pill inline">Step 1</span>
+            <strong>Open SourceKit and sign in</strong>
+          </div>
+        </td>
+        <td>Chrome window with the SourceKit authentication screen in view.</td>
+        <td>The SourceKit logo, sign-in form, and primary CTA with no extra desktop chrome.</td>
+        <td><code>../output/guide-screenshots/workflow/step-01-sign-in.png</code></td>
+      </tr>
+    
+
+      <tr>
+        <td>
+          <div class="plan-step-wrap">
+            <span class="step-pill inline">Step 2</span>
+            <strong>Start in New Search</strong>
+          </div>
+        </td>
+        <td>New Search workspace immediately after opening the recruiter dashboard.</td>
+        <td>Left navigation plus the Research & Strategy inputs and quick templates.</td>
+        <td><code>../output/guide-screenshots/workflow/step-02-new-search.png</code></td>
+      </tr>
+    
+
+      <tr>
+        <td>
+          <div class="plan-step-wrap">
+            <span class="step-pill inline">Step 3</span>
+            <strong>Build sourcing strategy</strong>
+          </div>
+        </td>
+        <td>Research & Strategy screen while the strategy builder is actively running.</td>
+        <td>Progress module, role context, and emerging target-repo / target-company logic.</td>
+        <td><code>../output/guide-screenshots/workflow/step-03-build-strategy.png</code></td>
+      </tr>
+    
+
+      <tr>
+        <td>
+          <div class="plan-step-wrap">
+            <span class="step-pill inline">Step 4</span>
+            <strong>Write a target-company and target-repo query</strong>
+          </div>
+        </td>
+        <td>Results tab with the search bar populated from strategy output.</td>
+        <td>Query text, visible repo/company anchors, and top of the ranked result list.</td>
+        <td><code>../output/guide-screenshots/workflow/step-04-query-composition.png</code></td>
+      </tr>
+    
+
+      <tr>
+        <td>
+          <div class="plan-step-wrap">
+            <span class="step-pill inline">Step 5</span>
+            <strong>Launch search and monitor progress</strong>
+          </div>
+        </td>
+        <td>Results screen during a live search run.</td>
+        <td>Progress timeline, loading cards, and status labels that show the pipeline advancing.</td>
+        <td><code>../output/guide-screenshots/workflow/step-05-search-progress.png</code></td>
+      </tr>
+    
+
+      <tr>
+        <td>
+          <div class="plan-step-wrap">
+            <span class="step-pill inline">Step 6</span>
+            <strong>Review ranked results</strong>
+          </div>
+        </td>
+        <td>Completed results view with candidate cards loaded.</td>
+        <td>Score badges, evidence snippets, and enough of the list to show ranking quality.</td>
+        <td><code>../output/guide-screenshots/workflow/step-06-ranked-results.png</code></td>
+      </tr>
+    
+
+      <tr>
+        <td>
+          <div class="plan-step-wrap">
+            <span class="step-pill inline">Step 7</span>
+            <strong>Handle no-results and broaden safely</strong>
+          </div>
+        </td>
+        <td>Results state that demonstrates how a narrow query can be broadened safely.</td>
+        <td>Query guidance, broadened targeting, and the part of the list or hint state that shows recovery.</td>
+        <td><code>../output/guide-screenshots/workflow/step-07-broaden-search.png</code></td>
+      </tr>
+    
+
+      <tr>
+        <td>
+          <div class="plan-step-wrap">
+            <span class="step-pill inline">Step 8</span>
+            <strong>Drill into candidate profile</strong>
+          </div>
+        </td>
+        <td>Candidate profile side panel opened from a completed search.</td>
+        <td>EEA signals, notable work, company context, and recruiter action controls in one frame.</td>
+        <td><code>../output/guide-screenshots/workflow/step-08-candidate-profile.png</code></td>
+      </tr>
+    
+
+      <tr>
+        <td>
+          <div class="plan-step-wrap">
+            <span class="step-pill inline">Step 9</span>
+            <strong>Create Webset from strategy criteria</strong>
+          </div>
+        </td>
+        <td>Websets builder with a fully populated criteria form.</td>
+        <td>Criteria text, enrichment selections, and the reusable sourcing definition layout.</td>
+        <td><code>../output/guide-screenshots/workflow/step-09-webset-criteria.png</code></td>
+      </tr>
+    
+
+      <tr>
+        <td>
+          <div class="plan-step-wrap">
+            <span class="step-pill inline">Step 10</span>
+            <strong>Submit Webset and track completion</strong>
+          </div>
+        </td>
+        <td>Immediate post-submit Webset state after clicking Create Webset.</td>
+        <td>Submission feedback, visible status, and any success or failure notification.</td>
+        <td><code>../output/guide-screenshots/workflow/step-10-webset-status.png</code></td>
+      </tr>
+    
+
+      <tr>
+        <td>
+          <div class="plan-step-wrap">
+            <span class="step-pill inline">Step 11</span>
+            <strong>Navigate to completed run results</strong>
+          </div>
+        </td>
+        <td>History tab with completed SourceKit runs listed.</td>
+        <td>Run names, timestamps, result counts, and the action affordance to reopen a run.</td>
+        <td><code>../output/guide-screenshots/workflow/step-11-history.png</code></td>
+      </tr>
+    
+
+      <tr>
+        <td>
+          <div class="plan-step-wrap">
+            <span class="step-pill inline">Step 12</span>
+            <strong>Export and move candidates into pipeline</strong>
+          </div>
+        </td>
+        <td>Results screen with Export menu or pipeline action controls visible.</td>
+        <td>Export menu, handoff options, and the shortlist context surrounding the action.</td>
+        <td><code>../output/guide-screenshots/workflow/step-12-export.png</code></td>
+      </tr>
+    
+          </tbody>
+        </table>
+      </div>
+    </section>
+  
+
+      
+    <section class="page step-page">
+      <div class="step-head">
+        <span class="step-pill">Step 1</span>
+        <h2>Open SourceKit and sign in</h2>
+      </div>
+      <p class="line"><strong>Do this:</strong> Go to getsourcekit.vercel.app and sign in with email or Google using your approved account.</p>
+      <p class="line"><strong>You should see:</strong> You should see the current SourceKit auth screen, then land in the recruiter workspace.</p>
+
+      <div class="capture-grid">
+        <article class="capture-card">
+          <div class="capture-label">Screenshot Target</div>
+          <p>Chrome window with the SourceKit authentication screen in view.</p>
+        </article>
+        <article class="capture-card">
+          <div class="capture-label">Area To Frame</div>
+          <p>The SourceKit logo, sign-in form, and primary CTA with no extra desktop chrome.</p>
+        </article>
+        <article class="capture-card path">
+          <div class="capture-label">Output Path</div>
+          <p class="path-chip">../output/guide-screenshots/workflow/step-01-sign-in.png</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="../output/guide-screenshots/workflow/step-01-sign-in.png" alt="Step 1 screenshot" style="object-position:center center;" />
+        <figcaption>Example view with current SourceKit branding.</figcaption>
+      </figure>
+
+      <div class="callout-grid">
+        <article class="callout api">
+          <div class="callout-title">APIs Active In This Step</div>
+          <ul><li>Supabase Auth (session + JWT)</li>
+<li>No provider search APIs yet</li></ul>
+        </article>
+        <article class="callout tip">
+          <div class="callout-title">Best Practice</div>
+          <p>Use one consistent account so saved history and websets are retained.</p>
+        </article>
+      </div>
+    </section>
+  
+
+    <section class="page step-page">
+      <div class="step-head">
+        <span class="step-pill">Step 2</span>
+        <h2>Start in New Search</h2>
+      </div>
+      <p class="line"><strong>Do this:</strong> Open New Search and set role/company context (example: Staff ML Engineer at Anthropic).</p>
+      <p class="line"><strong>You should see:</strong> Role and company fields become the base input for strategy generation.</p>
+
+      <div class="capture-grid">
+        <article class="capture-card">
+          <div class="capture-label">Screenshot Target</div>
+          <p>New Search workspace immediately after opening the recruiter dashboard.</p>
+        </article>
+        <article class="capture-card">
+          <div class="capture-label">Area To Frame</div>
+          <p>Left navigation plus the Research & Strategy inputs and quick templates.</p>
+        </article>
+        <article class="capture-card path">
+          <div class="capture-label">Output Path</div>
+          <p class="path-chip">../output/guide-screenshots/workflow/step-02-new-search.png</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="../output/guide-screenshots/workflow/step-02-new-search.png" alt="Step 2 screenshot" />
+        <figcaption>Live application screenshot.</figcaption>
+      </figure>
+
+      <div class="callout-grid">
+        <article class="callout api">
+          <div class="callout-title">APIs Active In This Step</div>
+          <ul><li>Front-end state only</li>
+<li>No external provider call until strategy is launched</li></ul>
+        </article>
+        <article class="callout tip">
+          <div class="callout-title">Best Practice</div>
+          <p>Role specificity strongly improves repo targeting and candidate quality.</p>
+        </article>
+      </div>
+    </section>
+  
+
+    <section class="page step-page">
+      <div class="step-head">
+        <span class="step-pill">Step 3</span>
+        <h2>Build sourcing strategy</h2>
+      </div>
+      <p class="line"><strong>Do this:</strong> Click Build Sourcing Strategy to generate search query, target repos, target companies, and EEA signals.</p>
+      <p class="line"><strong>You should see:</strong> You should see strategy progress states and role-specific sourcing logic.</p>
+
+      <div class="capture-grid">
+        <article class="capture-card">
+          <div class="capture-label">Screenshot Target</div>
+          <p>Research & Strategy screen while the strategy builder is actively running.</p>
+        </article>
+        <article class="capture-card">
+          <div class="capture-label">Area To Frame</div>
+          <p>Progress module, role context, and emerging target-repo / target-company logic.</p>
+        </article>
+        <article class="capture-card path">
+          <div class="capture-label">Output Path</div>
+          <p class="path-chip">../output/guide-screenshots/workflow/step-03-build-strategy.png</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="../output/guide-screenshots/workflow/step-03-build-strategy.png" alt="Step 3 screenshot" />
+        <figcaption>Live application screenshot.</figcaption>
+      </figure>
+
+      <div class="callout-grid">
+        <article class="callout api">
+          <div class="callout-title">APIs Active In This Step</div>
+          <ul><li>Edge function: research-role</li>
+<li>Anthropic Messages API (tool call for structured strategy)</li>
+<li>Harmonic Companies + Similar Companies APIs for enrichment/expansion</li></ul>
+        </article>
+        <article class="callout tip">
+          <div class="callout-title">Best Practice</div>
+          <p>This is where target companies and target repos are formed; review before searching.</p>
+        </article>
+      </div>
+    </section>
+  
+
+    <section class="page step-page">
+      <div class="step-head">
+        <span class="step-pill">Step 4</span>
+        <h2>Write a target-company and target-repo query</h2>
+      </div>
+      <p class="line"><strong>Do this:</strong> In Results, use strategy output to compose a query that names target companies and repo ecosystems.</p>
+      <p class="line"><strong>You should see:</strong> Your query is visible in the search bar with immediate context on the ranked slate.</p>
+
+      <div class="capture-grid">
+        <article class="capture-card">
+          <div class="capture-label">Screenshot Target</div>
+          <p>Results tab with the search bar populated from strategy output.</p>
+        </article>
+        <article class="capture-card">
+          <div class="capture-label">Area To Frame</div>
+          <p>Query text, visible repo/company anchors, and top of the ranked result list.</p>
+        </article>
+        <article class="capture-card path">
+          <div class="capture-label">Output Path</div>
+          <p class="path-chip">../output/guide-screenshots/workflow/step-04-query-composition.png</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="../output/guide-screenshots/workflow/step-04-query-composition.png" alt="Step 4 screenshot" />
+        <figcaption>Live application screenshot.</figcaption>
+      </figure>
+
+      <div class="callout-grid">
+        <article class="callout api">
+          <div class="callout-title">APIs Active In This Step</div>
+          <ul><li>Edge function: github-search (or search-candidates flow depending entry point)</li>
+<li>GitHub API and Exa Search API are primed by query intent</li></ul>
+        </article>
+        <article class="callout tip">
+          <div class="callout-title">Best Practice</div>
+          <p>Best practice: use fewer company names plus stronger repo signals to avoid over-constraining.</p>
+        </article>
+      </div>
+    </section>
+  
+
+    <section class="page step-page">
+      <div class="step-head">
+        <span class="step-pill">Step 5</span>
+        <h2>Launch search and monitor progress</h2>
+      </div>
+      <p class="line"><strong>Do this:</strong> Click Search and wait for parsing, retrieval, enrichment, and scoring to complete.</p>
+      <p class="line"><strong>You should see:</strong> You should see real-time progress lines and loading cards.</p>
+
+      <div class="capture-grid">
+        <article class="capture-card">
+          <div class="capture-label">Screenshot Target</div>
+          <p>Results screen during a live search run.</p>
+        </article>
+        <article class="capture-card">
+          <div class="capture-label">Area To Frame</div>
+          <p>Progress timeline, loading cards, and status labels that show the pipeline advancing.</p>
+        </article>
+        <article class="capture-card path">
+          <div class="capture-label">Output Path</div>
+          <p class="path-chip">../output/guide-screenshots/workflow/step-05-search-progress.png</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="../output/guide-screenshots/workflow/step-05-search-progress.png" alt="Step 5 screenshot" />
+        <figcaption>Live application screenshot.</figcaption>
+      </figure>
+
+      <div class="callout-grid">
+        <article class="callout api">
+          <div class="callout-title">APIs Active In This Step</div>
+          <ul><li>GitHub API (contributors/users/repos/events)</li>
+<li>Exa Search API (semantic candidate assist)</li>
+<li>Anthropic Messages API (query parsing + scoring summaries)</li></ul>
+        </article>
+        <article class="callout tip">
+          <div class="callout-title">Best Practice</div>
+          <p>Do not tune filters mid-run; let ranking finish first.</p>
+        </article>
+      </div>
+    </section>
+  
+
+    <section class="page step-page">
+      <div class="step-head">
+        <span class="step-pill">Step 6</span>
+        <h2>Review ranked results</h2>
+      </div>
+      <p class="line"><strong>Do this:</strong> Open the completed run and inspect score, evidence snippets, and repo contribution depth.</p>
+      <p class="line"><strong>You should see:</strong> You should see a ranked list with candidate cards and quick actions.</p>
+
+      <div class="capture-grid">
+        <article class="capture-card">
+          <div class="capture-label">Screenshot Target</div>
+          <p>Completed results view with candidate cards loaded.</p>
+        </article>
+        <article class="capture-card">
+          <div class="capture-label">Area To Frame</div>
+          <p>Score badges, evidence snippets, and enough of the list to show ranking quality.</p>
+        </article>
+        <article class="capture-card path">
+          <div class="capture-label">Output Path</div>
+          <p class="path-chip">../output/guide-screenshots/workflow/step-06-ranked-results.png</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="../output/guide-screenshots/workflow/step-06-ranked-results.png" alt="Step 6 screenshot" />
+        <figcaption>Live application screenshot.</figcaption>
+      </figure>
+
+      <div class="callout-grid">
+        <article class="callout api">
+          <div class="callout-title">APIs Active In This Step</div>
+          <ul><li>Supabase candidate cache + query-scoped scoring persistence</li>
+<li>No new upstream call needed when loading cached completed runs</li></ul>
+        </article>
+        <article class="callout tip">
+          <div class="callout-title">Best Practice</div>
+          <p>Score is evidence strength from public artifacts, not final interview recommendation.</p>
+        </article>
+      </div>
+    </section>
+  
+
+    <section class="page step-page">
+      <div class="step-head">
+        <span class="step-pill">Step 7</span>
+        <h2>Handle no-results and broaden safely</h2>
+      </div>
+      <p class="line"><strong>Do this:</strong> If no engineers found, reduce strict company constraints and retain technical repo anchors.</p>
+      <p class="line"><strong>You should see:</strong> You should see guidance hints and can rerun with broader criteria.</p>
+
+      <div class="capture-grid">
+        <article class="capture-card">
+          <div class="capture-label">Screenshot Target</div>
+          <p>Results state that demonstrates how a narrow query can be broadened safely.</p>
+        </article>
+        <article class="capture-card">
+          <div class="capture-label">Area To Frame</div>
+          <p>Query guidance, broadened targeting, and the part of the list or hint state that shows recovery.</p>
+        </article>
+        <article class="capture-card path">
+          <div class="capture-label">Output Path</div>
+          <p class="path-chip">../output/guide-screenshots/workflow/step-07-broaden-search.png</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="../output/guide-screenshots/workflow/step-07-broaden-search.png" alt="Step 7 screenshot" />
+        <figcaption>Live application screenshot.</figcaption>
+      </figure>
+
+      <div class="callout-grid">
+        <article class="callout api">
+          <div class="callout-title">APIs Active In This Step</div>
+          <ul><li>Same search pipeline with adjusted query</li>
+<li>No-results guidance from SourceKit result layer</li></ul>
+        </article>
+        <article class="callout tip">
+          <div class="callout-title">Best Practice</div>
+          <p>Broaden company scope first. Keep high-signal repo and technology constraints.</p>
+        </article>
+      </div>
+    </section>
+  
+
+    <section class="page step-page">
+      <div class="step-head">
+        <span class="step-pill">Step 8</span>
+        <h2>Drill into candidate profile</h2>
+      </div>
+      <p class="line"><strong>Do this:</strong> Click a candidate to open profile details, EEA indicators, notable work, and outreach tools.</p>
+      <p class="line"><strong>You should see:</strong> A side panel shows summary evidence and action controls.</p>
+
+      <div class="capture-grid">
+        <article class="capture-card">
+          <div class="capture-label">Screenshot Target</div>
+          <p>Candidate profile side panel opened from a completed search.</p>
+        </article>
+        <article class="capture-card">
+          <div class="capture-label">Area To Frame</div>
+          <p>EEA signals, notable work, company context, and recruiter action controls in one frame.</p>
+        </article>
+        <article class="capture-card path">
+          <div class="capture-label">Output Path</div>
+          <p class="path-chip">../output/guide-screenshots/workflow/step-08-candidate-profile.png</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="../output/guide-screenshots/workflow/step-08-candidate-profile.png" alt="Step 8 screenshot" />
+        <figcaption>Live application screenshot.</figcaption>
+      </figure>
+
+      <div class="callout-grid">
+        <article class="callout api">
+          <div class="callout-title">APIs Active In This Step</div>
+          <ul><li>GitHub profile data from cached/enriched candidate records</li>
+<li>Anthropic Messages API for generated outreach when requested</li>
+<li>Optional Exa + Anthropic via enrich-linkedin flow</li></ul>
+        </article>
+        <article class="callout tip">
+          <div class="callout-title">Best Practice</div>
+          <p>Use cited repo evidence in outreach for higher response quality.</p>
+        </article>
+      </div>
+    </section>
+  
+
+    <section class="page step-page">
+      <div class="step-head">
+        <span class="step-pill">Step 9</span>
+        <h2>Create Webset from strategy criteria</h2>
+      </div>
+      <p class="line"><strong>Do this:</strong> Open Websets and convert strategy logic into persistent criteria and enrichment fields.</p>
+      <p class="line"><strong>You should see:</strong> A Webset definition captures query + criteria + enrichments for recurring monitoring.</p>
+
+      <div class="capture-grid">
+        <article class="capture-card">
+          <div class="capture-label">Screenshot Target</div>
+          <p>Websets builder with a fully populated criteria form.</p>
+        </article>
+        <article class="capture-card">
+          <div class="capture-label">Area To Frame</div>
+          <p>Criteria text, enrichment selections, and the reusable sourcing definition layout.</p>
+        </article>
+        <article class="capture-card path">
+          <div class="capture-label">Output Path</div>
+          <p class="path-chip">../output/guide-screenshots/workflow/step-09-webset-criteria.png</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="../output/guide-screenshots/workflow/step-09-webset-criteria.png" alt="Step 9 screenshot" />
+        <figcaption>Live application screenshot.</figcaption>
+      </figure>
+
+      <div class="callout-grid">
+        <article class="callout api">
+          <div class="callout-title">APIs Active In This Step</div>
+          <ul><li>Edge function: exa-websets</li>
+<li>Exa Websets API (create/list/items/enrichments)</li></ul>
+        </article>
+        <article class="callout tip">
+          <div class="callout-title">Best Practice</div>
+          <p>Criterion text should describe verifiable evidence patterns, not generic title matching.</p>
+        </article>
+      </div>
+    </section>
+  
+
+    <section class="page step-page">
+      <div class="step-head">
+        <span class="step-pill">Step 10</span>
+        <h2>Submit Webset and track completion</h2>
+      </div>
+      <p class="line"><strong>Do this:</strong> Click Create Webset and observe status; investigate errors if submission fails.</p>
+      <p class="line"><strong>You should see:</strong> You should see success progression or an explicit failure notification.</p>
+
+      <div class="capture-grid">
+        <article class="capture-card">
+          <div class="capture-label">Screenshot Target</div>
+          <p>Immediate post-submit Webset state after clicking Create Webset.</p>
+        </article>
+        <article class="capture-card">
+          <div class="capture-label">Area To Frame</div>
+          <p>Submission feedback, visible status, and any success or failure notification.</p>
+        </article>
+        <article class="capture-card path">
+          <div class="capture-label">Output Path</div>
+          <p class="path-chip">../output/guide-screenshots/workflow/step-10-webset-status.png</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="../output/guide-screenshots/workflow/step-10-webset-status.png" alt="Step 10 screenshot" />
+        <figcaption>Live application screenshot.</figcaption>
+      </figure>
+
+      <div class="callout-grid">
+        <article class="callout api">
+          <div class="callout-title">APIs Active In This Step</div>
+          <ul><li>Exa Websets create call</li>
+<li>webset-webhook event ingestion (idle/item/enrichment events) when configured</li></ul>
+        </article>
+        <article class="callout tip">
+          <div class="callout-title">Best Practice</div>
+          <p>If you see Failed to fetch, verify server-side EXA key, quota, and network path first.</p>
+        </article>
+      </div>
+    </section>
+  
+
+    <section class="page step-page">
+      <div class="step-head">
+        <span class="step-pill">Step 11</span>
+        <h2>Navigate to completed run results</h2>
+      </div>
+      <p class="line"><strong>Do this:</strong> Open History to load completed search/webset-backed runs and continue pipeline actions.</p>
+      <p class="line"><strong>You should see:</strong> Completed runs show timestamp + count; opening a run restores ranked results.</p>
+
+      <div class="capture-grid">
+        <article class="capture-card">
+          <div class="capture-label">Screenshot Target</div>
+          <p>History tab with completed SourceKit runs listed.</p>
+        </article>
+        <article class="capture-card">
+          <div class="capture-label">Area To Frame</div>
+          <p>Run names, timestamps, result counts, and the action affordance to reopen a run.</p>
+        </article>
+        <article class="capture-card path">
+          <div class="capture-label">Output Path</div>
+          <p class="path-chip">../output/guide-screenshots/workflow/step-11-history.png</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="../output/guide-screenshots/workflow/step-11-history.png" alt="Step 11 screenshot" />
+        <figcaption>Live application screenshot.</figcaption>
+      </figure>
+
+      <div class="callout-grid">
+        <article class="callout api">
+          <div class="callout-title">APIs Active In This Step</div>
+          <ul><li>Supabase persistence for search history and webset mappings</li>
+<li>No re-search required to review completed runs</li></ul>
+        </article>
+        <article class="callout tip">
+          <div class="callout-title">Best Practice</div>
+          <p>History is the fastest way to return to completed result sets after async processing.</p>
+        </article>
+      </div>
+    </section>
+  
+
+    <section class="page step-page">
+      <div class="step-head">
+        <span class="step-pill">Step 12</span>
+        <h2>Export and move candidates into pipeline</h2>
+      </div>
+      <p class="line"><strong>Do this:</strong> Use Export and pipeline actions once shortlist quality is confirmed.</p>
+      <p class="line"><strong>You should see:</strong> CSV/JSON export and stage movement controls are available from results/pipeline screens.</p>
+
+      <div class="capture-grid">
+        <article class="capture-card">
+          <div class="capture-label">Screenshot Target</div>
+          <p>Results screen with Export menu or pipeline action controls visible.</p>
+        </article>
+        <article class="capture-card">
+          <div class="capture-label">Area To Frame</div>
+          <p>Export menu, handoff options, and the shortlist context surrounding the action.</p>
+        </article>
+        <article class="capture-card path">
+          <div class="capture-label">Output Path</div>
+          <p class="path-chip">../output/guide-screenshots/workflow/step-12-export.png</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="../output/guide-screenshots/workflow/step-12-export.png" alt="Step 12 screenshot" />
+        <figcaption>Live application screenshot.</figcaption>
+      </figure>
+
+      <div class="callout-grid">
+        <article class="callout api">
+          <div class="callout-title">APIs Active In This Step</div>
+          <ul><li>Supabase pipeline state updates</li>
+<li>Optional exa-websets batch_pipeline import path for webset items</li></ul>
+        </article>
+        <article class="callout tip">
+          <div class="callout-title">Best Practice</div>
+          <p>Freeze final filters before export to prevent noisy handoff files.</p>
+        </article>
+      </div>
+    </section>
+  
+
+      
+    <section class="page provider-page">
+      <div class="provider-head" style="--provider-accent:#0891b2;">
+        <div class="brand-lockup">
+          <img src="../../docs/assets/logos/exa-full.svg" alt="Exa API" class="provider-logo" />
+          <div>
+            <h2>Exa API</h2>
+            <p>Semantic retrieval, candidate expansion, and persistent Webset infrastructure.</p>
+          </div>
+        </div>
+        <div class="mark-wrap">
+          <img src="../../docs/assets/logos/exa-mark.svg" alt="Exa API mark" class="provider-mark" />
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>API Surface</th>
+              <th>SourceKit Function</th>
+              <th>Upstream Endpoint</th>
+              <th>Functionality</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+      <tr>
+        <td><strong>Search API</strong></td>
+        <td><span class="mono">search-candidates, github-search, enrich-linkedin</span></td>
+        <td><span class="mono">POST /search</span></td>
+        <td>Neural person discovery, profile leads, and LinkedIn search candidates.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>findSimilar API</strong></td>
+        <td><span class="mono">find-similar-candidates</span></td>
+        <td><span class="mono">POST /findSimilar</span></td>
+        <td>Lateral discovery from a strong profile to similar engineers.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Websets API</strong></td>
+        <td><span class="mono">exa-websets</span></td>
+        <td><span class="mono">/websets/v0/websets*</span></td>
+        <td>Create/list/get/delete websets, fetch items, add enrichments.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Webset Monitors</strong></td>
+        <td><span class="mono">exa-websets</span></td>
+        <td><span class="mono">/websets/{id}/monitors*</span></td>
+        <td>Create/list/pause/resume scheduled monitors.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Webset Imports</strong></td>
+        <td><span class="mono">import-candidates</span></td>
+        <td><span class="mono">POST /websets/{id}/imports</span></td>
+        <td>Import existing candidate URLs into websets.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Answer API</strong></td>
+        <td><span class="mono">Not wired in current repo</span></td>
+        <td><span class="mono">N/A</span></td>
+        <td>Product narrative includes grounded summaries, but no direct /answer call in current code.</td>
+        <td><span class="status status-planned">Planned</span></td>
+      </tr>
+    
+          </tbody>
+        </table>
+      </div>
+    </section>
+  
+
+    <section class="page provider-page">
+      <div class="provider-head" style="--provider-accent:#7c3aed;">
+        <div class="brand-lockup">
+          <img src="../../docs/assets/logos/parallel-full.svg" alt="Parallel API" class="provider-logo" />
+          <div>
+            <h2>Parallel API</h2>
+            <p>Company intelligence, dynamic page extraction, and async talent-mapping tasks.</p>
+          </div>
+        </div>
+        <div class="mark-wrap">
+          <img src="../../docs/assets/logos/parallel-mark.svg" alt="Parallel API mark" class="provider-mark" />
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>API Surface</th>
+              <th>SourceKit Function</th>
+              <th>Upstream Endpoint</th>
+              <th>Functionality</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+      <tr>
+        <td><strong>Extract API</strong></td>
+        <td><span class="mono">parse-jd</span></td>
+        <td><span class="mono">POST /v1beta/extract</span></td>
+        <td>Extracts JD content from JS-rendered pages with fallback parsing.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Search API</strong></td>
+        <td><span class="mono">search-candidates</span></td>
+        <td><span class="mono">POST /v1beta/search</span></td>
+        <td>Secondary candidate retrieval stream merged with Exa output.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Task API</strong></td>
+        <td><span class="mono">company-intel</span></td>
+        <td><span class="mono">POST/GET /v1beta/tasks</span></td>
+        <td>Per-company intelligence jobs: headcount, stack, attrition, rationale.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>FindAll API</strong></td>
+        <td><span class="mono">map-company-talent</span></td>
+        <td><span class="mono">POST/GET /v1beta/findall</span></td>
+        <td>Maps engineers at target companies with profile links and notable work.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+          </tbody>
+        </table>
+      </div>
+    </section>
+  
+
+    <section class="page provider-page">
+      <div class="provider-head" style="--provider-accent:#15803d;">
+        <div class="brand-lockup">
+          <img src="../../docs/assets/logos/github-full.svg" alt="GitHub API" class="provider-logo" />
+          <div>
+            <h2>GitHub API</h2>
+            <p>Primary evidence signal: contributors, commits, repos, and developer activity.</p>
+          </div>
+        </div>
+        <div class="mark-wrap">
+          <img src="../../docs/assets/logos/github-green.svg" alt="GitHub API mark" class="provider-mark" />
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>API Surface</th>
+              <th>SourceKit Function</th>
+              <th>Upstream Endpoint</th>
+              <th>Functionality</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+      <tr>
+        <td><strong>Contributors API</strong></td>
+        <td><span class="mono">github-search</span></td>
+        <td><span class="mono">GET /repos/{owner}/{repo}/contributors</span></td>
+        <td>Builds candidate pool from target repositories.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Users Search API</strong></td>
+        <td><span class="mono">github-search</span></td>
+        <td><span class="mono">GET /search/users</span></td>
+        <td>Adds candidate candidates from skill/location qualifiers.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Users/Repos/Events</strong></td>
+        <td><span class="mono">github-search, github-profile</span></td>
+        <td><span class="mono">GET /users/*, /repos, /events</span></td>
+        <td>Enriches candidate evidence packets and profile views.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Repo Verification</strong></td>
+        <td><span class="mono">github-search</span></td>
+        <td><span class="mono">GET /repos/{owner}/{name}</span></td>
+        <td>Validates strategy repos before retrieval.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Code Quality Inputs</strong></td>
+        <td><span class="mono">github-code-quality</span></td>
+        <td><span class="mono">Repos + commits + contents endpoints</span></td>
+        <td>Computes deeper repository quality and AI usage indicators.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+          </tbody>
+        </table>
+      </div>
+    </section>
+  
+
+    <section class="page provider-page">
+      <div class="provider-head" style="--provider-accent:#ea580c;">
+        <div class="brand-lockup">
+          <img src="../../docs/assets/logos/claude-full.svg" alt="Claude (Anthropic) API" class="provider-logo" />
+          <div>
+            <h2>Claude (Anthropic) API</h2>
+            <p>Structured strategy generation, ranking/scoring intelligence, and recruiter writing tools.</p>
+          </div>
+        </div>
+        <div class="mark-wrap">
+          <img src="../../docs/assets/logos/claude-mark.svg" alt="Claude (Anthropic) API mark" class="provider-mark" />
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>API Surface</th>
+              <th>SourceKit Function</th>
+              <th>Upstream Endpoint</th>
+              <th>Functionality</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+      <tr>
+        <td><strong>Tool-based strategy</strong></td>
+        <td><span class="mono">research-role</span></td>
+        <td><span class="mono">POST /v1/messages (tool call)</span></td>
+        <td>Returns structured strategy JSON with repos, companies, and EEA signals.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Query parsing</strong></td>
+        <td><span class="mono">github-search</span></td>
+        <td><span class="mono">POST /v1/messages</span></td>
+        <td>Parses recruiter query into repos/skills/location/seniority hints.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Candidate scoring</strong></td>
+        <td><span class="mono">github-search</span></td>
+        <td><span class="mono">POST /v1/messages</span></td>
+        <td>Scores and summarizes candidates with recruitability signal.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Outreach generation</strong></td>
+        <td><span class="mono">generate-outreach</span></td>
+        <td><span class="mono">POST /v1/messages</span></td>
+        <td>Creates concise personalized outreach drafts.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>LinkedIn disambiguation</strong></td>
+        <td><span class="mono">enrich-linkedin</span></td>
+        <td><span class="mono">POST /v1/messages (tool call)</span></td>
+        <td>Chooses best LinkedIn profile match from search results.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+          </tbody>
+        </table>
+      </div>
+    </section>
+  
+
+    <section class="page provider-page">
+      <div class="provider-head" style="--provider-accent:#0f766e;">
+        <div class="brand-lockup">
+          <img src="../../docs/assets/logos/harmonic-full.svg" alt="Harmonic API" class="provider-logo" />
+          <div>
+            <h2>Harmonic API</h2>
+            <p>Company graph enrichment and expansion for stronger poach-company intelligence.</p>
+          </div>
+        </div>
+        <div class="mark-wrap">
+          <img src="../../docs/assets/logos/harmonic-full.svg" alt="Harmonic API mark" class="provider-mark" />
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>API Surface</th>
+              <th>SourceKit Function</th>
+              <th>Upstream Endpoint</th>
+              <th>Functionality</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+      <tr>
+        <td><strong>Companies API</strong></td>
+        <td><span class="mono">research-role, harmonic-enrich</span></td>
+        <td><span class="mono">POST /companies</span></td>
+        <td>Enriches target companies with stage, funding, growth, and graph context.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Similar Companies</strong></td>
+        <td><span class="mono">research-role, harmonic-search</span></td>
+        <td><span class="mono">POST /search/similar_companies</span></td>
+        <td>Expands adjacent target-company graph from strong seed URNs.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Company/Person Enrichment</strong></td>
+        <td><span class="mono">harmonic-enrich</span></td>
+        <td><span class="mono">companies/persons/employees/status</span></td>
+        <td>Normalized enrichment wrappers with caching and status checks.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+
+      <tr>
+        <td><strong>Search Agent + Keyword</strong></td>
+        <td><span class="mono">harmonic-search</span></td>
+        <td><span class="mono">search_agent + companies_by_keywords + typeahead</span></td>
+        <td>Natural language and keyword company landscape discovery.</td>
+        <td><span class="status status-live">Live</span></td>
+      </tr>
+    
+          </tbody>
+        </table>
+      </div>
+    </section>
+  
+
+      <section class="page">
+        <h2>Implementation Notes</h2>
+        <div class="warn">
+          <ul>
+            <li><strong>Exa Answer API:</strong> product narrative references grounded answer synthesis, but no direct Exa <code>/answer</code> call is currently wired in this repository.</li>
+            <li><strong>Webset create failures:</strong> <code>Failed to fetch</code> states are typically key/quota/connectivity issues in provider path, not just UI issues.</li>
+            <li><strong>Search gating:</strong> strategy/search flows enforce auth/subscription gate before expensive provider calls.</li>
+            <li><strong>Webset criteria normalization:</strong> server-side webset create path limits criteria to the first five entries.</li>
+            <li><strong>History as completion hub:</strong> completed runs (including async paths) are reopened through History for stable results review.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="page">
+        <h2>Approved Logo System</h2>
+        <p>Primary SourceKit identity and partner marks used in this guide. This page uses the current SourceKit logo set.</p>
+
+        <div class="logo-system">
+          <article class="brand-hero">
+            <div class="brand-hero-head">
+              <h3>SourceKit Brand Identity</h3>
+              <span class="approved-badge">Current Version</span>
+            </div>
+            <div class="brand-hero-grid">
+              <div class="brand-cell">
+                <img src="../../docs/assets/logos/sourcekit-full.svg" alt="SourceKit full logo" />
+                <div class="brand-caption"><mark>Primary</mark> sourcekit-full.svg</div>
+              </div>
+              <div class="brand-cell">
+                <img src="../../docs/assets/logos/sourcekit-mark-new.svg" alt="SourceKit mark logo" />
+                <div class="brand-caption"><mark>Mark</mark> sourcekit-mark-new.svg</div>
+              </div>
+            </div>
+          </article>
+
+          <div class="partners-grid">
+            <article class="partner-card">
+              <div class="partner-head">
+                <h4 class="partner-title">Exa</h4>
+                <span class="token">Research</span>
+              </div>
+              <div class="partner-logos">
+                <div class="logo-tile"><img src="../../docs/assets/logos/exa-full.svg" alt="Exa full logo" /><div class="mono">exa-full.svg</div></div>
+                <div class="logo-tile mark"><img src="../../docs/assets/logos/exa-mark.svg" alt="Exa mark logo" /><div class="mono">exa-mark.svg</div></div>
+              </div>
+            </article>
+
+            <article class="partner-card">
+              <div class="partner-head">
+                <h4 class="partner-title">Parallel</h4>
+                <span class="token">Company Intel</span>
+              </div>
+              <div class="partner-logos">
+                <div class="logo-tile"><img src="../../docs/assets/logos/parallel-full.svg" alt="Parallel full logo" /><div class="mono">parallel-full.svg</div></div>
+                <div class="logo-tile mark"><img src="../../docs/assets/logos/parallel-mark.svg" alt="Parallel mark logo" /><div class="mono">parallel-mark.svg</div></div>
+              </div>
+            </article>
+
+            <article class="partner-card">
+              <div class="partner-head">
+                <h4 class="partner-title">GitHub</h4>
+                <span class="token">Evidence</span>
+              </div>
+              <div class="partner-logos">
+                <div class="logo-tile"><img src="../../docs/assets/logos/github-full.svg" alt="GitHub full logo" /><div class="mono">github-full.svg</div></div>
+                <div class="logo-tile mark"><img src="../../docs/assets/logos/github-green.svg" alt="GitHub green mark logo" /><div class="mono">github-green.svg</div></div>
+              </div>
+            </article>
+
+            <article class="partner-card">
+              <div class="partner-head">
+                <h4 class="partner-title">Claude</h4>
+                <span class="token">Reasoning</span>
+              </div>
+              <div class="partner-logos">
+                <div class="logo-tile"><img src="../../docs/assets/logos/claude-full.svg" alt="Claude full logo" /><div class="mono">claude-full.svg</div></div>
+                <div class="logo-tile mark"><img src="../../docs/assets/logos/claude-mark.svg" alt="Claude mark logo" /><div class="mono">claude-mark.svg</div></div>
+              </div>
+            </article>
+
+            <article class="partner-card">
+              <div class="partner-head">
+                <h4 class="partner-title">Harmonic</h4>
+                <span class="token">Graph</span>
+              </div>
+              <div class="partner-logos">
+                <div class="logo-tile"><img src="../../docs/assets/logos/harmonic-full.svg" alt="Harmonic full logo" /><div class="mono">harmonic-full.svg</div></div>
+                <div class="logo-tile placeholder"><div class="mono">mark asset not provided</div></div>
+              </div>
+            </article>
+          </div>
+
+          <div class="guideline-grid">
+            <article class="guide-card ok">
+              <h4>Logo Usage: Do</h4>
+              <ul class="guide-list">
+                <li>Use <code>sourcekit-full.svg</code> for title bars and headers.</li>
+                <li>Use <code>sourcekit-mark-new.svg</code> for compact badges and avatars.</li>
+                <li>Keep clear space around every logo mark.</li>
+              </ul>
+            </article>
+            <article class="guide-card no">
+              <h4>Logo Usage: Avoid</h4>
+              <ul class="guide-list">
+                <li>Do not stretch or recolor partner logos.</li>
+                <li>Do not mix old SourceKit marks with the current set.</li>
+                <li>Do not place low-contrast logos on similar background tones.</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -35,19 +35,18 @@ export function SourceKitLogo({
         width={size}
         height={size}
         className={markClassName}
-        // canonical mark is teal; enforce via CSS token in your app:
-        // .text-accent { color: var(--accent-primary); }
+        // canonical mark uses neutral foreground in UI lockups
       />
       <span style={{ display: "inline-flex", alignItems: "baseline", gap: 0 }}>
         <span
           className={sourceClassName}
-          style={{ fontFamily: "DM Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif", fontWeight: 600, color: "var(--fg-primary, #FFFFFF)" }}
+          style={{ fontFamily: "DM Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif", fontWeight: 600, color: "var(--accent-primary, #006EE6)" }}
         >
           Source
         </span>
         <span
           className={kitClassName}
-          style={{ fontFamily: "DM Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif", fontWeight: 500, color: "#9E9E9E" }}
+          style={{ fontFamily: "DM Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif", fontWeight: 500, color: "var(--fg-primary, #0F172A)" }}
         >
           Kit
         </span>

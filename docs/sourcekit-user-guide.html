@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SourceKit User Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #c4cad6;
+        --paper: #f6f8fc;
+        --panel: #e9edf4;
+        --panel-2: #dde5f0;
+        --line: #c4ccda;
+        --line-2: #b2bdcf;
+        --text: #0f172a;
+        --muted: #475569;
+        --subtle: #5d6f89;
+        --green: #00d5c1;
+        --blue: #006ee6;
+        --shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(900px 500px at -10% -20%, #eef4ff 0%, transparent 60%),
+          radial-gradient(1200px 680px at 110% 0%, #d8fff8 0%, transparent 62%),
+          linear-gradient(180deg, #d4dae5 0%, #c4cad6 100%);
+        color: var(--text);
+        font-family: "DM Sans", "Avenir Next", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .doc {
+        width: 100%;
+        margin: 0;
+      }
+      .page {
+        background: linear-gradient(180deg, var(--panel) 0%, var(--paper) 100%);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        margin: 10px;
+        padding: 20px 16px 24px;
+        page-break-after: always;
+        break-after: page;
+        box-shadow: var(--shadow);
+        position: relative;
+      }
+      .page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 34px;
+        line-height: 1.1;
+      }
+      h2 {
+        margin: 0 0 12px;
+        font-size: 24px;
+        line-height: 1.2;
+      }
+      h3 {
+        margin: 18px 0 8px;
+        font-size: 17px;
+      }
+      p {
+        margin: 0 0 10px;
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 14px;
+      }
+      code {
+        font-family: "JetBrains Mono", monospace;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        padding: 2px 5px;
+        border-radius: 4px;
+        color: var(--text);
+        font-size: 12px;
+      }
+      .cover {
+        min-height: 8.4in;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 18px;
+        background:
+          linear-gradient(145deg, #eef4ff 0%, #dce6f7 45%, #d0d9e9 100%);
+        overflow: hidden;
+      }
+      .cover::before,
+      .cover::after {
+        content: "";
+        position: absolute;
+        border-radius: 999px;
+        pointer-events: none;
+      }
+      .cover::before {
+        width: 360px;
+        height: 360px;
+        right: -120px;
+        top: -120px;
+        background: radial-gradient(circle, rgba(0, 110, 230, 0.18) 0%, rgba(0, 110, 230, 0) 72%);
+      }
+      .cover::after {
+        width: 320px;
+        height: 320px;
+        left: -140px;
+        bottom: -140px;
+        background: radial-gradient(circle, rgba(0, 213, 193, 0.16) 0%, rgba(0, 213, 193, 0) 74%);
+      }
+      .cover-logo {
+        height: 52px;
+        width: auto;
+      }
+      .pill {
+        border: 1px solid #a8b9d5;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 11px;
+        font-family: "JetBrains Mono", monospace;
+        background: rgba(255, 255, 255, 0.84);
+        color: var(--muted);
+        width: fit-content;
+      }
+      .cover-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .mini-card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 13px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+      }
+      .logo-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+      }
+      .logo-chip {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: linear-gradient(180deg, #ffffff 0%, #f6f8fc 100%);
+        width: 102px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .logo-chip img {
+        max-height: 22px;
+        max-width: 84px;
+        width: auto;
+      }
+      .subtitle {
+        font-size: 18px;
+        color: var(--muted);
+        margin: 0 0 24px;
+      }
+      .meta p {
+        margin: 0 0 8px;
+        font-size: 14px;
+      }
+      .meta strong {
+        display: inline-block;
+        width: 110px;
+        color: var(--text);
+      }
+      ul {
+        margin: 0 0 14px;
+        padding-left: 18px;
+        color: var(--muted);
+      }
+      li {
+        margin-bottom: 8px;
+        font-size: 14px;
+        line-height: 1.45;
+      }
+      .line strong {
+        color: var(--text);
+      }
+      .shot {
+        margin: 14px 0 12px;
+      }
+      .shot img {
+        width: 100%;
+        height: 334px;
+        object-fit: contain;
+        object-position: top left;
+        display: block;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(240, 246, 255, 0.9) 100%);
+        border: 1px solid var(--line-2);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        padding: 12px;
+      }
+      .shot figcaption {
+        margin-top: 6px;
+        color: var(--subtle);
+        font-size: 12px;
+      }
+      .capture-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.2fr;
+        gap: 10px;
+        margin: 12px 0 2px;
+      }
+      .capture-card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+        padding: 10px 12px;
+      }
+      .capture-card p {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .capture-label {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #0b4c95;
+        margin-bottom: 6px;
+      }
+      .capture-card.path {
+        background: linear-gradient(180deg, rgba(0, 110, 230, 0.08), rgba(0, 110, 230, 0.03));
+      }
+      .path-chip {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--text);
+        word-break: break-all;
+      }
+      .callout {
+        border: 1px solid;
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      .callout.tip {
+        background: rgba(0, 213, 193, 0.1);
+        border-color: rgba(0, 213, 193, 0.35);
+      }
+      .callout.warning {
+        background: rgba(249, 115, 22, 0.1);
+        border-color: rgba(249, 115, 22, 0.3);
+      }
+      .callout-title {
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+      .callout p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .troubleshooting {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--panel-2);
+      }
+      .issue-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-top: 1px solid var(--line);
+      }
+      .issue-row:first-child {
+        border-top: 0;
+      }
+      .issue-row > div {
+        padding: 12px;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+      .issue-head > div {
+        background: linear-gradient(180deg, #e5ecf7 0%, #dde6f2 100%);
+        color: var(--text);
+        font-weight: 700;
+      }
+      .issue-row > div:first-child {
+        background: var(--panel);
+        font-weight: 600;
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="doc">
+      <section class="page cover">
+        <img src="../../docs/assets/logos/sourcekit-full.svg" alt="SourceKit" class="cover-logo" />
+        <div class="pill">Version March 20, 2026</div>
+        <h1>SourceKit User Guide</h1>
+        <p class="subtitle">Evidence-based technical talent discovery</p>
+        <div class="cover-grid">
+          <div class="mini-card meta">
+            <p><strong>URL</strong> <code>getsourcekit.vercel.app</code></p>
+            <p><strong>Version date</strong> March 20, 2026</p>
+            <p><strong>Scenario</strong> ML Engineer at Anthropic + Websets workflow</p>
+          </div>
+          <div class="mini-card">
+            <h3>Provider stack</h3>
+            <div class="logo-strip">
+              <div class="logo-chip"><img src="../../docs/assets/logos/exa-full.svg" alt="Exa" /></div>
+              <div class="logo-chip"><img src="../../docs/assets/logos/parallel-full.svg" alt="Parallel" /></div>
+              <div class="logo-chip"><img src="../../docs/assets/logos/github-full.svg" alt="GitHub" /></div>
+              <div class="logo-chip"><img src="../../docs/assets/logos/claude-full.svg" alt="Claude" /></div>
+              <div class="logo-chip"><img src="../../docs/assets/logos/harmonic-full.svg" alt="Harmonic" /></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page">
+        <h2>What You Need Before You Start</h2>
+        <h3>Browser</h3>
+        <ul>
+          <li>Use Google Chrome for consistent login and capture behavior.</li>
+        </ul>
+        <h3>Account access</h3>
+        <ul>
+          <li>Use an approved SourceKit account with search permissions.</li>
+          <li>Ensure search quota and external provider keys are active.</li>
+        </ul>
+        <h3>Have these details ready</h3>
+        <ul>
+          <li>Role context: <code>ML Engineer</code> + target company <code>Anthropic</code>.</li>
+          <li>Target-company shortlist (for example: Anthropic, OpenAI, DeepMind, Stripe, Datadog).</li>
+          <li>Target-repository signals (for example: PyTorch, vLLM, Ray, model serving, distributed training).</li>
+          <li>Webset criteria text for reusable recurring sourcing workflows.</li>
+        </ul>
+      </section>
+
+      
+      <section class="page step-page">
+        <h2>Step 1: Open SourceKit and sign in</h2>
+        <p class="line"><strong>Do this:</strong> Go to <code>getsourcekit.vercel.app</code> and authenticate with your approved Google account.</p>
+        <p class="line"><strong>You should see:</strong> You should see the SourceKit login screen and then your recruiter workspace after sign-in.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>SourceKit sign-in screen in Chrome.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Branding, auth form, and primary sign-in call to action.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-01-sign-in.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-01-sign-in.png" alt="Step 1 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout tip">
+          <div class="callout-title">Tip</div>
+          <p>Use the same work account every time so your saved searches and settings persist.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 2: Open New Search workspace</h2>
+        <p class="line"><strong>Do this:</strong> Select <code>New Search</code> to start from role and company context before running discovery.</p>
+        <p class="line"><strong>You should see:</strong> You should see the Research & Strategy screen with role input fields and quick templates.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Recruiter dashboard after opening New Search.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Left navigation, role inputs, and quick-template area.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-02-new-search.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-02-new-search.png" alt="Step 2 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout tip">
+          <div class="callout-title">Tip</div>
+          <p>Role-first setup is the fastest path for specialized technical hiring.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 3: Set role and company</h2>
+        <p class="line"><strong>Do this:</strong> Choose the Anthropic quick template to prefill role and company details.</p>
+        <p class="line"><strong>You should see:</strong> You should see <code>Staff ML Engineer</code> and <code>Anthropic</code> in the Role + Company fields.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Research & Strategy form with Anthropic quick template applied.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Prefilled role and company fields with surrounding context.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-03-role-company.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-03-role-company.png" alt="Step 3 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout tip">
+          <div class="callout-title">Tip</div>
+          <p>Edit both fields if needed before strategy generation starts.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 4: Build sourcing strategy</h2>
+        <p class="line"><strong>Do this:</strong> Click <code>Build Sourcing Strategy</code> to generate targeting guidance from your role context.</p>
+        <p class="line"><strong>You should see:</strong> You should see strategy progress items such as target repositories and competitor mapping.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Research & Strategy screen during strategy generation.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Progress module and generated targeting signals.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-04-build-strategy.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-04-build-strategy.png" alt="Step 4 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout tip">
+          <div class="callout-title">Best practice</div>
+          <p>Use this output to seed target companies, repo names, and skills in your search query.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 5: Define target companies and repos in query</h2>
+        <p class="line"><strong>Do this:</strong> Open <code>Results</code> and write a technical query with company targets and repository signals.</p>
+        <p class="line"><strong>You should see:</strong> You should see your query in the search bar while ranked results remain visible below.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Results tab with query text populated from strategy notes.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Search query plus first rows of ranked results.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-05-query.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-05-query.png" alt="Step 5 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout warning">
+          <div class="callout-title">Best practice</div>
+          <p>Keep company targets short and list concrete repo ecosystems such as <code>PyTorch</code>, <code>vLLM</code>, and <code>Ray</code>.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 6: Run search and monitor progress</h2>
+        <p class="line"><strong>Do this:</strong> Click <code>Search</code> and wait while SourceKit parses repositories, enriches profiles, and scores candidates.</p>
+        <p class="line"><strong>You should see:</strong> You should see live status lines and loading cards until ranking finishes.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Results screen while the search is actively running.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Progress states and loading cards that explain the current stage.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-06-search-progress.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-06-search-progress.png" alt="Step 6 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout tip">
+          <div class="callout-title">Tip</div>
+          <p>Do not change filters until scoring completes to avoid rework.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 7: Handle no-results searches</h2>
+        <p class="line"><strong>Do this:</strong> If your query is too narrow, read the built-in tips and adjust company or repository constraints.</p>
+        <p class="line"><strong>You should see:</strong> You should see the <code>No engineers found</code> guidance with concrete ways to broaden search.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Results state that shows how to recover from an over-targeted search.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Guidance text, broadened targeting, and visible results context.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-07-broaden.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-07-broaden.png" alt="Step 7 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout warning">
+          <div class="callout-title">Common issue</div>
+          <p>Remove one or two company constraints first, then rerun with repository names still intact.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 8: Open completed runs in History</h2>
+        <p class="line"><strong>Do this:</strong> Go to <code>History</code> and select the completed sourcing run you want to review.</p>
+        <p class="line"><strong>You should see:</strong> You should see recent runs with timestamps and engineer count.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>History tab with completed search runs listed.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Recent runs, timestamps, and result counts.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-08-history.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-08-history.png" alt="Step 8 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout tip">
+          <div class="callout-title">Tip</div>
+          <p>Completed webset-backed runs appear here as well, so this is the fastest place to reopen results.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 9: Review ranked candidate pipeline</h2>
+        <p class="line"><strong>Do this:</strong> Open the run from History to load the ranked candidate list in <code>Results</code>.</p>
+        <p class="line"><strong>You should see:</strong> You should see scored engineer cards with repository evidence, language signals, and quick actions.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Completed ranked result list loaded from History.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Candidate cards, scores, and visible evidence snippets.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-09-ranked-results.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-09-ranked-results.png" alt="Step 9 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout warning">
+          <div class="callout-title">Score meaning</div>
+          <p>The score measures verifiable GitHub output and is not a substitute for interviews.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 10: Review query details before action</h2>
+        <p class="line"><strong>Do this:</strong> Expand <code>Query details</code> to verify the exact search text and parsed criteria.</p>
+        <p class="line"><strong>You should see:</strong> You should see the expanded query panel directly above ranked results.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Expanded query details panel in Results.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Parsed criteria, exact query text, and relationship to ranked results.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-10-query-details.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-10-query-details.png" alt="Step 10 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout tip">
+          <div class="callout-title">Best practice</div>
+          <p>Confirm parsed criteria before exporting so the final slate matches your role brief.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 11: Inspect an individual candidate profile</h2>
+        <p class="line"><strong>Do this:</strong> Click a candidate card to open the profile side panel.</p>
+        <p class="line"><strong>You should see:</strong> You should see summary, EEA breakdown, notable work, and outreach tools in one panel.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Candidate profile side panel opened from the results list.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Summary, EEA breakdown, notable work, and outreach actions.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-11-candidate-profile.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-11-candidate-profile.png" alt="Step 11 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout tip">
+          <div class="callout-title">Tip</div>
+          <p>Use EEA and repo evidence directly in personalized outreach.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 12: Open Websets from strategy workflow</h2>
+        <p class="line"><strong>Do this:</strong> Navigate to <code>Websets</code> to turn your strategy into a reusable sourcing definition.</p>
+        <p class="line"><strong>You should see:</strong> You should see the Create Webset form with search query, criteria, and enrichment sections.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Websets tab before filling the reusable sourcing definition.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Create Webset form structure and the top of the builder.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-12-websets-start.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-12-websets-start.png" alt="Step 12 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout tip">
+          <div class="callout-title">Tip</div>
+          <p>Websets are best for recurring roles with stable technical criteria.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 13: Create webset criteria from sourcing strategy</h2>
+        <p class="line"><strong>Do this:</strong> Add criteria for target companies, repository signals, and enrichment fields from your strategy notes.</p>
+        <p class="line"><strong>You should see:</strong> You should see a complete Webset definition ready for creation.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Filled Webset builder with sourcing logic translated into criteria.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Criteria content, enrichment fields, and reusable definition inputs.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-13-webset-criteria.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-13-webset-criteria.png" alt="Step 13 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout tip">
+          <div class="callout-title">Best practice</div>
+          <p>Use criteria that describe evidence, such as concrete repo contribution patterns or infrastructure ownership.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 14: Submit Webset and watch completion status</h2>
+        <p class="line"><strong>Do this:</strong> Click <code>Create Webset</code> and confirm whether the run is accepted or an error is shown.</p>
+        <p class="line"><strong>You should see:</strong> You should see either a success flow or a visible notification if creation fails.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Immediate Webset submission state after clicking Create Webset.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Submission feedback and visible success or failure messaging.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-14-webset-submit.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-14-webset-submit.png" alt="Step 14 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout warning">
+          <div class="callout-title">Common issue</div>
+          <p>If you see <code>Failed to fetch</code>, verify provider keys and retry before checking History for results.</p>
+        </div>
+      </section>
+    
+
+      <section class="page step-page">
+        <h2>Step 15: Export candidate output</h2>
+        <p class="line"><strong>Do this:</strong> From Results, open <code>Export</code> and choose CSV or JSON for handoff.</p>
+        <p class="line"><strong>You should see:</strong> You should see export options available directly from the ranked list.</p>
+        <div class="capture-grid">
+          <div class="capture-card">
+            <div class="capture-label">Target</div>
+            <p>Results screen with export controls visible.</p>
+          </div>
+          <div class="capture-card">
+            <div class="capture-label">Area To Frame</div>
+            <p>Export menu options alongside the shortlist context.</p>
+          </div>
+          <div class="capture-card path">
+            <div class="capture-label">Output Path</div>
+            <p class="path-chip">../output/guide-screenshots/user-guide/step-15-export.png</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="../output/guide-screenshots/user-guide/step-15-export.png" alt="Step 15 screenshot" />
+          <figcaption>Live application screenshot.</figcaption>
+        </figure>
+        <div class="callout tip">
+          <div class="callout-title">Tip</div>
+          <p>Finalize filters before export so recruiter handoff stays focused.</p>
+        </div>
+      </section>
+    
+
+      <section class="page">
+        <h2>Troubleshooting</h2>
+        <div class="troubleshooting">
+          <div class="issue-row">
+            <div>Strategy build remains in progress</div>
+            <div>Continue in Results tab and refine with query, repo signals, and filters while strategy service recovers.</div>
+          </div>
+          <div class="issue-row">
+            <div>No engineers found</div>
+            <div>Broaden the query by removing one or two company constraints and keeping technical repo signals.</div>
+          </div>
+          <div class="issue-row">
+            <div>Webset create shows Failed to fetch</div>
+            <div>Check provider keys and account limits, then retry from the same saved criteria.</div>
+          </div>
+          <div class="issue-row">
+            <div>Completed run not visible in Results</div>
+            <div>Open History and select the completed run entry to reload ranked candidates.</div>
+          </div>
+          <div class="issue-row">
+            <div>Export disabled or empty</div>
+            <div>Confirm results are loaded and active filters are not removing all rows.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

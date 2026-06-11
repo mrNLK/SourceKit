@@ -1,7 +1,7 @@
 {
-  "name": "SourceKit",
-  "short_name": "SourceKit",
-  "description": "AI-powered candidate sourcing from GitHub signal data",
+  "name": "SellKit",
+  "short_name": "SellKit",
+  "description": "Manual-first BD sourcing review workspace for signal-backed outreach",
   "start_url": "/",
   "icons": [
     {

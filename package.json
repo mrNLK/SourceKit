@@ -8,10 +8,13 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "build:marketing": "npm run generate:marketing && npm run validate:marketing",
+    "generate:marketing": "node docs/generate-sourcekit-marketing-package.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "validate:marketing": "node docs/validate-sourcekit-marketing-package.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
