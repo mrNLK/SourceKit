@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SellKit Workflow and User Experience Write-Up</title>
+  <style>
+    :root {
+      --ink: #102128;
+      --muted: #58707a;
+      --line: #c8d8d8;
+      --panel: #f6fbfa;
+      --wash: #eaf4f2;
+      --teal: #08786f;
+      --teal-dark: #07554f;
+      --amber: #a14600;
+      --amber-bg: #fff4e8;
+      --blue: #1d5fd1;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #f8fbfa 0%, #eef6f4 100%);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    a {
+      color: var(--teal-dark);
+      font-weight: 700;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 40px 24px 56px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      align-items: end;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 28px;
+    }
+
+    .kicker {
+      margin: 0 0 8px;
+      color: var(--teal-dark);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 6vw, 68px);
+      line-height: 0.95;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      max-width: 850px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: clamp(18px, 2vw, 24px);
+      line-height: 1.38;
+    }
+
+    .meta-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.78);
+      padding: 18px;
+    }
+
+    .meta-card h2,
+    .meta-card p {
+      margin: 0;
+    }
+
+    .meta-card h2 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    .meta-card p {
+      margin-top: 8px;
+      font-size: 15px;
+      color: var(--ink);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .summary-card {
+      min-height: 126px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--white);
+      padding: 16px;
+    }
+
+    .summary-card strong {
+      display: block;
+      font-size: 16px;
+    }
+
+    .summary-card span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    section {
+      margin-top: 42px;
+    }
+
+    .section-head {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 58px minmax(0, 1fr);
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .step {
+      display: grid;
+      width: 44px;
+      height: 44px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--teal);
+      color: var(--white);
+      font-weight: 800;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 36px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .section-copy {
+      max-width: 940px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .shot {
+      margin: 18px 0 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--white);
+      box-shadow: 0 18px 50px rgba(16, 33, 40, 0.08);
+    }
+
+    .shot img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    figcaption {
+      border-top: 1px solid var(--line);
+      padding: 12px 14px;
+      color: var(--muted);
+      font-size: 14px;
+      background: #fbfdfd;
+    }
+
+    .callout {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--teal);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 16px 18px;
+    }
+
+    .callout h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .callout p,
+    .callout ul {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .callout ul {
+      padding-left: 20px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--white);
+      padding: 18px;
+    }
+
+    .panel h3 {
+      margin: 0 0 10px;
+      font-size: 19px;
+    }
+
+    .panel p,
+    .panel li {
+      color: var(--muted);
+    }
+
+    .panel ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .table-wrap {
+      margin-top: 18px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--white);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 13px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--wash);
+      color: var(--ink);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    td {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    code {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #edf6f4;
+      padding: 2px 5px;
+      color: var(--teal-dark);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    .amber {
+      border-left-color: var(--amber);
+      background: var(--amber-bg);
+    }
+
+    .mobile-shot {
+      max-width: 410px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .footer {
+      margin-top: 42px;
+      border-top: 1px solid var(--line);
+      padding-top: 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .summary-grid,
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .page {
+        padding: 28px 16px 42px;
+      }
+
+      .section-head {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .page {
+        max-width: none;
+        padding: 20px;
+      }
+
+      .shot,
+      .panel,
+      .summary-card,
+      .meta-card,
+      .callout {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+
+      section {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div>
+        <p class="kicker">SellKit workflow</p>
+        <h1>Workflow and user experience write-up</h1>
+        <p class="lede">SellKit is a manual-first BD sourcing workspace for Mariah Rubino. It helps her tune the target profile, review scored prospects with evidence, and prepare outreach packets without automatically sending email, touching LinkedIn, or writing to a CRM.</p>
+      </div>
+      <aside class="meta-card">
+        <h2>Scope</h2>
+        <p>Current workflow, Additional Context onboarding, review queue, evidence review, and manual handoff UX.</p>
+        <p><strong>Mode:</strong> Human approval before every send.</p>
+      </aside>
+    </header>
+
+    <div class="summary-grid" aria-label="Workflow summary">
+      <div class="summary-card">
+        <strong>1. Tune Mariah's profile</strong>
+        <span>Five required onboarding answers plus optional Additional Context.</span>
+      </div>
+      <div class="summary-card">
+        <strong>2. Review the queue</strong>
+        <span>Search, filter, sort, and inspect scored targets before taking action.</span>
+      </div>
+      <div class="summary-card">
+        <strong>3. Read evidence</strong>
+        <span>Target rationale, score factors, buying committee, signal sources, and email confidence.</span>
+      </div>
+      <div class="summary-card">
+        <strong>4. Approve manually</strong>
+        <span>Prepare copy, LinkedIn note, and CRM CSV only after human approval.</span>
+      </div>
+    </div>
+
+    <section>
+      <div class="section-head">
+        <span class="step">1</span>
+        <div>
+          <h2>Start in the review workspace</h2>
+          <p class="section-copy">The first screen keeps Mariah in a work queue, not a marketing page. The top band confirms onboarding status and manual-send policy. The provider architecture is collapsed by default so the highest-frequency action, reviewing targets, is visible immediately.</p>
+        </div>
+      </div>
+      <figure class="shot">
+        <img src="../output/guide-screenshots/sellkit-additional-context/01-review-queue-overview.png" alt="SellKit review queue overview" />
+        <figcaption><strong>Review queue overview.</strong> Mariah sees onboarding state, provider stage summary, queue controls, the selected target, and evidence-backed review cards.</figcaption>
+      </figure>
+      <div class="callout">
+        <h3>UX intent</h3>
+        <p>The page assumes Mariah wants to make a decision quickly. High-level provider details are available but not forced into the main path.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="step">2</span>
+        <div>
+          <h2>Use onboarding to calibrate fit, signals, and voice</h2>
+          <p class="section-copy">Edit Onboarding is the control panel for Mariah's preferences. The first five questions remain the required setup. Additional Context is optional and captures everything the structured questions miss: niches, exclusions, regions, deal-size floors, and positioning notes.</p>
+        </div>
+      </div>
+      <figure class="shot">
+        <img src="../output/guide-screenshots/sellkit-additional-context/02-additional-context-empty.png" alt="SellKit onboarding form with Additional Context field" />
+        <figcaption><strong>Optional context field.</strong> The field sits after Email voice, has helper text, and includes a live 2,000-character counter.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="../output/guide-screenshots/sellkit-additional-context/03-additional-context-filled.png" alt="Additional Context filled with enterprise expert services positioning" />
+        <figcaption><strong>Filled context.</strong> Example context is framed around expert services for big tech: change management consultants, product and engineering leaders, domain experts, exclusions, and rollout urgency.</figcaption>
+      </figure>
+      <div class="two-col">
+        <div class="panel">
+          <h3>What Mariah should enter</h3>
+          <ul>
+            <li>Strong niches: platform modernization, AI adoption, transformation work, change management.</li>
+            <li>Strong buyer situations: large rollout, executive urgency, senior hiring spike, new initiative owner.</li>
+            <li>Exclusions: regions, sectors, deal sizes, industries, title patterns, or accounts to avoid.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>What the app does with it</h3>
+          <ul>
+            <li>Treats it as calibration data for fit and tone.</li>
+            <li>Stores changes in an append-only history table.</li>
+            <li>Never treats context as permission to send, enrich, or automate LinkedIn.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="step">3</span>
+        <div>
+          <h2>Save context, then choose whether to re-score</h2>
+          <p class="section-copy">When Additional Context changes, SellKit does not spend provider credits automatically. Instead, it marks the queue as potentially stale and asks Mariah whether to re-score. This keeps cost and workflow control with the human operator.</p>
+        </div>
+      </div>
+      <figure class="shot">
+        <img src="../output/guide-screenshots/sellkit-additional-context/04-context-stale-banner.png" alt="Review queue showing re-score banner after onboarding context changes" />
+        <figcaption><strong>Non-blocking stale-score banner.</strong> The queue remains usable, but Mariah gets a clear prompt that saved context changed after the current scores were prepared.</figcaption>
+      </figure>
+      <div class="callout amber">
+        <h3>Important behavior</h3>
+        <p>The button is intentionally manual. In this phase it is a no-spend stub that marks the local queue current. A later persisted scoring job can attach the same UX to a real re-score run.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="step">4</span>
+        <div>
+          <h2>Review one target at a time with evidence visible</h2>
+          <p class="section-copy">The central review panel explains why the selected person is worth considering. Mariah can inspect the company fit, buyer fit, review gate, verified email, and checklist before approving anything. The outreach packet is visible on large screens so the decision and draft stay connected.</p>
+        </div>
+      </div>
+      <figure class="shot">
+        <img src="../output/guide-screenshots/sellkit-additional-context/05-review-detail-and-packet.png" alt="Target detail view with queue, evidence, and outreach packet" />
+        <figcaption><strong>Evidence-first review.</strong> Score, target rationale, review gate, verified email, checklist, and manual email draft are all visible in the same decision frame.</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th>What Mariah learns</th>
+              <th>UX purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Queue</td>
+              <td>Who is available for review, score, status, company, and recency.</td>
+              <td>Fast triage without opening each target.</td>
+            </tr>
+            <tr>
+              <td>Why this target</td>
+              <td>The specific signal and expert-services angle.</td>
+              <td>Shows the outreach reason in plain language.</td>
+            </tr>
+            <tr>
+              <td>Review checklist</td>
+              <td>Account fit, buyer fit, signal evidence, email confidence, draft readiness.</td>
+              <td>Prevents approval from becoming a blind click.</td>
+            </tr>
+            <tr>
+              <td>Outreach packet</td>
+              <td>Email, LinkedIn note, CRM export status, and approval state.</td>
+              <td>Keeps handoff actions tied to the reviewed evidence.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="step">5</span>
+        <div>
+          <h2>Approve draft, but keep sends manual</h2>
+          <p class="section-copy">Approval changes the target state and unlocks the manual CRM export path. Email copy and .eml download remain blocked until approved sender footer details are configured. This makes the product usable in a policy-constrained environment without hiding the missing setup.</p>
+        </div>
+      </div>
+      <figure class="shot">
+        <img src="../output/guide-screenshots/sellkit-additional-context/06-approved-manual-handoff.png" alt="Approved target showing manual handoff with sender footer needed" />
+        <figcaption><strong>Manual handoff after approval.</strong> The packet clearly shows approval and export readiness, while email handoff remains gated by sender footer setup.</figcaption>
+      </figure>
+      <div class="callout">
+        <h3>Manual-first guardrail</h3>
+        <p>SellKit prepares approved work for Mariah to review and move manually. It does not send email, automate LinkedIn, or write to Salesforce from this flow.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="step">6</span>
+        <div>
+          <h2>Mobile keeps the same workflow readable</h2>
+          <p class="section-copy">The mobile layout stacks the form and turns the queue into cards. The Additional Context field remains usable, the counter stays visible, and no horizontal scrolling is introduced.</p>
+        </div>
+      </div>
+      <figure class="shot mobile-shot">
+        <img src="../output/guide-screenshots/sellkit-additional-context/07-mobile-additional-context.png" alt="Mobile SellKit onboarding with Additional Context field" />
+        <figcaption><strong>Mobile onboarding.</strong> The optional context field and V1 operating-mode guardrails remain readable on a narrow screen.</figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="step">7</span>
+        <div>
+          <h2>UX assessment and recommended improvements</h2>
+          <p class="section-copy">The current experience is coherent for a human-in-the-loop operator. The strongest pieces are the collapsed provider architecture, visible manual-send status, review checklist, and evidence-first packet. A few small changes would make it easier for a nontechnical user.</p>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <h3>Working well</h3>
+          <ul>
+            <li>The first screen is a work queue, not a landing page.</li>
+            <li>Mariah can tune targeting in plain English.</li>
+            <li>Context changes do not trigger automatic spend.</li>
+            <li>The app separates approval, email copy, and CRM export.</li>
+            <li>Evidence and draft live close together on desktop.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Recommended next refinements</h3>
+          <ul>
+            <li>Rename <code>Re-score queue</code> to <code>Mark scores current</code> while it remains a V1 stub.</li>
+            <li>Add a tiny setup health panel for sender footer, provider keys, CRM policy, and approved domain.</li>
+            <li>Add an "Example context" shortcut next to the textarea for nontechnical users.</li>
+            <li>Show when context was last saved and who changed it.</li>
+            <li>When real persisted scoring is wired, show estimated cost before re-score starts.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="step">8</span>
+        <div>
+          <h2>Data and guardrail model</h2>
+          <p class="section-copy">Additional Context is intentionally designed as calibration, not instruction. The backend stores the latest context on the onboarding profile and writes every text change to history. Score versioning fields are ready for persisted scoring, but the current user flow does not trigger provider spend automatically.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Object</th>
+              <th>Purpose</th>
+              <th>User impact</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>context_text</code></td>
+              <td>Latest optional onboarding context, up to 2,000 characters.</td>
+              <td>Lets Mariah add nuance without changing the five required questions.</td>
+            </tr>
+            <tr>
+              <td><code>context_source</code></td>
+              <td>Tracks whether context came from manual entry, guide paste, or future API import.</td>
+              <td>Keeps future "Send to SellKit" paths auditable.</td>
+            </tr>
+            <tr>
+              <td><code>onboarding_context_history</code></td>
+              <td>Append-only record of context changes.</td>
+              <td>Supports review and rollback conversations without overwriting history.</td>
+            </tr>
+            <tr>
+              <td><code>context_version</code></td>
+              <td>Version/hash a score can be stamped with when persisted scoring is wired.</td>
+              <td>Explains why older scores may need review after context changes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>Generated from the local SellKit app at <code>/sellkit</code>. Screenshots are stored in <code>output/guide-screenshots/sellkit-additional-context/</code>.</p>
+    </footer>
+  </main>
+</body>
+</html>
