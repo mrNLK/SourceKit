@@ -1385,24 +1385,28 @@ export default function BdSourcingTab({ userId }: BdSourcingTabProps = {}) {
 
     let resultMessage: string;
     try {
-      const response = await bdSourcingApi.enrichWorkEmail(selected.id);
+      const response = await bdSourcingApi.enrichWorkEmail(selected);
+      resultMessage = response.message;
+      setEnrichedTargetIds((current) => new Set(current).add(selected.id));
+      setEnrichmentBatchUsed((count) => count + 1);
+      toast({
+        title: "Work email enriched",
+        description: "Manual click only. Apollo returned work-email data; no phone or personal email fields were requested.",
+      });
+    } catch (error) {
       resultMessage =
-        response.status === "completed"
-          ? response.message
-          : `Apollo adapter is stubbed server-side: ${response.message}`;
-    } catch {
-      resultMessage =
-        "Apollo is not connected yet. This target is recorded as ready for Apollo work-email enrichment - no provider spend happened.";
+        error instanceof Error
+          ? error.message
+          : "Apollo work-email enrichment did not complete for this target.";
+      toast({
+        title: "Work email enrichment blocked",
+        description: resultMessage,
+        variant: "destructive",
+      });
     }
 
-    setEnrichedTargetIds((current) => new Set(current).add(selected.id));
-    setEnrichmentBatchUsed((count) => count + 1);
     setEnrichmentResults((current) => ({ ...current, [selected.id]: resultMessage }));
     setEnriching(false);
-    toast({
-      title: "Work email enrichment recorded",
-      description: "Manual click only. Work email only - no phone or personal email fields were requested.",
-    });
   };
 
   const addRadarCriteria = (recommendation: BdSignalDiscoveryRecommendation) => {
