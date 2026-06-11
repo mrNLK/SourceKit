@@ -34,7 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SourceKitMark } from "@/components/brand/SourceKitMark";
+import { SellKitMark } from "@/components/brand/SellKitMark";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -919,7 +919,7 @@ export default function BdSourcingTab({ userId }: BdSourcingTabProps = {}) {
     const previousTitle = document.title;
     document.title = "SellKit";
     return () => {
-      document.title = previousTitle || "SourceKit";
+      document.title = previousTitle || "SellKit";
     };
   }, []);
 
@@ -1539,7 +1539,7 @@ export default function BdSourcingTab({ userId }: BdSourcingTabProps = {}) {
       <header className="sk-topbar flex h-[72px] items-center justify-between px-6">
         <div className="flex min-w-0 items-center gap-5">
           <div className="flex items-center gap-2.5">
-            <SourceKitMark className="sk-logo-mark h-8 w-8 shrink-0" title="SellKit" />
+            <SellKitMark className="sk-logo-mark h-8 w-8 shrink-0" title="SellKit" />
             <h1 className="sk-wordmark text-2xl font-semibold">SellKit</h1>
           </div>
           <button className="sk-workstream hidden h-10 items-center gap-4 rounded-md px-4 text-left text-xs md:flex">
