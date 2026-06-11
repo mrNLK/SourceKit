@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SourceKitMark } from "@/components/brand/SourceKitMark";
@@ -24,6 +24,14 @@ const Auth = () => {
   const isEmailSignUpLoading: boolean = loadingAction === "email-sign-up";
   const isGoogleLoading: boolean = loadingAction === "google";
   const redirectPath = sanitizeRedirectPath(searchParams.get("redirect"), "/");
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = "SellKit";
+    return () => {
+      document.title = previousTitle || "SellKit";
+    };
+  }, []);
 
   const handleGoogleSignIn = async (): Promise<void> => {
     setLoadingAction("google");
@@ -100,12 +108,12 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6 text-center">
         <div className="flex flex-col items-center gap-4">
-          <SourceKitMark className="w-12 h-12 text-foreground" />
+          <SourceKitMark className="w-12 h-12 text-foreground" title="SellKit" />
           <div className="text-lg tracking-tight">
-            <span className="text-primary font-semibold">Source</span>
+            <span className="text-primary font-semibold">Sell</span>
             <span className="text-foreground font-medium">Kit</span>
           </div>
-          <p className="text-sm text-muted-foreground">Sign in to start sourcing</p>
+          <p className="text-sm text-muted-foreground">Sign in to review and approve sourcing drafts</p>
         </div>
 
         {error && (

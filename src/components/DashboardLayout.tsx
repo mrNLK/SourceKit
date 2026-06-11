@@ -37,12 +37,16 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
   // FEAT-007: Theme toggle
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     if (typeof window !== "undefined") {
-      return (localStorage.getItem("sourcekit-theme") as "dark" | "light") || "dark";
+      const savedTheme: string | null = localStorage.getItem("sourcekit-theme");
+      if (savedTheme === "dark" || savedTheme === "light") {
+        return savedTheme;
+      }
+      return "light";
     }
-    return "dark";
+    return "light";
   });
   useEffect(() => {
-    document.documentElement.classList.toggle("light", theme === "light");
+    document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.setItem("sourcekit-theme", theme);
   }, [theme]);
 
@@ -61,9 +65,9 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
-        <SourceKitMark className="w-7 h-7 text-primary" />
+        <SourceKitMark className="w-7 h-7 text-foreground" />
         <span className="text-sm tracking-tight">
-          <span className="text-foreground font-semibold">Source</span><span className="text-muted-foreground font-medium">Kit</span>
+          <span className="text-primary font-semibold">Source</span><span className="text-foreground font-medium">Kit</span>
         </span>
       </div>
 
@@ -189,9 +193,9 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
-              <SourceKitMark className="w-5 h-5 text-primary" />
+              <SourceKitMark className="w-5 h-5 text-foreground" />
               <span className="text-sm">
-                <span className="text-foreground font-semibold">Source</span><span className="text-muted-foreground font-medium">Kit</span>
+                <span className="text-primary font-semibold">Source</span><span className="text-foreground font-medium">Kit</span>
               </span>
             </div>
           </header>
