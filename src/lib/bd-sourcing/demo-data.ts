@@ -152,7 +152,7 @@ export function runDemoBdSourcingFlow(): BdDemoFlow {
     operatorName: "Operator",
     operatorEmail: "operator@example.com",
     physicalAddress: "123 Market St, San Francisco, CA",
-    unsubscribeUrl: "https://sourcekit.example/unsubscribe/demo",
+    unsubscribeUrl: "https://sellkit.example/unsubscribe/demo",
   });
 
   if (!emailDraft.ok) {
