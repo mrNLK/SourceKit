@@ -341,6 +341,228 @@ export type Database = {
         }
         Relationships: []
       }
+      bd_conversion_events: {
+        Row: {
+          channel: "manual_email" | "linkedin_manual" | "crm_import" | "offline" | null
+          company_name: string
+          contact_name: string
+          conversion_area: "signal" | "outreach" | "both"
+          created_at: string
+          event_type:
+            | "target_approved"
+            | "manual_email_sent"
+            | "linkedin_note_sent"
+            | "reply_received"
+            | "positive_reply"
+            | "meeting_booked"
+            | "opportunity_created"
+            | "won"
+            | "lost"
+            | "disqualified"
+          id: string
+          metadata: Json
+          notes: string
+          occurred_at: string
+          outreach_touch_id: string | null
+          signal_external_id: string | null
+          signal_id: string | null
+          signal_title: string
+          signal_type: "exec_change" | "senior_hiring_spike" | "funding" | "open_web" | "manual"
+          source: "manual" | "csv_import" | "api_import" | "provider_webhook" | "demo"
+          target_external_id: string | null
+          target_id: string | null
+          user_id: string
+        }
+        Insert: {
+          channel?: "manual_email" | "linkedin_manual" | "crm_import" | "offline" | null
+          company_name: string
+          contact_name: string
+          conversion_area: "signal" | "outreach" | "both"
+          created_at?: string
+          event_type:
+            | "target_approved"
+            | "manual_email_sent"
+            | "linkedin_note_sent"
+            | "reply_received"
+            | "positive_reply"
+            | "meeting_booked"
+            | "opportunity_created"
+            | "won"
+            | "lost"
+            | "disqualified"
+          id?: string
+          metadata?: Json
+          notes?: string
+          occurred_at?: string
+          outreach_touch_id?: string | null
+          signal_external_id?: string | null
+          signal_id?: string | null
+          signal_title: string
+          signal_type: "exec_change" | "senior_hiring_spike" | "funding" | "open_web" | "manual"
+          source?: "manual" | "csv_import" | "api_import" | "provider_webhook" | "demo"
+          target_external_id?: string | null
+          target_id?: string | null
+          user_id?: string
+        }
+        Update: {
+          channel?: "manual_email" | "linkedin_manual" | "crm_import" | "offline" | null
+          company_name?: string
+          contact_name?: string
+          conversion_area?: "signal" | "outreach" | "both"
+          created_at?: string
+          event_type?:
+            | "target_approved"
+            | "manual_email_sent"
+            | "linkedin_note_sent"
+            | "reply_received"
+            | "positive_reply"
+            | "meeting_booked"
+            | "opportunity_created"
+            | "won"
+            | "lost"
+            | "disqualified"
+          id?: string
+          metadata?: Json
+          notes?: string
+          occurred_at?: string
+          outreach_touch_id?: string | null
+          signal_external_id?: string | null
+          signal_id?: string | null
+          signal_title?: string
+          signal_type?: "exec_change" | "senior_hiring_spike" | "funding" | "open_web" | "manual"
+          source?: "manual" | "csv_import" | "api_import" | "provider_webhook" | "demo"
+          target_external_id?: string | null
+          target_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bd_signal_radar_items: {
+        Row: {
+          company_domain: string
+          company_name: string
+          confidence: number
+          created_at: string
+          detected_at: string
+          id: string
+          metadata: Json
+          provider: "exa" | "findem" | "parallel" | "manual"
+          signal_summary: string
+          signal_title: string
+          signal_type: "exec_change" | "senior_hiring_spike" | "funding" | "open_web" | "manual"
+          source_url: string
+          status: "new" | "reviewed" | "queued" | "ignored"
+          suggested_persona: "cto" | "vp_eng" | "vp_data" | "head_transformation" | "security_ciso" | "other"
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_domain?: string
+          company_name: string
+          confidence?: number
+          created_at?: string
+          detected_at?: string
+          id?: string
+          metadata?: Json
+          provider?: "exa" | "findem" | "parallel" | "manual"
+          signal_summary?: string
+          signal_title: string
+          signal_type: "exec_change" | "senior_hiring_spike" | "funding" | "open_web" | "manual"
+          source_url?: string
+          status?: "new" | "reviewed" | "queued" | "ignored"
+          suggested_persona?: "cto" | "vp_eng" | "vp_data" | "head_transformation" | "security_ciso" | "other"
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          company_domain?: string
+          company_name?: string
+          confidence?: number
+          created_at?: string
+          detected_at?: string
+          id?: string
+          metadata?: Json
+          provider?: "exa" | "findem" | "parallel" | "manual"
+          signal_summary?: string
+          signal_title?: string
+          signal_type?: "exec_change" | "senior_hiring_spike" | "funding" | "open_web" | "manual"
+          source_url?: string
+          status?: "new" | "reviewed" | "queued" | "ignored"
+          suggested_persona?: "cto" | "vp_eng" | "vp_data" | "head_transformation" | "security_ciso" | "other"
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      onboarding_context_history: {
+        Row: {
+          created_at: string
+          id: string
+          source: "manual" | "guide_paste" | "api_import"
+          text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          source?: "manual" | "guide_paste" | "api_import"
+          text?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          source?: "manual" | "guide_paste" | "api_import"
+          text?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sellkit_onboarding_profiles: {
+        Row: {
+          buyer_titles: string
+          buying_signals: string
+          completed_at: string | null
+          context_source: "manual" | "guide_paste" | "api_import"
+          context_text: string | null
+          context_updated_at: string | null
+          created_at: string
+          email_voice: string
+          ideal_company: string
+          offer_line: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          buyer_titles?: string
+          buying_signals?: string
+          completed_at?: string | null
+          context_source?: "manual" | "guide_paste" | "api_import"
+          context_text?: string | null
+          context_updated_at?: string | null
+          created_at?: string
+          email_voice?: string
+          ideal_company?: string
+          offer_line?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          buyer_titles?: string
+          buying_signals?: string
+          completed_at?: string | null
+          context_source?: "manual" | "guide_paste" | "api_import"
+          context_text?: string | null
+          context_updated_at?: string | null
+          created_at?: string
+          email_voice?: string
+          ideal_company?: string
+          offer_line?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       shortlisted_candidates: {
         Row: {
           candidate_data: Json | null
