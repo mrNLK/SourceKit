@@ -40,4 +40,56 @@ describe("BD sourcing manual handoff", () => {
     expect(csv).toContain("Maya Chen");
     expect(csv).toContain("northstarcloud.example");
   });
+
+  const exportTarget = (overrides: Partial<Parameters<typeof buildManualCrmCsv>[0][number]>) => ({
+    fullName: "Maya Chen",
+    firstName: "Maya",
+    lastName: "Chen",
+    title: "VP Data Strategy",
+    company: "Northstar Cloud",
+    domain: "northstarcloud.example",
+    workEmail: "maya.chen@northstarcloud.example",
+    linkedinUrl: null,
+    signal: "New CIO joined",
+    sourceUrl: "https://northstarcloud.example/news",
+    score: 98,
+    ...overrides,
+  });
+
+  it.each([
+    ["formula", '=HYPERLINK("https://evil.example","Northstar")'],
+    ["plus", "+1+2"],
+    ["minus", "-2+3"],
+    ["at", "@SUM(A1:A9)"],
+  ])("neutralizes provider-supplied company names starting with a %s trigger", (_kind, company) => {
+    const csv = buildManualCrmCsv([exportTarget({ company })]);
+    const sanitized = `'${company}`;
+    const encoded = /[",\n\r]/.test(sanitized)
+      ? `"${sanitized.replace(/"/g, '""')}"`
+      : sanitized;
+    expect(csv).toContain(encoded);
+    expect(csv).not.toContain(`,${company},`);
+  });
+
+  it("neutralizes whitespace-shifted formula triggers in contact names", () => {
+    const csv = buildManualCrmCsv([
+      exportTarget({ fullName: "\t=cmd|' /C calc'!A0", firstName: "\r=2+5", lastName: "\n@evil" }),
+    ]);
+    const dataRow = csv.slice(csv.indexOf("\n") + 1);
+    expect(dataRow.startsWith(`'\t=`)).toBe(true);
+    expect(dataRow).toContain(`"'\r=2+5"`);
+    expect(dataRow).toContain(`"'\n@evil"`);
+  });
+
+  it("preserves normal text and existing quoting behavior", () => {
+    const csv = buildManualCrmCsv([
+      exportTarget({ company: 'Acme "Insights", Inc', title: "VP, Data" }),
+    ]);
+    const dataRow = csv.split("\n").slice(1).join("\n");
+    expect(dataRow).toContain('"Acme ""Insights"", Inc"');
+    expect(dataRow).toContain('"VP, Data"');
+    expect(dataRow).toContain("Maya Chen");
+    expect(dataRow).not.toContain("'Maya Chen");
+    expect(dataRow).toContain(",98");
+  });
 });
