@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { BdTargetView } from "@/types/bd-sourcing";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -31,6 +32,22 @@ export interface BdSourcingActionResponse {
   data?: Record<string, unknown>;
 }
 
+type WorkEmailEnrichmentTarget = Pick<BdTargetView, "id" | "company" | "contact">;
+
+function toHeaderValue(value: string): string {
+  return value.trim().replace(/[^\x20-\x7E]/g, "");
+}
+
+function validateHeaderValue(name: string, value: string): string {
+  try {
+    new Headers({ [name]: value });
+  } catch {
+    throw new Error(`Invalid ${name} header value for Supabase function request.`);
+  }
+
+  return value;
+}
+
 export async function invokeBdSourcingAction(
   action: BdSourcingAction,
   payload: Record<string, unknown> = {},
@@ -44,12 +61,16 @@ export async function invokeBdSourcingAction(
     throw new Error("Authentication required");
   }
 
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/bd-sourcing`, {
+  const supabaseUrl = SUPABASE_URL.trim();
+  const supabaseKey = validateHeaderValue("apikey", toHeaderValue(SUPABASE_KEY));
+  const accessToken = validateHeaderValue("Authorization", `Bearer ${toHeaderValue(session.access_token)}`);
+
+  const res = await fetch(`${supabaseUrl}/functions/v1/bd-sourcing`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${session.access_token}`,
+      apikey: supabaseKey,
+      Authorization: accessToken,
     },
     body: JSON.stringify({ action, payload }),
   });
@@ -81,8 +102,23 @@ export const bdSourcingApi = {
   getExaAgentRun: (runId: string) => invokeBdSourcingAction("exa_agent_get_run", { runId }),
   runDedup: (targetId: string) => invokeBdSourcingAction("dedup", { targetId }),
   runEnrichment: (targetId: string) => invokeBdSourcingAction("enrich", { targetId }),
-  enrichWorkEmail: (targetId: string) =>
-    invokeBdSourcingAction("enrich", { targetId, provider: "apollo", fields: ["work_email"] }),
+  enrichWorkEmail: (target: WorkEmailEnrichmentTarget | string) => {
+    const payload = typeof target === "string"
+      ? { targetId: target }
+      : {
+          targetId: target.id,
+          fullName: target.contact.fullName,
+          firstName: target.contact.firstName,
+          lastName: target.contact.lastName,
+          title: target.contact.title,
+          companyName: target.company.name,
+          companyDomain: target.company.domain,
+          websiteUrl: target.company.websiteUrl,
+          linkedinUrl: target.contact.linkedinUrl,
+        };
+
+    return invokeBdSourcingAction("enrich", { ...payload, provider: "apollo", fields: ["work_email"] });
+  },
   scoreTarget: (targetId: string) => invokeBdSourcingAction("score", { targetId }),
   draftEmail: (targetId: string) => invokeBdSourcingAction("draft_email", { targetId }),
   approveTarget: (targetId: string) => invokeBdSourcingAction("approve", { targetId }),
