@@ -5,27 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SellKit — Start Here</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Spline+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
   :root {
-    --ink: #0d1b2a;
-    --prussian: #1b263b;
-    --dusk: #415a77;
-    --denim: #778da9;
-    --alabaster: #e0e1dd;
-    --surface: #f2f3ef;
-    --line: #bfc8cd;
-    --display: "Fraunces", Georgia, serif;
-    --body: "Spline Sans", -apple-system, "Segoe UI", sans-serif;
-    --mono: "Spline Sans Mono", ui-monospace, Menlo, monospace;
+    --brand-primary: #7C3AED;
+    --brand-primary-hover: #6D28D9;
+    --brand-dark: #10213A;
+    --brand-slate: #415A77;
+    --brand-muted: #A0AEC0;
+    --brand-surface: #F1F3F2;
+    --brand-background: #FAFBFC;
+    --brand-white: #FFFFFF;
+    --brand-border: #DCE3EC;
+    --brand-success: #18C29C;
+    --brand-warning: #F59E0B;
+    --brand-error: #DC2626;
+    --ink: var(--brand-dark);
+    --prussian: var(--brand-dark);
+    --dusk: var(--brand-slate);
+    --denim: var(--brand-primary);
+    --alabaster: var(--brand-background);
+    --surface: var(--brand-white);
+    --line: var(--brand-border);
+    --display: "DM Sans", -apple-system, "Segoe UI", sans-serif;
+    --body: "DM Sans", -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
     margin: 0;
     color: var(--ink);
-    background:
-      repeating-linear-gradient(180deg, rgba(119,141,169,0.07) 0, rgba(119,141,169,0.07) 1px, transparent 1px, transparent 64px),
-      var(--alabaster);
+    background: var(--brand-background);
     font-family: var(--body);
     line-height: 1.55;
   }
@@ -37,54 +47,103 @@
     align-items: center;
     gap: 12px;
     padding: 12px 20px;
-    background: rgba(13,27,42,0.97);
-    color: var(--alabaster);
-    border-bottom: 1px solid var(--dusk);
+    background: rgba(255,255,255,0.96);
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 1px 2px rgba(16,33,58,0.05);
   }
-  .topbar svg { width: 26px; height: 26px; color: var(--denim); flex: none; }
-  .topbar .word { font-family: var(--display); font-weight: 700; font-size: 18px; }
-  .topbar .word em { color: var(--denim); font-style: normal; }
-  .topbar .tag { font-family: var(--mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--denim); }
+  .topbar svg { width: 26px; height: 26px; color: var(--brand-primary); flex: none; }
+  .topbar .word { font-family: var(--display); font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
+  .topbar .word em { color: var(--brand-primary); font-style: normal; }
+  .topbar .tag { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dusk); }
   .topbar .progress {
     margin-left: auto;
     font-family: var(--mono);
     font-size: 12px;
-    color: var(--alabaster);
-    border: 1px solid var(--dusk);
-    border-radius: 2px;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 999px;
     padding: 5px 10px;
-    background: rgba(65,90,119,0.3);
+    background: var(--brand-surface);
   }
   main { max-width: 880px; margin: 0 auto; padding: 32px 20px 64px; }
   .hero {
     position: relative;
     overflow: hidden;
-    border: 1px solid var(--prussian);
-    border-radius: 4px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
     padding: 34px 30px 30px;
-    background: linear-gradient(150deg, #0d1b2a 0%, #1b263b 52%, #2c405c 100%);
-    color: var(--alabaster);
-    box-shadow: 0 26px 60px rgba(13,27,42,0.3);
+    background: var(--brand-white);
+    color: var(--ink);
+    box-shadow: 0 22px 54px rgba(16,33,58,0.09);
     animation: surface 600ms cubic-bezier(0.22,1,0.36,1) both;
   }
   .hero::before {
     content: "";
     position: absolute;
-    inset: -55% -30% auto auto;
-    width: 640px; height: 640px;
-    border-radius: 50%;
-    background: repeating-radial-gradient(circle at center, transparent 0, transparent 46px, rgba(224,225,221,0.07) 46px, rgba(224,225,221,0.07) 48px);
+    inset: 0 auto 0 0;
+    width: 6px;
+    background: var(--brand-primary);
     pointer-events: none;
   }
-  .hero .kicker { margin: 0 0 12px; font-family: var(--mono); font-size: 11.5px; font-weight: 600; letter-spacing: 0.32em; text-transform: uppercase; color: var(--denim); }
-  h1 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 40px; line-height: 1.06; letter-spacing: -0.01em; color: #f4f5f1; }
-  .hero p { margin: 14px 0 0; max-width: 620px; color: #b8c4d4; font-size: 16px; position: relative; }
+  .hero .kicker { margin: 0 0 12px; font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--brand-primary); }
+  h1 { margin: 0; font-family: var(--display); font-weight: 800; font-size: 40px; line-height: 1.06; letter-spacing: -0.02em; color: var(--brand-dark); }
+  .hero p { margin: 14px 0 0; max-width: 620px; color: var(--dusk); font-size: 16px; position: relative; }
   .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; position: relative; }
-  .pill { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; padding: 6px 10px; border: 1px solid rgba(119,141,169,0.55); border-radius: 2px; background: rgba(13,27,42,0.55); }
+  .pill { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; padding: 6px 10px; border: 1px solid rgba(124,58,237,0.22); border-radius: 999px; background: rgba(124,58,237,0.08); color: var(--brand-primary); font-weight: 700; }
   h2 { display: flex; align-items: center; gap: 11px; margin: 40px 0 4px; font-family: var(--display); font-weight: 600; font-size: 24px; }
-  h2 .ping { width: 9px; height: 9px; border-radius: 50%; background: var(--dusk); box-shadow: 0 0 0 3px var(--alabaster), 0 0 0 4px var(--denim); flex: none; }
+  h2 .ping { width: 9px; height: 9px; border-radius: 50%; background: var(--brand-primary); box-shadow: 0 0 0 4px rgba(124,58,237,0.12); flex: none; }
   h2 .n { font-family: var(--mono); font-size: 12px; color: var(--denim); letter-spacing: 0.2em; }
   .lede { margin: 4px 0 14px; color: var(--dusk); font-size: 14.5px; }
+
+  .fold {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255,255,255,0.78);
+    box-shadow: 0 16px 40px rgba(16,33,58,0.07);
+    margin-top: 16px;
+    overflow: hidden;
+    animation: surface 600ms cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .fold:first-of-type { margin-top: 28px; }
+  .fold summary {
+    list-style: none;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    gap: 16px;
+    align-items: center;
+    padding: 18px 20px;
+  }
+  .fold summary::-webkit-details-marker { display: none; }
+  .fold summary h2 { margin: 0; min-width: 0; }
+  .fold summary .lede { margin: 5px 0 0 31px; max-width: 640px; }
+  .fold summary .chevron {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brand-primary);
+    background: var(--brand-white);
+    transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+  }
+  .fold summary .chevron::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translate(-1px,-1px);
+  }
+  .fold[open] summary .chevron { transform: rotate(180deg); background: rgba(124,58,237,0.08); border-color: rgba(124,58,237,0.24); }
+  .fold-body {
+    border-top: 1px solid var(--line);
+    padding: 16px 20px 20px;
+    background: rgba(255,255,255,0.62);
+  }
 
   /* check-off setup steps */
   .step {
@@ -92,15 +151,15 @@
     grid-template-columns: auto minmax(0,1fr);
     gap: 14px;
     border: 1px solid var(--line);
-    border-left: 3px solid var(--denim);
-    border-radius: 4px;
+    border-left: 3px solid var(--brand-primary);
+    border-radius: 14px;
     background: var(--surface);
     padding: 16px;
     margin-top: 10px;
     box-shadow: 0 10px 26px rgba(13,27,42,0.07);
     transition: border-color 160ms ease, opacity 160ms ease;
   }
-  .step input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--dusk); cursor: pointer; }
+  .step input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--brand-primary); cursor: pointer; }
   .step strong { display: block; font-size: 16px; color: var(--prussian); }
   .step p { margin: 4px 0 0; font-size: 14px; color: var(--ink); }
   .step.done { border-left-color: var(--dusk); opacity: 0.62; }
@@ -128,10 +187,10 @@
     display: flex; align-items: center; justify-content: center;
     width: 40px; height: 40px;
     border-radius: 50%;
-    background: var(--prussian);
-    color: var(--alabaster);
+    background: var(--brand-primary);
+    color: var(--brand-white);
     font-family: var(--mono); font-size: 13px; font-weight: 600;
-    box-shadow: 0 0 0 2px var(--alabaster), 0 0 0 3px var(--denim);
+    box-shadow: 0 0 0 4px rgba(124,58,237,0.12);
     z-index: 1;
   }
   .leg:not(:last-child)::after {
@@ -139,7 +198,7 @@
     position: absolute;
     left: 23px; top: 54px; bottom: -10px;
     width: 2px;
-    background: repeating-linear-gradient(180deg, var(--denim) 0, var(--denim) 5px, transparent 5px, transparent 10px);
+    background: repeating-linear-gradient(180deg, var(--brand-primary) 0, var(--brand-primary) 5px, transparent 5px, transparent 10px);
   }
   .leg strong { display: block; font-size: 15.5px; color: var(--prussian); }
   .leg p { margin: 3px 0 0; font-size: 14px; color: var(--ink); max-width: 660px; }
@@ -149,8 +208,8 @@
   .crew { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 12px; }
   .member {
     border: 1px solid var(--line);
-    border-left: 3px solid var(--dusk);
-    border-radius: 4px;
+    border-left: 3px solid var(--brand-primary);
+    border-radius: 14px;
     background: var(--surface);
     padding: 16px;
     box-shadow: 0 10px 26px rgba(13,27,42,0.07);
@@ -166,20 +225,20 @@
   .rule {
     border: 1px solid var(--line);
     border-top: 3px solid var(--prussian);
-    border-radius: 4px;
+    border-radius: 14px;
     background: var(--surface);
     padding: 16px;
     box-shadow: 0 10px 26px rgba(13,27,42,0.07);
   }
   .rule strong { display: block; color: var(--prussian); font-size: 15px; }
   .rule p { margin: 5px 0 0; font-size: 13.5px; }
-  .rule.hard { background: var(--prussian); border-color: var(--prussian); color: var(--alabaster); }
-  .rule.hard strong { color: var(--denim); }
+  .rule.hard { background: var(--brand-primary); border-color: var(--brand-primary); color: var(--brand-white); }
+  .rule.hard strong { color: var(--brand-white); }
 
   /* fixes accordion */
   .fix {
     border: 1px solid var(--line);
-    border-radius: 4px;
+    border-radius: 14px;
     background: var(--surface);
     margin-top: 8px;
     overflow: hidden;
@@ -202,14 +261,18 @@
   a { color: var(--dusk); font-weight: 600; text-decoration-color: var(--denim); text-underline-offset: 2px; }
 
   section { animation: surface 600ms cubic-bezier(0.22,1,0.36,1) both; }
-  section:nth-of-type(2) { animation-delay: 80ms; }
-  section:nth-of-type(3) { animation-delay: 160ms; }
+  .fold:nth-of-type(2) { animation-delay: 80ms; }
+  .fold:nth-of-type(3) { animation-delay: 160ms; }
   @keyframes surface { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
   @media (max-width: 680px) {
     h1 { font-size: 31px; }
     .rules, .crew { grid-template-columns: 1fr; }
     .topbar .tag { display: none; }
+    .fold summary { padding: 16px; grid-template-columns: minmax(0,1fr) auto; }
+    .fold summary h2 { font-size: 20px; }
+    .fold summary .lede { margin-left: 28px; }
+    .fold-body { padding: 14px 16px 18px; }
   }
   @media print {
     .topbar { position: static; }
@@ -220,8 +283,8 @@
 </head>
 <body>
   <div class="topbar">
-    <svg viewBox="0 0 256 256" aria-label="SellKit" role="img"><path d="M76 136 A 44 44 0 0 1 120 180" stroke="currentColor" stroke-width="20" stroke-linecap="round" fill="none"/><path d="M76 104 A 76 76 0 0 1 152 180" stroke="currentColor" stroke-width="20" stroke-linecap="round" fill="none"/><path d="M76 72 A 108 108 0 0 1 184 180" stroke="currentColor" stroke-width="20" stroke-linecap="round" fill="none"/><circle cx="76" cy="180" r="12" fill="currentColor"/></svg>
-    <span class="word"><em>Sell</em>Kit</span>
+    <svg viewBox="0 0 24 24" aria-label="SellKit" role="img" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.75 6.25H10a4.25 4.25 0 0 0 0 8.5h1.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.25 17.75H14a4.25 4.25 0 0 0 0-8.5h-1.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="word">Sell<em>Kit</em></span>
     <span class="tag">Start here</span>
     <span class="progress" id="progress">0 / 3 set up</span>
   </div>
@@ -238,14 +301,20 @@
       </div>
     </section>
 
-    <section>
-      <h2><span class="ping"></span>First ten minutes <span class="n">SETUP</span></h2>
-      <p class="lede">Three steps. Check them off — this page remembers.</p>
+    <details class="fold" data-fold="setup" open>
+      <summary>
+        <span>
+          <h2><span class="ping"></span>First ten minutes <span class="n">SETUP</span></h2>
+          <p class="lede">Three steps. Check them off — this page remembers.</p>
+        </span>
+        <span class="chevron" aria-hidden="true"></span>
+      </summary>
+      <div class="fold-body">
 
       <label class="step"><input type="checkbox" data-step="signin" />
         <span>
           <strong>Sign in</strong>
-          <p>Open <code>/sellkit</code> with the approved work account. You'll see a SellKit sign-in, then land back in the app.</p>
+          <p>Open <code>https://sellkit-mu.vercel.app</code> with the approved work account. You'll see a SellKit sign-in, then land back in the app.</p>
         </span>
       </label>
 
@@ -272,11 +341,18 @@
           <p>Answers save to your account and follow you to any browser. Edit anytime with <code>Edit Onboarding</code>.</p>
         </span>
       </label>
-    </section>
+      </div>
+    </details>
 
-    <section>
-      <h2><span class="ping"></span>The daily loop <span class="n">~20 MIN</span></h2>
-      <p class="lede">Top of the page to bottom, once a day.</p>
+    <details class="fold" data-fold="daily-loop">
+      <summary>
+        <span>
+          <h2><span class="ping"></span>The daily loop <span class="n">~20 MIN</span></h2>
+          <p class="lede">Top of the page to bottom, once a day.</p>
+        </span>
+        <span class="chevron" aria-hidden="true"></span>
+      </summary>
+      <div class="fold-body">
       <div class="loop">
         <div class="leg"><span></span><span><span class="where">Signal Radar</span><strong>Sweep the radar</strong>
           <p>Each card is one fresh signal on one account. <em>Add to queue</em> if it's timely, <em>Ignore</em> if not, <em>Review</em> to just mark it seen. Ignoring is reversible.</p></span></div>
@@ -289,17 +365,24 @@
         <div class="leg"><span></span><span><span class="where">Conversion tracker</span><strong>Track what happens</strong>
           <p>Click <em>Track sent / reply / meeting / won</em> as outcomes arrive. Tracked targets stay in the CSV export, and the dashboard learns which signals and personas convert. Signal Discovery turns that into next week's experiments.</p></span></div>
       </div>
-    </section>
+      </div>
+    </details>
 
-    <section>
-      <h2><span class="ping"></span>Your research team <span class="n">UNDER THE HOOD</span></h2>
-      <p class="lede">SellKit quietly employs four specialist services. You never deal with them directly — their work just shows up in the app, already organized. Here's who does what, and why each one earns its keep.</p>
+    <details class="fold" data-fold="research-team">
+      <summary>
+        <span>
+          <h2><span class="ping"></span>Your research team <span class="n">UNDER THE HOOD</span></h2>
+          <p class="lede">SellKit quietly employs four specialist services. Their work shows up in the app already organized.</p>
+        </span>
+        <span class="chevron" aria-hidden="true"></span>
+      </summary>
+      <div class="fold-body">
 
       <div class="crew">
         <div class="member">
           <span class="role">THE SCOUT · Exa</span>
           <strong>Finds companies and spots the moment</strong>
-          <p>Reads the public web — news, careers pages, announcements — to find companies that fit your profile and catch the events that make outreach timely: a new executive, a hiring spike, cost pressure.</p>
+          <p>Reads the public web — news, careers pages, announcements — to find companies that fit your profile and catch the events that make outreach timely: a new executive, a hiring spike, or efficiency pressure.</p>
           <p class="value">Why it matters: every radar card and queue target starts here. Without the scout, you'd be skimming press releases all morning.</p>
         </div>
         <div class="member">
@@ -310,38 +393,55 @@
         </div>
         <div class="member">
           <span class="role">THE QUICK CHECKER · Parallel</span>
-          <strong>Tests your targeting before you spend</strong>
+          <strong>Tests your targeting quickly</strong>
           <p>Powers the ICP Preview Lab. Type a description of your ideal customer and it returns a fast sample — up to 10 matches with reasons — so you can see whether your criteria find the right companies.</p>
-          <p class="value">Why it matters: you tune your aim on a handful of cheap samples instead of paying for a full list that turns out to be wrong.</p>
+          <p class="value">Why it matters: you tune your aim on a small preview before committing to a broader list that may need a sharper definition.</p>
         </div>
         <div class="member">
           <span class="role">THE VERIFIER · Apollo</span>
           <strong>Confirms the work email</strong>
           <p>Once a target scores 75+ and you click <em>Enrich work email</em>, it verifies the buyer's business address so your message reaches a real inbox instead of bouncing.</p>
-          <p class="value">Why it matters: it's the most expensive helper, which is exactly why SellKit only lets it work on targets already worth contacting — and never fetches phone numbers or personal addresses.</p>
+          <p class="value">Why it matters: email verification is deliberately gated, so SellKit only runs it on targets already worth contacting — and never fetches phone numbers or personal addresses.</p>
         </div>
       </div>
       <p class="small">One more, on the bench: <strong>Clay</strong>, a spreadsheet-style workspace for the occasional row that needs human judgment. You'll rarely meet it.</p>
-    </section>
+      </div>
+    </details>
 
-    <section>
-      <h2><span class="ping"></span>Four rules that never bend <span class="n">GUARDRAILS</span></h2>
+    <details class="fold" data-fold="guardrails">
+      <summary>
+        <span>
+          <h2><span class="ping"></span>Four rules that never bend <span class="n">GUARDRAILS</span></h2>
+          <p class="lede">The safety model stays visible without making you read every rule up front.</p>
+        </span>
+        <span class="chevron" aria-hidden="true"></span>
+      </summary>
+      <div class="fold-body">
       <div class="rules">
         <div class="rule hard"><strong>Nothing sends itself</strong><p>No auto email, no LinkedIn automation, no Salesforce writes. Every outbound action is your click, in your tools.</p></div>
-        <div class="rule"><strong>Paid enrichment is gated</strong><p>Apollo runs only on a manual click, only at score 75+, only for work email, max 10 per batch.</p></div>
+        <div class="rule"><strong>Email enrichment is gated</strong><p>Apollo runs only on a manual click, only at score 75+, only for work email, max 10 per batch.</p></div>
         <div class="rule"><strong>Exports are safe to open</strong><p>The CRM CSV neutralizes formula-looking cells, so provider-supplied text can't execute in Excel or Sheets.</p></div>
         <div class="rule"><strong>Provider text is data, not orders</strong><p>Research output is clamped and validated. It can inform a draft; it can never change the rules above.</p></div>
       </div>
-    </section>
+      </div>
+    </details>
 
-    <section>
-      <h2><span class="ping"></span>If something looks off <span class="n">FIXES</span></h2>
+    <details class="fold" data-fold="fixes">
+      <summary>
+        <span>
+          <h2><span class="ping"></span>If something looks off <span class="n">FIXES</span></h2>
+          <p class="lede">Common states and what to do next.</p>
+        </span>
+        <span class="chevron" aria-hidden="true"></span>
+      </summary>
+      <div class="fold-body">
       <details class="fix"><summary>Buttons like Track or Export are greyed out</summary><div>Approve the draft first. Tracking and export unlock after approval, and each outcome can only be tracked once per target.</div></details>
-      <details class="fix"><summary>"Enrich work email" is blocked</summary><div>The card states the reason: score under 75, already enriched, rejected/suppressed, or the 10-target batch cap is spent.</div></details>
-      <details class="fix"><summary>The radar or ICP preview shows sample data</summary><div>The provider was unavailable, so SellKit shows a labeled, zero-cost fallback. Try again later for live results.</div></details>
+      <details class="fix"><summary>"Enrich work email" is blocked</summary><div>The card states the reason: score under 75, already enriched, rejected/suppressed, or the 10-target batch cap has already been used.</div></details>
+      <details class="fix"><summary>The radar or ICP preview shows sample data</summary><div>The provider was unavailable, so SellKit shows a labeled fallback. Try again later for live results.</div></details>
       <details class="fix"><summary>The draft doesn't sound like me</summary><div>Reopen onboarding, paste a real email into the voice question, and Save Progress. Drafts follow your example.</div></details>
-      <details class="fix"><summary>I'm stuck on the sign-in page</summary><div>Sign out fully, reopen <code>/sellkit</code>, and use the approved account. You'll be redirected back after signing in.</div></details>
-    </section>
+      <details class="fix"><summary>I'm stuck on the sign-in page</summary><div>Sign out fully, reopen <code>https://sellkit-mu.vercel.app</code>, and use the approved account. You'll be redirected back after signing in.</div></details>
+      </div>
+    </details>
 
     <p class="footer">
       <span>SELLKIT · MANUAL-FIRST PROSPECTING</span>
@@ -352,10 +452,26 @@
   <script>
     (function () {
       var KEY = "sellkit:onboarding-page:v1";
+      var FOLD_KEY = "sellkit:onboarding-folds:v1";
       var saved = {};
+      var savedFolds = {};
       try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { saved = {}; }
+      try { savedFolds = JSON.parse(localStorage.getItem(FOLD_KEY) || "{}"); } catch (e) { savedFolds = {}; }
       var boxes = document.querySelectorAll(".step input[type=checkbox]");
+      var folds = document.querySelectorAll(".fold[data-fold]");
       var progress = document.getElementById("progress");
+
+      folds.forEach(function (fold) {
+        var id = fold.dataset.fold;
+        if (Object.prototype.hasOwnProperty.call(savedFolds, id)) {
+          fold.open = Boolean(savedFolds[id]);
+        }
+        fold.addEventListener("toggle", function () {
+          savedFolds[id] = fold.open;
+          try { localStorage.setItem(FOLD_KEY, JSON.stringify(savedFolds)); } catch (e) {}
+        });
+      });
+
       function paint() {
         var done = 0;
         boxes.forEach(function (box) {
