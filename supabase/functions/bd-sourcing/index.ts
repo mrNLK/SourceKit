@@ -347,6 +347,19 @@ function isPersonalEmail(email: string): boolean {
   return PERSONAL_EMAIL_DOMAINS.has(emailDomain(email));
 }
 
+function emailMatchesCompanyDomain(email: string, companyDomain: string | null): boolean {
+  if (!companyDomain) return false;
+
+  const normalizedCompanyDomain = normalizeDomain(companyDomain);
+  const normalizedEmailDomain = normalizeDomain(emailDomain(email));
+  if (!normalizedCompanyDomain || !normalizedEmailDomain) return false;
+
+  return (
+    normalizedEmailDomain === normalizedCompanyDomain ||
+    normalizedEmailDomain.endsWith(`.${normalizedCompanyDomain}`)
+  );
+}
+
 function readStringField(record: Record<string, unknown>, ...keys: string[]): string | null {
   for (const key of keys) {
     const value = firstString(record[key]);
@@ -846,6 +859,23 @@ async function apolloWorkEmailEnrichment(req: Request, payload: Record<string, u
       data: {
         provider: "apollo",
         targetId,
+        emailDomain: emailDomain(workEmail),
+        emailStatus,
+        apolloPersonId,
+      },
+    });
+  }
+
+  if (domain && !emailMatchesCompanyDomain(workEmail, domain)) {
+    return jsonResponse(req, 422, {
+      ok: false,
+      action: "enrich",
+      status: "blocked",
+      message: `Apollo returned a work email on ${emailDomain(workEmail)}, not ${domain}, so SellKit did not accept it.`,
+      data: {
+        provider: "apollo",
+        targetId,
+        expectedDomain: domain,
         emailDomain: emailDomain(workEmail),
         emailStatus,
         apolloPersonId,
