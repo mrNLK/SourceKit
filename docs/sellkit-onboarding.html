@@ -56,16 +56,7 @@
   .topbar .word { font-family: var(--display); font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
   .topbar .word em { color: var(--brand-primary); font-style: normal; }
   .topbar .tag { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dusk); }
-  .topbar .progress {
-    margin-left: auto;
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--ink);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 5px 10px;
-    background: var(--brand-surface);
-  }
+  .topbar .tag { margin-left: auto; }
   main { max-width: 880px; margin: 0 auto; padding: 32px 20px 64px; }
   .hero {
     position: relative;
@@ -87,8 +78,7 @@
     pointer-events: none;
   }
   .hero .kicker { margin: 0 0 12px; font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--brand-primary); }
-  h1 { margin: 0; font-family: var(--display); font-weight: 800; font-size: 40px; line-height: 1.06; letter-spacing: -0.02em; color: var(--brand-dark); }
-  .hero p { margin: 14px 0 0; max-width: 620px; color: var(--dusk); font-size: 16px; position: relative; }
+  .hero p { margin: 0; max-width: 660px; color: var(--dusk); font-size: 17px; position: relative; }
   .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; position: relative; }
   .pill { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; padding: 6px 10px; border: 1px solid rgba(124,58,237,0.22); border-radius: 999px; background: rgba(124,58,237,0.08); color: var(--brand-primary); font-weight: 700; }
   h2 { display: flex; align-items: center; gap: 11px; margin: 40px 0 4px; font-family: var(--display); font-weight: 600; font-size: 24px; }
@@ -145,31 +135,6 @@
     background: rgba(255,255,255,0.62);
   }
 
-  /* check-off setup steps */
-  .step {
-    display: grid;
-    grid-template-columns: auto minmax(0,1fr);
-    gap: 14px;
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--brand-primary);
-    border-radius: 14px;
-    background: var(--surface);
-    padding: 16px;
-    margin-top: 10px;
-    box-shadow: 0 10px 26px rgba(13,27,42,0.07);
-    transition: border-color 160ms ease, opacity 160ms ease;
-  }
-  .step input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--brand-primary); cursor: pointer; }
-  .step strong { display: block; font-size: 16px; color: var(--prussian); }
-  .step p { margin: 4px 0 0; font-size: 14px; color: var(--ink); }
-  .step.done { border-left-color: var(--dusk); opacity: 0.62; }
-  .step.done strong { text-decoration: line-through; text-decoration-color: var(--denim); }
-  .step details { margin-top: 8px; }
-  .step summary { cursor: pointer; font-family: var(--mono); font-size: 12px; color: var(--dusk); }
-  .step details p { color: var(--dusk); font-size: 13.5px; }
-  .qlist { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--ink); }
-  .qlist li { margin: 3px 0; }
-  .qlist em { color: var(--dusk); font-style: normal; }
   code { font-family: var(--mono); font-size: 0.88em; padding: 1.5px 5px; border: 1px solid var(--line); border-radius: 2px; background: rgba(119,141,169,0.14); color: var(--prussian); }
 
   /* daily loop */
@@ -266,11 +231,11 @@
   @keyframes surface { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
   @media (max-width: 680px) {
-    h1 { font-size: 31px; }
     .rules, .crew { grid-template-columns: 1fr; }
     .topbar .tag { display: none; }
     .fold summary { padding: 16px; grid-template-columns: minmax(0,1fr) auto; }
     .fold summary h2 { font-size: 20px; }
+    .fold summary h2 .n { display: none; }
     .fold summary .lede { margin-left: 28px; }
     .fold-body { padding: 14px 16px 18px; }
   }
@@ -286,13 +251,11 @@
     <svg viewBox="0 0 24 24" aria-label="SellKit" role="img" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.75 6.25H10a4.25 4.25 0 0 0 0 8.5h1.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.25 17.75H14a4.25 4.25 0 0 0 0-8.5h-1.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span class="word">Sell<em>Kit</em></span>
     <span class="tag">Start here</span>
-    <span class="progress" id="progress">0 / 3 set up</span>
   </div>
 
   <main>
     <section class="hero">
-      <p class="kicker">Onboarding · 10 minutes</p>
-      <h1>Find the right buyer at the right moment. Then decide.</h1>
+      <p class="kicker">Manual-first prospecting</p>
       <p>SellKit surfaces account signals, scores buyers, researches the committee, and drafts the first email. You review, approve, send by hand, and tell it what worked. It never sends anything for you.</p>
       <div class="pills">
         <span class="pill">MANUAL-FIRST</span>
@@ -300,49 +263,6 @@
         <span class="pill">SAVES TO YOUR ACCOUNT</span>
       </div>
     </section>
-
-    <details class="fold" data-fold="setup" open>
-      <summary>
-        <span>
-          <h2><span class="ping"></span>First ten minutes <span class="n">SETUP</span></h2>
-          <p class="lede">Three steps. Check them off — this page remembers.</p>
-        </span>
-        <span class="chevron" aria-hidden="true"></span>
-      </summary>
-      <div class="fold-body">
-
-      <label class="step"><input type="checkbox" data-step="signin" />
-        <span>
-          <strong>Sign in</strong>
-          <p>Open <code>https://sellkit-mu.vercel.app</code> with the approved work account. You'll see a SellKit sign-in, then land back in the app.</p>
-        </span>
-      </label>
-
-      <label class="step"><input type="checkbox" data-step="questions" />
-        <span>
-          <strong>Answer the five questions</strong>
-          <p>The onboarding panel is open until it's done. Don't aim for perfect — aim for honest and specific.</p>
-          <details>
-            <summary>what good answers look like</summary>
-            <ul class="qlist">
-              <li><em>Ideal company</em> — size, geography, and the kind of initiative that makes outside experts timely. "2,000+ employee software orgs mid AI-platform rollout, US first."</li>
-              <li><em>Buyer titles</em> — strong yes (CTO, VP Eng, Head of Data) and close-but-no (recruiters, junior PMO).</li>
-              <li><em>One-line offer</em> — concrete: who the experts are, what problem they de-risk.</li>
-              <li><em>Buying signals</em> — ranked: new leader &gt; hiring spike &gt; funding. A signal needs an owner and urgency.</li>
-              <li><em>Email voice</em> — paste a real email. Short, plain, signal in sentence one.</li>
-            </ul>
-          </details>
-        </span>
-      </label>
-
-      <label class="step"><input type="checkbox" data-step="save" />
-        <span>
-          <strong>Click <code>Save Progress</code></strong>
-          <p>Answers save to your account and follow you to any browser. Edit anytime with <code>Edit Onboarding</code>.</p>
-        </span>
-      </label>
-      </div>
-    </details>
 
     <details class="fold" data-fold="daily-loop">
       <summary>
@@ -451,15 +371,10 @@
 
   <script>
     (function () {
-      var KEY = "sellkit:onboarding-page:v1";
-      var FOLD_KEY = "sellkit:onboarding-folds:v1";
-      var saved = {};
+      var FOLD_KEY = "sellkit:onboarding-folds:v2";
       var savedFolds = {};
-      try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { saved = {}; }
       try { savedFolds = JSON.parse(localStorage.getItem(FOLD_KEY) || "{}"); } catch (e) { savedFolds = {}; }
-      var boxes = document.querySelectorAll(".step input[type=checkbox]");
       var folds = document.querySelectorAll(".fold[data-fold]");
-      var progress = document.getElementById("progress");
 
       folds.forEach(function (fold) {
         var id = fold.dataset.fold;
@@ -471,24 +386,6 @@
           try { localStorage.setItem(FOLD_KEY, JSON.stringify(savedFolds)); } catch (e) {}
         });
       });
-
-      function paint() {
-        var done = 0;
-        boxes.forEach(function (box) {
-          box.closest(".step").classList.toggle("done", box.checked);
-          if (box.checked) done += 1;
-        });
-        progress.textContent = done + " / " + boxes.length + (done === boxes.length ? " — ready" : " set up");
-      }
-      boxes.forEach(function (box) {
-        box.checked = Boolean(saved[box.dataset.step]);
-        box.addEventListener("change", function () {
-          saved[box.dataset.step] = box.checked;
-          try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
-          paint();
-        });
-      });
-      paint();
     })();
   </script>
 </body>
