@@ -236,6 +236,16 @@ export async function createScore(
       product_instinct: fields.productInstinct ?? null,
       leadership_potential: fields.leadershipPotential ?? null,
       composite_score: composite,
+      quality_score_10: fields.qualityScore10 ?? null,
+      closability_probability_pct: fields.closabilityProbabilityPct ?? null,
+      expected_value: fields.expectedValue ?? null,
+      inbound_intent_score: fields.inboundIntentScore ?? null,
+      company_mobility_score: fields.companyMobilityScore ?? null,
+      ve_model_fit_score: fields.veModelFitScore ?? null,
+      comp_reachability_score: fields.compReachabilityScore ?? null,
+      outreach_blocked: fields.outreachBlocked ?? false,
+      closability_reasons: fields.closabilityReasons ?? null,
+      closability_version: fields.closabilityVersion ?? null,
       notes: fields.notes || null,
     })
     .select()

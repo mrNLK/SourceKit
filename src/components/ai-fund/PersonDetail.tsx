@@ -142,6 +142,12 @@ export default function PersonDetail({ person, onBack }: Props) {
             <p className={`text-xs font-medium ${scoreColor(latestScore.compositeScore)}`}>
               {scoreLabel(latestScore.compositeScore)}
             </p>
+            <p className="text-[10px] text-muted-foreground">
+              {latestScore.expectedValue !== null ? `EV ${latestScore.expectedValue.toFixed(2)}` : "EV -"} · {latestScore.closabilityProbabilityPct !== null ? `Prob ${latestScore.closabilityProbabilityPct.toFixed(1)}%` : "Prob -"}
+            </p>
+            {latestScore.outreachBlocked && (
+              <p className="text-[10px] text-orange-400">{"Outreach blocked (<25%)"}</p>
+            )}
           </div>
         )}
       </div>
@@ -249,6 +255,26 @@ export default function PersonDetail({ person, onBack }: Props) {
                     <p className="text-[9px] text-muted-foreground/60">{dim.weight}</p>
                   </div>
                 ))}
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-4 border-t border-border pt-3">
+                <div className="text-center">
+                  <p className="text-base font-semibold text-foreground">
+                    {latestScore.closabilityProbabilityPct !== null ? `${latestScore.closabilityProbabilityPct.toFixed(1)}%` : "-"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Probability</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-base font-semibold text-foreground">
+                    {latestScore.expectedValue !== null ? latestScore.expectedValue.toFixed(2) : "-"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Expected Value</p>
+                </div>
+                <div className="text-center">
+                  <p className={`text-base font-semibold ${latestScore.outreachBlocked ? "text-orange-400" : "text-emerald-400"}`}>
+                    {latestScore.outreachBlocked ? "Blocked" : "Eligible"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Outreach</p>
+                </div>
               </div>
               {latestScore.notes && (
                 <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
