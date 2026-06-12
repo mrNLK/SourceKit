@@ -145,6 +145,22 @@
   .leg p { margin: 3px 0 0; font-size: 14px; color: var(--ink); max-width: 660px; }
   .leg .where { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--denim); }
 
+  /* research team */
+  .crew { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 12px; }
+  .member {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--dusk);
+    border-radius: 4px;
+    background: var(--surface);
+    padding: 16px;
+    box-shadow: 0 10px 26px rgba(13,27,42,0.07);
+  }
+  .member .role { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; color: var(--denim); }
+  .member strong { display: block; margin-top: 6px; font-family: var(--display); font-weight: 600; font-size: 16.5px; color: var(--prussian); }
+  .member p { margin: 7px 0 0; font-size: 13.5px; color: var(--ink); }
+  .member .value { color: var(--dusk); border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 10px; }
+  .small { margin-top: 12px; font-size: 13px; color: var(--dusk); }
+
   /* rules */
   .rules { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 12px; }
   .rule {
@@ -192,7 +208,7 @@
 
   @media (max-width: 680px) {
     h1 { font-size: 31px; }
-    .rules { grid-template-columns: 1fr; }
+    .rules, .crew { grid-template-columns: 1fr; }
     .topbar .tag { display: none; }
   }
   @media print {
@@ -273,6 +289,39 @@
         <div class="leg"><span></span><span><span class="where">Conversion tracker</span><strong>Track what happens</strong>
           <p>Click <em>Track sent / reply / meeting / won</em> as outcomes arrive. Tracked targets stay in the CSV export, and the dashboard learns which signals and personas convert. Signal Discovery turns that into next week's experiments.</p></span></div>
       </div>
+    </section>
+
+    <section>
+      <h2><span class="ping"></span>Your research team <span class="n">UNDER THE HOOD</span></h2>
+      <p class="lede">SellKit quietly employs four specialist services. You never deal with them directly — their work just shows up in the app, already organized. Here's who does what, and why each one earns its keep.</p>
+
+      <div class="crew">
+        <div class="member">
+          <span class="role">THE SCOUT · Exa</span>
+          <strong>Finds companies and spots the moment</strong>
+          <p>Reads the public web — news, careers pages, announcements — to find companies that fit your profile and catch the events that make outreach timely: a new executive, a hiring spike, cost pressure.</p>
+          <p class="value">Why it matters: every radar card and queue target starts here. Without the scout, you'd be skimming press releases all morning.</p>
+        </div>
+        <div class="member">
+          <span class="role">THE RESEARCHER · Exa Agent</span>
+          <strong>Builds the account dossier</strong>
+          <p>When you hit <em>Refresh committee map</em>, it reads up on one company and comes back with the five people who matter — buyer, champion, blocker, budget holder, technical evaluator — each with a reason and a source link.</p>
+          <p class="value">Why it matters: an hour of account research compressed into a card you can verify, because every claim links to where it came from.</p>
+        </div>
+        <div class="member">
+          <span class="role">THE QUICK CHECKER · Parallel</span>
+          <strong>Tests your targeting before you spend</strong>
+          <p>Powers the ICP Preview Lab. Type a description of your ideal customer and it returns a fast sample — up to 10 matches with reasons — so you can see whether your criteria find the right companies.</p>
+          <p class="value">Why it matters: you tune your aim on a handful of cheap samples instead of paying for a full list that turns out to be wrong.</p>
+        </div>
+        <div class="member">
+          <span class="role">THE VERIFIER · Apollo</span>
+          <strong>Confirms the work email</strong>
+          <p>Once a target scores 75+ and you click <em>Enrich work email</em>, it verifies the buyer's business address so your message reaches a real inbox instead of bouncing.</p>
+          <p class="value">Why it matters: it's the most expensive helper, which is exactly why SellKit only lets it work on targets already worth contacting — and never fetches phone numbers or personal addresses.</p>
+        </div>
+      </div>
+      <p class="small">One more, on the bench: <strong>Clay</strong>, a spreadsheet-style workspace for the occasional row that needs human judgment. You'll rarely meet it.</p>
     </section>
 
     <section>
