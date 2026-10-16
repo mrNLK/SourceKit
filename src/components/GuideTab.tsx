@@ -1,36 +1,41 @@
-import { ExternalLink } from "lucide-react";
+import { Download, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const guideUrl = "https://sourcekit-docs.netlify.app/guide_user_reference.html";
+// SourceKit Pilot Guide, served as a static page from public/guide/.
+export const GUIDE_URL = "/guide/index.html";
+export const GUIDE_PDF_URL = "/guide/SourceKit-Pilot-Guide.pdf";
 
 const GuideTab = () => {
   return (
-    <div className="flex flex-col h-full rounded-xl overflow-hidden border border-border/40 bg-card">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-card/70">
+    <div className="flex flex-col h-full rounded-xl overflow-hidden border border-border bg-card">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
         <div>
-          <h2 className="text-sm font-semibold text-foreground tracking-tight">
-            Guide
-          </h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Loaded from `sourcekit-docs.netlify.app`
-          </p>
+          <h2 className="text-sm font-semibold text-foreground tracking-tight">SourceKit Pilot Guide</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Onboarding walkthrough for pilot users</p>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-          onClick={() => window.open(guideUrl, "_blank", "noopener,noreferrer")}
-        >
-          Open in new tab
-          <ExternalLink className="w-3 h-3" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button asChild variant="ghost" size="sm" className="h-7 gap-1.5 text-xs text-secondary-foreground hover:text-primary">
+            <a href={GUIDE_PDF_URL} download>
+              Download PDF
+              <Download className="w-3 h-3" />
+            </a>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 text-xs text-secondary-foreground hover:text-primary"
+            onClick={() => window.open(GUIDE_URL, "_blank", "noopener,noreferrer")}
+          >
+            Open in new tab
+            <ExternalLink className="w-3 h-3" />
+          </Button>
+        </div>
       </div>
       <iframe
-        src={guideUrl}
-        title="SourceKit Reference Guide"
+        src={GUIDE_URL}
+        title="SourceKit Pilot Guide"
         className="flex-1 w-full border-0 bg-background"
         style={{ minHeight: "calc(100vh - 140px)" }}
-        sandbox="allow-same-origin allow-scripts"
       />
     </div>
   );
