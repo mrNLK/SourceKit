@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { checkPilotAccess, type UsageKind } from "./pilot.ts";
 
 export interface AuthResult {
   user: { id: string; email?: string };
@@ -12,7 +13,12 @@ export interface AuthResult {
  * Usage:
  *   const { user } = await requireAuth(req);
  */
-export async function requireAuth(req: Request): Promise<AuthResult> {
+export interface RequireAuthOptions {
+  /** Pilot daily-cap bucket to consume. Omit to only enforce the invite allowlist. */
+  usage?: UsageKind;
+}
+
+export async function requireAuth(req: Request, opts: RequireAuthOptions = {}): Promise<AuthResult> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
     throw { status: 401, body: { error: "Missing Authorization header" } };
@@ -38,6 +44,12 @@ export async function requireAuth(req: Request): Promise<AuthResult> {
 
   if (error || !user) {
     throw { status: 401, body: { error: "Invalid or expired token" } };
+  }
+
+  // Pilot: invite-only allowlist + per-user daily caps (no-op unless PILOT_MODE=true)
+  const pilot = await checkPilotAccess(user.id, opts.usage ?? null);
+  if (!pilot.allowed) {
+    throw { status: pilot.status, body: pilot.body };
   }
 
   return { user: { id: user.id, email: user.email } };

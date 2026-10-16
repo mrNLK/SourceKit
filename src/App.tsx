@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import { Analytics } from "@vercel/analytics/react";
 import { postAuthRedirectStorageKey, sanitizeRedirectPath } from "./lib/auth-redirect";
 import { recruiterRoutes } from "./recruiter/routes";
+import { PILOT_MODE } from "./lib/pilot";
 
 // Recruiter OS — lazy-loaded route group
 const RecruiterLayout = lazy(() => import("./recruiter/RecruiterLayout"));
@@ -105,7 +106,7 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {["/sellkit", "/bd-sourcing"].map((path) => (
+              {!PILOT_MODE && ["/sellkit", "/bd-sourcing"].map((path) => (
                 <Route
                   key={path}
                   path={path}
@@ -122,6 +123,7 @@ const App = () => {
                 <>
                   <Route path="/" element={<Index />} />
                   <Route path="/developer/:id" element={<DeveloperProfile />} />
+                  {!PILOT_MODE && (
                   <Route path="/recruiter/*" element={
                     <Suspense fallback={<AppFallback />}>
                       <RecruiterLayout />
@@ -129,6 +131,7 @@ const App = () => {
                   }>
                     {recruiterRoutes}
                   </Route>
+                  )}
                   <Route path="/auth" element={<AuthRedirect />} />
 
                   <Route path="*" element={<NotFound />} />

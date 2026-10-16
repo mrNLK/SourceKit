@@ -74,7 +74,7 @@ serve(async (req) => {
   }
 
   try {
-    await requireAuth(req);
+    await requireAuth(req, { usage: 'ai' });
 
     const { url, parallel_api_key } = await req.json();
 

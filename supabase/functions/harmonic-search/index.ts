@@ -49,7 +49,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
   try {
-    await requireAuth(req)
+    await requireAuth(req, { usage: 'search' })
     const body = await req.json()
     const { action, ...params } = body
 

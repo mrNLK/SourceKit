@@ -10,7 +10,7 @@ serve(async (req) => {
   }
 
   try {
-    await requireAuth(req);
+    await requireAuth(req, { usage: 'enrich' });
 
     const { username, name, location, bio } = await req.json();
 

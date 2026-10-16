@@ -9,7 +9,7 @@ serve(async (req) => {
   }
 
   try {
-    await requireAuth(req);
+    await requireAuth(req, { usage: 'ai' });
 
     const { candidate_name, github_username, role_context } = await req.json();
 

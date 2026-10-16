@@ -11,7 +11,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: [path.join(projectRoot, "src/test/setup.ts")],
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    include: ["src/**/*.{test,spec}.{ts,tsx}", "supabase/functions/_shared/**/*.test.ts"],
   },
   resolve: {
     alias: { "@": path.join(projectRoot, "src") },

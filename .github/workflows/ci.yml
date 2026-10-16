@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
+          VITE_SUPABASE_PROJECT_ID: ci-placeholder
+          VITE_PILOT_MODE: "true"
+      # Non-blocking until the pre-existing backlog is fixed (~187 lint errors, ~156 tsc errors).
+      - name: Lint (non-blocking)
+        continue-on-error: true
+        run: npm run lint
+      - name: Typecheck (non-blocking)
+        continue-on-error: true
+        run: npx tsc -p tsconfig.app.json --noEmit
+
+  edge-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check shared edge-function modules (non-blocking)
+        continue-on-error: true
+        run: deno check supabase/functions/_shared/pilot.ts supabase/functions/_shared/auth.ts supabase/functions/_shared/gate.ts

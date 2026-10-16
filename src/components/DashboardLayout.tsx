@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Menu, X, Users, Sparkles, Crown, Layers, Sun, Moon, BookOpen } from "lucide-react";
 import { SourceKitMark } from "@/components/brand/SourceKitMark";
+import { PILOT_MODE } from "@/lib/pilot";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -95,7 +96,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
       </nav>
 
       {/* Usage indicator */}
-      {subscription && (
+      {subscription && !PILOT_MODE && (
         <div className="px-4 pb-3">
           {subscription.plan === 'pro' ? (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
