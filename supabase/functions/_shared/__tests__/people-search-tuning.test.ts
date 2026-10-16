@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { harmonicEmployeeGroup, icTitleRank } from "../providers/requests.ts";
+import { harmonicEmployeeGroup, icTitleRank, scoreRepoRelevance } from "../providers/requests.ts";
 import { harmonicCompanyFirstPeople, githubContributorSearch, githubHandleByNameCompany, companyTokens } from "../providers/clients.ts";
 import { classifyPerson, currentExecTitle } from "../talent-flags.ts";
 
@@ -47,25 +47,33 @@ describe("Harmonic: IC queries pull engineering staff, not founders/execs", () =
 });
 
 describe("GitHub: core, high-signal repos", () => {
-  it("merges per-keyword results, puts canonical repo first, then by stars", async () => {
+  const KW = ["ML infrastructure", "PyTorch", "distributed training"];
+  const repo = (full: string, stars: number, description: string, topics: string[] = []) => {
+    const [owner, name] = full.split("/");
+    return { full_name: full, name, owner: { login: owner }, stargazers_count: stars, description, topics };
+  };
+  const SD = repo("AUTOMATIC1111/stable-diffusion-webui", 150000, "Stable Diffusion web UI", ["pytorch", "ai", "deep-learning"]);
+  const PT = repo("pytorch/pytorch", 90000, "Tensors and Dynamic neural networks in Python with strong GPU acceleration", ["deep-learning", "gpu"]);
+  const DS = repo("deepspeedai/DeepSpeed", 40000, "DeepSpeed is a deep learning optimization library that makes distributed training and inference easy, efficient, and effective.", ["pytorch", "deep-learning"]);
+  const TT = repo("pytorch/torchtitan", 4500, "A PyTorch native platform for training generative AI models", ["distributed-training"]);
+  const HF = repo("huggingface/transformers", 140000, "Transformers: the model-definition framework for state-of-the-art machine learning models", ["pytorch", "nlp"]);
+
+  it("scoreRepoRelevance: tag-only matches are weak", () => {
+    expect(scoreRepoRelevance(SD, KW).score).toBe(0.5);
+    expect(scoreRepoRelevance(DS, KW).score).toBe(1.5);
+    expect(scoreRepoRelevance(TT, KW).score).toBe(1.5); // "PyTorch" in description + distributed-training topic
+    expect(scoreRepoRelevance(PT, KW)).toEqual({ score: 1, canonical: true }); // name matches "PyTorch"
+  });
+
+  it("drops tag-only repos (stable-diffusion-webui) and ranks real matches", async () => {
     const f = vi.fn(async (url: string) => {
-      if (url.includes("/search/repositories")) {
-        const q = decodeURIComponent(new URL(url).searchParams.get("q")!);
-        if (q.startsWith("PyTorch")) return ok({ items: [
-          { full_name: "huggingface/transformers", name: "transformers", owner: { login: "huggingface" }, stargazers_count: 140000 },
-          { full_name: "pytorch/pytorch", name: "pytorch", owner: { login: "pytorch" }, stargazers_count: 90000 },
-        ] });
-        return ok({ items: [
-          { full_name: "run-house/kubetorch", name: "kubetorch", owner: { login: "run-house" }, stargazers_count: 900 },
-          { full_name: "microsoft/DeepSpeed", name: "DeepSpeed", owner: { login: "microsoft" }, stargazers_count: 40000 },
-          { full_name: "someone/fork", name: "fork", owner: { login: "someone" }, stargazers_count: 99999, fork: true },
-        ] });
-      }
-      if (url.includes("/contributors")) return ok([{ login: url.includes("pytorch/pytorch") ? "ezyang" : "dev", type: "User" }]);
+      if (url.includes("/search/repositories")) return ok({ items: [SD, HF, PT, DS, TT] });
+      if (url.includes("/contributors")) return ok([{ login: url.includes("pytorch/pytorch") ? "ezyang" : "dev" + url.length, type: "User" }]);
       return ok({ login: new URL(url).pathname.split("/").pop(), id: 1 });
     });
-    const r = await githubContributorSearch("t", ["ML infrastructure in:name", "PyTorch in:name", "distributed training in:name"], { repos: 3 }, f as never);
-    expect(r.repos).toEqual(["pytorch/pytorch", "huggingface/transformers", "microsoft/DeepSpeed"]);
+    const r = await githubContributorSearch("t", ["q1 in:name"], { repos: 3, keywords: KW }, f as never);
+    expect(r.repos).toEqual(["pytorch/pytorch", "deepspeedai/DeepSpeed", "pytorch/torchtitan"]);
+    expect(r.rejected).toEqual(["AUTOMATIC1111/stable-diffusion-webui", "huggingface/transformers"]);
     expect(r.candidates[0].githubLogin).toBe("ezyang");
   });
 });
