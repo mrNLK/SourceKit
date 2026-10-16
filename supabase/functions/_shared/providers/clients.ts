@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- provider payloads are untyped JSON */
 // Thin provider clients. fetch is injectable so tests never hit paid APIs.
 import {
-  APOLLO_BASE, EXA_BASE, EXA_WEBSETS_BASE, PARALLEL_BASE,
-  buildApolloSearchUrl, buildExaPeopleSearch, buildFindAllPeopleRun, buildParallelEntitySearch,
+  AIRSCALE_BASE, EXA_BASE, EXA_WEBSETS_BASE, PARALLEL_BASE,
+  buildExaPeopleSearch, buildFindAllPeopleRun, buildParallelEntitySearch,
   buildParallelExtractV1, buildParallelSearchV1, buildWebsetPeopleSearch,
-  type CandidateFilters, type DeepSearchInput, type ExaSearchType, type FindAllGenerator,
+  type AirscaleEmailInput, type DeepSearchInput, type ExaSearchType, type FindAllGenerator,
 } from "./requests.ts";
 import {
-  fromApolloPerson, fromExaResult, fromExaWebsetItem, fromGithubUser, fromParallelEntity,
+  fromExaResult, fromHarmonicPerson, fromExaWebsetItem, fromGithubUser, fromParallelEntity,
   fromParallelFindAllCandidate, type UnifiedCandidate,
 } from "./candidate.ts";
 
@@ -72,26 +72,87 @@ export async function parallelExtractV1(apiKey: string, url: string, objective?:
   return typeof text === "string" && text.trim() ? text : null;
 }
 
-export async function apolloPeopleSearch(apiKey: string, filters: CandidateFilters, page = 1, perPage = 25, f: FetchLike = fetch): Promise<{ candidates: UnifiedCandidate[]; total: number | null }> {
-  const data = await json("apollo", await f(buildApolloSearchUrl(filters, page, perPage), {
-    method: "POST",
-    headers: { "x-api-key": apiKey, "Content-Type": "application/json", "Cache-Control": "no-cache" },
-  }));
-  const people = data.people || data.contacts || [];
-  return {
-    candidates: compact(people.map((p: any, i: number) => fromApolloPerson(p, i + 1))),
-    total: typeof data.total_entries === "number" ? data.total_entries : (data.pagination?.total_entries ?? null),
-  };
+// ---------- Harmonic ----------
+
+export interface HarmonicConfig { apiKey: string; baseUrl: string }
+
+function hHeaders(cfg: HarmonicConfig, body = false): Record<string, string> {
+  return { apikey: cfg.apiKey, Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}) };
 }
 
-/** Apollo bulk enrichment (costs credits; 10 per call). Not used by default sourcing. */
-export async function apolloBulkMatch(apiKey: string, ids: string[], f: FetchLike = fetch): Promise<UnifiedCandidate[]> {
-  const data = await json("apollo", await f(`${APOLLO_BASE}/people/bulk_match?reveal_personal_emails=false&reveal_phone_number=false`, {
+/** Pull URNs out of Harmonic search/employee responses (strings or objects). */
+export function extractUrns(data: any, kind: "company" | "person"): string[] {
+  const list = Array.isArray(data) ? data : (data?.results ?? data?.urns ?? data?.companies ?? data?.people ?? []);
+  const out: string[] = [];
+  for (const it of list) {
+    const v = typeof it === "string" ? it : (it?.[`${kind}_urn`] ?? it?.entity_urn ?? it?.urn ?? null);
+    if (typeof v === "string" && (v.includes(`:${kind}:`) || !v.startsWith("urn:"))) out.push(v);
+  }
+  return [...new Set(out)];
+}
+
+export async function harmonicPersonsByUrns(cfg: HarmonicConfig, urns: string[], f: FetchLike = fetch): Promise<UnifiedCandidate[]> {
+  if (!urns.length) return [];
+  const data = await json("harmonic", await f(`${cfg.baseUrl}/persons/batchGet`, {
     method: "POST",
-    headers: { "x-api-key": apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ details: ids.slice(0, 10).map((id) => ({ id })) }),
+    headers: hHeaders(cfg, true),
+    body: JSON.stringify({ urns: urns.slice(0, 100) }),
   }));
-  return compact((data.matches || []).map((p: any, i: number) => (p ? fromApolloPerson(p, i + 1) : null)));
+  const people = Array.isArray(data) ? data : (data.results || data.persons || []);
+  return compact(people.map((p: any, i: number) => fromHarmonicPerson(p, i + 1)));
+}
+
+/** Name lookup: typeahead PERSON -> person URNs -> batchGet. */
+export async function harmonicPeopleByName(cfg: HarmonicConfig, name: string, limit = 10, f: FetchLike = fetch): Promise<UnifiedCandidate[]> {
+  const q = new URLSearchParams({ query: name, search_type: "PERSON" });
+  const data = await json("harmonic", await f(`${cfg.baseUrl}/search/typeahead?${q}`, { headers: hHeaders(cfg) }));
+  return harmonicPersonsByUrns(cfg, extractUrns(data, "person").slice(0, limit), f);
+}
+
+/** Person by LinkedIn URL (enrich endpoint; same call the existing harmonic-person function uses). */
+export async function harmonicPersonByLinkedin(cfg: HarmonicConfig, linkedinUrl: string, f: FetchLike = fetch): Promise<UnifiedCandidate | null> {
+  const q = new URLSearchParams({ linkedin_url: linkedinUrl });
+  const data = await json("harmonic", await f(`${cfg.baseUrl}/persons?${q}`, { method: "POST", headers: hHeaders(cfg) }));
+  const p = data?.person ?? data;
+  return p && (p.full_name || p.name) ? fromHarmonicPerson(p, 1) : null;
+}
+
+/**
+ * Company-first sourcing: search_agent (NL company search) -> top companies ->
+ * /companies/{urn}/employees (active, group filter) -> /persons/batchGet.
+ */
+export async function harmonicCompanyFirstPeople(
+  cfg: HarmonicConfig,
+  companyQuery: string,
+  opts: { companies?: number; perCompany?: number; group?: string } = {},
+  f: FetchLike = fetch,
+): Promise<{ candidates: UnifiedCandidate[]; companyUrns: string[] }> {
+  const nCompanies = Math.max(1, Math.min(10, opts.companies ?? 5));
+  const perCompany = Math.max(1, Math.min(50, opts.perCompany ?? 10));
+  const q = new URLSearchParams({ query: companyQuery, size: String(nCompanies) });
+  const search = await json("harmonic", await f(`${cfg.baseUrl}/search/search_agent?${q}`, { headers: hHeaders(cfg) }));
+  const companyUrns = extractUrns(search, "company").slice(0, nCompanies);
+  const employeeLists = await Promise.allSettled(companyUrns.map(async (urn) => {
+    const eq = new URLSearchParams({ employee_group_type: opts.group ?? "ALL", employee_status: "ACTIVE", size: String(perCompany), page: "0" });
+    const data = await json("harmonic", await f(`${cfg.baseUrl}/companies/${encodeURIComponent(urn)}/employees?${eq}`, { headers: hHeaders(cfg) }));
+    return extractUrns(data, "person").slice(0, perCompany);
+  }));
+  const personUrns = [...new Set(employeeLists.flatMap((r) => (r.status === "fulfilled" ? r.value : [])))];
+  return { candidates: await harmonicPersonsByUrns(cfg, personUrns, f), companyUrns };
+}
+
+// ---------- Airscale (email enrichment) ----------
+
+export interface AirscaleEmailResult { status: "success" | "not_found" | string; email: string | null; email_status?: string; provider?: string }
+
+export async function airscaleFindEmail(apiKey: string, input: AirscaleEmailInput, f: FetchLike = fetch): Promise<AirscaleEmailResult> {
+  const data = await json("airscale", await f(`${AIRSCALE_BASE}/email`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  }));
+  const r = data?.response && typeof data.response === "object" && "email" in data.response ? data.response : data;
+  return { status: r.status ?? data.status ?? "unknown", email: r.email ?? null, email_status: r.email_status, provider: r.provider };
 }
 
 export async function githubUserSearch(token: string | undefined, q: string, perPage = 20, f: FetchLike = fetch): Promise<UnifiedCandidate[]> {

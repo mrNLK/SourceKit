@@ -1,5 +1,5 @@
 // Candidate dedup + merge. Pure.
-// Match order: LinkedIn slug, GitHub login, Apollo ID, Harmonic URN, email, then fuzzy name + (company or domain).
+// Match order: LinkedIn slug, GitHub login, Harmonic URN, email, then fuzzy name + (company or domain).
 import { linkedinSlug, type UnifiedCandidate } from "./candidate.ts";
 
 export function normalizeName(n: string): string {
@@ -60,7 +60,6 @@ export function identityKeys(c: UnifiedCandidate): string[] {
   const li = linkedinSlug(c.linkedinUrl);
   if (li) keys.push(`li:${li}`);
   if (c.githubLogin) keys.push(`gh:${c.githubLogin.toLowerCase()}`);
-  if (c.apolloId) keys.push(`ap:${c.apolloId}`);
   if (c.harmonicUrn) keys.push(`hm:${c.harmonicUrn}`);
   for (const e of c.emails) keys.push(`em:${e.toLowerCase()}`);
   return keys;
@@ -76,6 +75,7 @@ export function isFuzzyMatch(a: UnifiedCandidate, b: UnifiedCandidate): boolean 
   const lb = linkedinSlug(b.linkedinUrl);
   if (la && lb && la !== lb) return false;
   if (a.githubLogin && b.githubLogin && a.githubLogin.toLowerCase() !== b.githubLogin.toLowerCase()) return false;
+  if (a.harmonicUrn && b.harmonicUrn && a.harmonicUrn !== b.harmonicUrn) return false;
   if (jaroWinkler(na, nb) < FUZZY_NAME_THRESHOLD) return false;
   if (a.companyDomain && b.companyDomain) return a.companyDomain === b.companyDomain;
   const ca = normalizeCompany(a.currentCompany);
@@ -101,7 +101,6 @@ export function mergeInto(a: UnifiedCandidate, b: UnifiedCandidate): UnifiedCand
     location: pick(a.location, b.location),
     linkedinUrl: pick(a.linkedinUrl, b.linkedinUrl),
     githubLogin: pick(a.githubLogin, b.githubLogin),
-    apolloId: pick(a.apolloId, b.apolloId),
     harmonicUrn: pick(a.harmonicUrn, b.harmonicUrn),
     emails: [...new Set([...a.emails, ...b.emails])],
     profileUrls: [...new Set([...a.profileUrls, ...b.profileUrls])],

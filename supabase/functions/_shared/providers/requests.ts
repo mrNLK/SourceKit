@@ -2,11 +2,12 @@
 // - Exa: POST /search, category "people" (not "person"), type instant|fast|auto|deep*; useAutoprompt removed.
 //   people category rejects excludeDomains and published-date filters (400).
 // - Parallel: /v1/search, /v1/extract (advanced_settings), /v1beta/findall/entity-search, /v1beta/findall/runs (V1).
-// - Apollo: POST /api/v1/mixed_people/api_search (0 credits, master key), filters as query params.
+// - Harmonic: /search/search_agent (companies), /companies/{urn}/employees, /persons/batchGet, /search/typeahead?search_type=PERSON.
+// - Airscale: POST /v1/email (Bearer key; 2 credits per found email, not_found free).
 
 export const EXA_BASE = "https://api.exa.ai";
 export const PARALLEL_BASE = "https://api.parallel.ai";
-export const APOLLO_BASE = "https://api.apollo.io/api/v1";
+export const AIRSCALE_BASE = "https://api.airscale.io/v1";
 export const EXA_WEBSETS_BASE = "https://api.exa.ai/websets/v0";
 
 export type ExaSearchType = "instant" | "fast" | "auto" | "deep-lite" | "deep" | "deep-reasoning";
@@ -14,7 +15,7 @@ export type ExaSearchType = "instant" | "fast" | "auto" | "deep-lite" | "deep" |
 /** Structured filters (e.g. derived from parse-jd / research-role output). */
 export interface CandidateFilters {
   titles?: string[];
-  seniorities?: string[]; // Apollo values: owner, founder, c_suite, partner, vp, head, director, manager, senior, entry, intern
+  seniorities?: string[];
   locations?: string[];
   skills?: string[];
   companyDomains?: string[];
@@ -128,21 +129,54 @@ export function buildWebsetPeopleSearch(input: DeepSearchInput, count = 25, maxP
   };
 }
 
-/** Apollo api_search uses array query params like person_titles[]=x. */
-export function buildApolloSearchUrl(f: CandidateFilters, page = 1, perPage = 25): string {
-  const p = new URLSearchParams();
-  for (const t of f.titles || []) p.append("person_titles[]", t);
-  if (f.titles?.length) p.set("include_similar_titles", "true");
-  for (const s of f.seniorities || []) p.append("person_seniorities[]", s);
-  for (const l of f.locations || []) p.append("person_locations[]", l);
-  for (const d of f.companyDomains || []) p.append("q_organization_domains_list[]", d);
-  const kw = [f.keywords, ...(f.skills || [])].filter(Boolean).join(" ");
-  if (kw) p.set("q_keywords", kw);
-  p.set("page", String(Math.max(1, Math.min(500, page))));
-  p.set("per_page", String(Math.max(1, Math.min(100, perPage))));
-  return `${APOLLO_BASE}/mixed_people/api_search?${p.toString()}`;
+export function hasFilters(f: CandidateFilters): boolean {
+  return !!(f.titles?.length || f.seniorities?.length || f.locations?.length || f.companyDomains?.length || f.companies?.length || f.keywords || f.skills?.length);
 }
 
-export function hasApolloFilters(f: CandidateFilters): boolean {
-  return !!(f.titles?.length || f.seniorities?.length || f.locations?.length || f.companyDomains?.length || f.keywords || f.skills?.length);
+/** Natural-language company query for Harmonic search_agent (company-first sourcing). */
+export function buildHarmonicCompanyQuery(query: string, f: CandidateFilters = {}): string {
+  if (f.companies?.length) return f.companies.slice(0, 5).join(", ");
+  const kw = [f.keywords, ...(f.skills || []).slice(0, 3)].filter(Boolean).join(" ");
+  return `companies building ${kw || query}`.trim();
+}
+
+/** Harmonic employee group filter: leadership roles -> LEADERSHIP, else NON_LEADERSHIP-inclusive ALL. */
+export function harmonicEmployeeGroup(f: CandidateFilters, query: string): "LEADERSHIP" | "FOUNDERS_AND_CEO" | "ALL" {
+  const t = [query, ...(f.titles || []), ...(f.seniorities || [])].join(" ").toLowerCase();
+  if (/\b(founder|ceo)\b/.test(t)) return "FOUNDERS_AND_CEO";
+  if (/\b(vp|head of|director|chief|cto|c_suite|leadership)\b/.test(t)) return "LEADERSHIP";
+  return "ALL";
+}
+
+export interface AirscaleEmailInput {
+  linkedin_profile_url?: string;
+  first_name?: string;
+  last_name?: string;
+  domain?: string;
+  company_name?: string;
+}
+
+/**
+ * Airscale needs either a LinkedIn profile URL, or first+last name plus company name/domain.
+ * Returns null if the candidate doesn't meet the minimum input (no call, no cost).
+ */
+export function buildAirscaleEmailInput(c: { fullName: string; linkedinUrl?: string | null; companyDomain?: string | null; currentCompany?: string | null }): AirscaleEmailInput | null {
+  const out: AirscaleEmailInput = {};
+  if (c.linkedinUrl) out.linkedin_profile_url = c.linkedinUrl;
+  const parts = c.fullName.replace(/[^\p{L}\s'-]/gu, " ").trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2 && !/\*/.test(c.fullName)) {
+    out.first_name = parts[0];
+    out.last_name = parts[parts.length - 1];
+    if (c.companyDomain) out.domain = c.companyDomain;
+    if (c.currentCompany) out.company_name = c.currentCompany;
+  }
+  const nameForm = !!(out.first_name && out.last_name && (out.domain || out.company_name));
+  if (!out.linkedin_profile_url && !nameForm) return null;
+  if (!nameForm) {
+    delete out.first_name;
+    delete out.last_name;
+    delete out.domain;
+    delete out.company_name;
+  }
+  return out;
 }

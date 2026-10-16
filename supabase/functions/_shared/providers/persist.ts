@@ -15,7 +15,6 @@ export interface SourcedCandidateRow {
   linkedin_url?: string | null;
   linkedin_slug?: string | null;
   github_login?: string | null;
-  apollo_id?: string | null;
   harmonic_urn?: string | null;
   emails: string[];
   profile_urls: string[];
@@ -39,7 +38,6 @@ export function toRow(userId: string, c: UnifiedCandidate, id?: string): Sourced
     linkedin_url: c.linkedinUrl ?? null,
     linkedin_slug: linkedinSlug(c.linkedinUrl),
     github_login: c.githubLogin ?? null,
-    apollo_id: c.apolloId ?? null,
     harmonic_urn: c.harmonicUrn ?? null,
     emails: c.emails,
     profile_urls: c.profileUrls.slice(0, 20),
@@ -61,7 +59,6 @@ export function fromRow(r: SourcedCandidateRow): UnifiedCandidate & { id?: strin
     location: r.location,
     linkedinUrl: r.linkedin_url,
     githubLogin: r.github_login,
-    apolloId: r.apollo_id,
     harmonicUrn: r.harmonic_urn,
     emails: r.emails || [],
     profileUrls: r.profile_urls || [],
@@ -103,7 +100,8 @@ export function mergeWithExisting(userId: string, fresh: UnifiedCandidate[], exi
 export const COST = {
   exaSearch: (results: number) => 0.007 + Math.max(0, results - 10) * 0.001,
   parallelEntitySearch: (results: number) => 0.005 + Math.max(0, results - 100) * 0.00005,
-  apolloSearch: () => 0,
+  harmonic: () => 0, // included in Harmonic plan (rate/credit limits per contract)
+  airscaleEmail: (found: number) => found * 2, // credits, not USD: 2 credits per found email, misses free
   githubSearch: () => 0,
   findAllRun: (generator: string, matches: number) =>
     generator === "preview" ? 0.1 : 0.25 + matches * (generator === "pro" ? 0.15 : generator === "core" ? 0.08 : 0.03),

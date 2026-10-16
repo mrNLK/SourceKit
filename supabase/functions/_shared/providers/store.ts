@@ -15,12 +15,12 @@ function quote(v: string): string {
 export async function loadExisting(supabase: Supa, userId: string, fresh: UnifiedCandidate[]): Promise<SourcedCandidateRow[]> {
   const li = [...new Set(fresh.map((c) => linkedinSlug(c.linkedinUrl)).filter(Boolean) as string[])];
   const gh = [...new Set(fresh.map((c) => c.githubLogin).filter(Boolean) as string[])];
-  const ap = [...new Set(fresh.map((c) => c.apolloId).filter(Boolean) as string[])];
+  const hm = [...new Set(fresh.map((c) => c.harmonicUrn).filter(Boolean) as string[])];
   const em = [...new Set(fresh.flatMap((c) => c.emails))];
   const ors: string[] = [];
   if (li.length) ors.push(`linkedin_slug.in.(${li.map(quote).join(",")})`);
   if (gh.length) ors.push(`github_login.in.(${gh.map(quote).join(",")})`);
-  if (ap.length) ors.push(`apollo_id.in.(${ap.map(quote).join(",")})`);
+  if (hm.length) ors.push(`harmonic_urn.in.(${hm.map(quote).join(",")})`);
   if (em.length) ors.push(`emails.ov.{${em.map(quote).join(",")}}`);
   if (!ors.length) return [];
   const { data, error } = await supabase.from("sourced_candidates").select("*").eq("user_id", userId).or(ors.join(",")).limit(1000);

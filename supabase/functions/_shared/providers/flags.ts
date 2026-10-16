@@ -18,12 +18,24 @@ export function isParallelPeopleEnabled(getEnv: EnvGetter): boolean {
   return isTrue(getEnv("PARALLEL_PEOPLE_SOURCES_ENABLED"));
 }
 
-/** Apollo people search needs a *master* API key; allow disabling explicitly. */
-export function isApolloEnabled(getEnv: EnvGetter): boolean {
-  if (!getEnv("APOLLO_API_KEY")) return false;
-  const flag = getEnv("APOLLO_SOURCE_ENABLED");
+/** Harmonic people sourcing: on when HARMONIC_API_KEY is set unless HARMONIC_SOURCE_ENABLED=false. */
+export function isHarmonicEnabled(getEnv: EnvGetter): boolean {
+  if (!getEnv("HARMONIC_API_KEY")) return false;
+  const flag = getEnv("HARMONIC_SOURCE_ENABLED");
   return flag === undefined || flag.trim() === "" ? true : isTrue(flag);
 }
+
+export function harmonicBaseUrl(getEnv: EnvGetter): string {
+  return (getEnv("HARMONIC_BASE_URL") || "https://api.harmonic.ai").replace(/\/+$/, "");
+}
+
+/** Airscale email enrichment (shortlist only): on iff AIRSCALE_API_KEY is set. */
+export function isAirscaleEnabled(getEnv: EnvGetter): boolean {
+  return !!(getEnv("AIRSCALE_API_KEY") || "").trim();
+}
+
+/** Max candidates per email-enrichment call (each found email costs 2 Airscale credits). */
+export const AIRSCALE_MAX_BATCH = 25;
 
 /**
  * Exa self-serve plans cap requests at 25 results; >25 needs Enterprise.

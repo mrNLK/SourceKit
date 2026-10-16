@@ -8,7 +8,7 @@ export type Provider =
   | "parallel_entity"
   | "parallel_findall"
   | "parallel_search"
-  | "apollo"
+  | "airscale"
   | "harmonic";
 
 export interface SourceHit {
@@ -29,7 +29,6 @@ export interface UnifiedCandidate {
   location?: string | null;
   linkedinUrl?: string | null;
   githubLogin?: string | null;
-  apolloId?: string | null;
   harmonicUrn?: string | null;
   emails: string[];
   profileUrls: string[];
@@ -187,18 +186,28 @@ export function fromExaWebsetItem(item: Record<string, any>, rank: number): Unif
   return deriveIdentities(c);
 }
 
-export function fromApolloPerson(p: Record<string, any>, rank: number): UnifiedCandidate | null {
-  const name = p.name || [p.first_name, p.last_name || p.last_name_obfuscated].filter(Boolean).join(" ");
+/** Harmonic person (GET /persons, POST /persons/batchGet). */
+export function fromHarmonicPerson(p: Record<string, any>, rank: number): UnifiedCandidate | null {
+  const name = p.full_name || p.name || [p.first_name, p.last_name].filter(Boolean).join(" ");
   if (!name) return null;
-  const c = emptyCandidate(name, { provider: "apollo", externalId: p.id ?? null, url: p.linkedin_url ?? null, rank, snippet: p.title ?? null });
-  c.apolloId = p.id ?? null;
-  c.currentTitle = p.title ?? null;
-  c.currentCompany = p.organization?.name ?? null;
-  c.companyDomain = p.organization?.primary_domain ?? p.organization?.website_url ?? null;
-  c.location = [p.city, p.state, p.country].filter(Boolean).join(", ") || null;
-  c.linkedinUrl = p.linkedin_url ?? null;
-  c.avatarUrl = p.photo_url ?? null;
-  if (p.email && p.email_status !== "unavailable") c.emails.push(p.email);
+  const urn = p.entity_urn || p.person_urn || (p.id != null ? `urn:harmonic:person:${p.id}` : null);
+  const socials = p.socials || {};
+  const liRaw = socials.linkedin?.url ?? socials.linkedin_url ?? socials.LINKEDIN?.url ?? p.linkedin_url ?? null;
+  const ghRaw = socials.github?.url ?? socials.GITHUB?.url ?? null;
+  const exp = Array.isArray(p.experience) ? p.experience : [];
+  const current = exp.find((e: any) => e?.is_current_position) || exp[0] || {};
+  const loc = p.location;
+  const c = emptyCandidate(String(name), { provider: "harmonic", externalId: urn, url: liRaw, rank, snippet: p.headline ?? current.title ?? null });
+  c.harmonicUrn = urn;
+  c.headline = p.headline ?? null;
+  c.currentTitle = current.title ?? p.title ?? null;
+  c.currentCompany = current.company_name ?? current.company?.name ?? null;
+  c.location = typeof loc === "string" ? loc : (loc?.location || [loc?.city, loc?.state, loc?.country].filter(Boolean).join(", ") || null);
+  c.linkedinUrl = liRaw;
+  c.summary = p.about ?? p.bio ?? null;
+  c.avatarUrl = p.profile_picture_url ?? null;
+  if (ghRaw) c.profileUrls.push(ghRaw);
+  for (const e of Array.isArray(p.contact?.emails) ? p.contact.emails : []) c.emails.push(String(e));
   return deriveIdentities(c);
 }
 

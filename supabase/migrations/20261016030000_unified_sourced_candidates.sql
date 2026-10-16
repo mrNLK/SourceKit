@@ -1,4 +1,4 @@
--- Unified multi-source candidates (Exa people, Parallel, Apollo, GitHub, Websets, Harmonic).
+-- Unified multi-source candidates (Exa people, Parallel, GitHub, Websets, Harmonic; Airscale email enrichment).
 -- Separate from the legacy GitHub-keyed public.candidates cache, which is unchanged.
 
 CREATE TABLE IF NOT EXISTS public.sourced_candidates (
@@ -13,9 +13,11 @@ CREATE TABLE IF NOT EXISTS public.sourced_candidates (
   linkedin_url TEXT,
   linkedin_slug TEXT,
   github_login TEXT,
-  apollo_id TEXT,
   harmonic_urn TEXT,
   emails TEXT[] NOT NULL DEFAULT '{}',
+  email_provider TEXT,
+  email_status TEXT,
+  email_checked_at TIMESTAMPTZ,
   profile_urls TEXT[] NOT NULL DEFAULT '{}',
   summary TEXT,
   avatar_url TEXT,
@@ -28,7 +30,6 @@ CREATE TABLE IF NOT EXISTS public.sourced_candidates (
 -- Hard identities are unique per user (dedup keys).
 CREATE UNIQUE INDEX IF NOT EXISTS sourced_candidates_user_linkedin_uq ON public.sourced_candidates (user_id, linkedin_slug) WHERE linkedin_slug IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS sourced_candidates_user_github_uq ON public.sourced_candidates (user_id, github_login) WHERE github_login IS NOT NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS sourced_candidates_user_apollo_uq ON public.sourced_candidates (user_id, apollo_id) WHERE apollo_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS sourced_candidates_user_harmonic_uq ON public.sourced_candidates (user_id, harmonic_urn) WHERE harmonic_urn IS NOT NULL;
 CREATE INDEX IF NOT EXISTS sourced_candidates_emails_gin ON public.sourced_candidates USING gin (emails);
 CREATE INDEX IF NOT EXISTS sourced_candidates_user_updated ON public.sourced_candidates (user_id, updated_at DESC);

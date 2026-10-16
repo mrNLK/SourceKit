@@ -1,16 +1,16 @@
 import { describe, it, expect, vi } from "vitest";
 import {
-  normalizeLinkedinUrl, githubLoginFromUrl, parseProfileTitle, fromExaResult, fromApolloPerson,
+  normalizeLinkedinUrl, githubLoginFromUrl, parseProfileTitle, fromExaResult, fromHarmonicPerson,
   fromParallelEntity, fromParallelFindAllCandidate, fromExaWebsetItem, fromGithubUser, type UnifiedCandidate,
 } from "../providers/candidate.ts";
 import { dedupCandidates, isFuzzyMatch, jaroWinkler, sourcingScore } from "../providers/dedup.ts";
 import {
-  buildApolloSearchUrl, buildExaPeopleSearch, buildFindAllPeopleRun, buildParallelEntitySearch,
-  buildParallelExtractV1, buildParallelSearchV1, buildPeopleQuery, buildWebsetPeopleSearch, sanitizeFilters, hasApolloFilters,
+  buildAirscaleEmailInput, buildHarmonicCompanyQuery, harmonicEmployeeGroup, buildExaPeopleSearch, buildFindAllPeopleRun, buildParallelEntitySearch,
+  buildParallelExtractV1, buildParallelSearchV1, buildPeopleQuery, buildWebsetPeopleSearch, sanitizeFilters, hasFilters,
 } from "../providers/requests.ts";
-import { exaMaxResults, isApolloEnabled, isParallelPeopleEnabled, clamp } from "../providers/flags.ts";
+import { exaMaxResults, isHarmonicEnabled, harmonicBaseUrl, isAirscaleEnabled, isParallelPeopleEnabled, clamp } from "../providers/flags.ts";
 import {
-  apolloPeopleSearch, exaPeopleSearch, findAllCreatePeopleRun, findAllGetResult, parallelEntitySearchPeople,
+  airscaleFindEmail, extractUrns, harmonicCompanyFirstPeople, harmonicPeopleByName, exaPeopleSearch, findAllCreatePeopleRun, findAllGetResult, parallelEntitySearchPeople,
   parallelExtractV1, ProviderError,
 } from "../providers/clients.ts";
 
@@ -47,8 +47,8 @@ describe("provider mappers", () => {
     expect(c.currentCompany).toBe("Acme");
     expect(c.sources[0]).toMatchObject({ provider: "exa", rank: 1, snippet: "PyTorch" });
   });
-  it("maps apollo, parallel, webset, findall and github records", () => {
-    expect(fromApolloPerson({ id: "ap1", first_name: "Jane", last_name_obfuscated: "D***", title: "CTO", organization: { name: "Acme", primary_domain: "acme.com" } }, 1)).toMatchObject({ fullName: "Jane D***", apolloId: "ap1", companyDomain: "acme.com" });
+  it("maps harmonic, parallel, webset, findall and github records", () => {
+    expect(fromHarmonicPerson({ entity_urn: "urn:harmonic:person:1", full_name: "Jane Doe", socials: { linkedin: { url: "https://linkedin.com/in/JaneD" } }, experience: [{ title: "CTO", company_name: "Acme", is_current_position: true }], location: { city: "SF", country: "US" } }, 1)).toMatchObject({ fullName: "Jane Doe", harmonicUrn: "urn:harmonic:person:1", linkedinUrl: "https://www.linkedin.com/in/janed", currentTitle: "CTO", currentCompany: "Acme", location: "SF, US" });
     expect(fromParallelEntity({ name: "Jane Doe", url: "https://github.com/janed", description: "ML" }, 2)).toMatchObject({ githubLogin: "janed" });
     expect(fromExaWebsetItem({ id: "w1", properties: { url: "https://linkedin.com/in/jd", person: { name: "Jane Doe", position: "SWE", company: { name: "Acme" }, location: "SF" } } }, 1)).toMatchObject({ currentTitle: "SWE", location: "SF", linkedinUrl: "https://www.linkedin.com/in/jd" });
     expect(fromParallelFindAllCandidate({ candidate_id: "c1", name: "Jane", url: "x", output: { linkedin_url: { value: "https://linkedin.com/in/jane" } } }, 1)?.linkedinUrl).toBe("https://www.linkedin.com/in/jane");
@@ -61,18 +61,18 @@ function cand(p: Partial<UnifiedCandidate>): UnifiedCandidate {
 }
 
 describe("dedup", () => {
-  it("merges on linkedin slug, github login, apollo id, email", () => {
+  it("merges on linkedin slug, github login, harmonic urn, email", () => {
     const out = dedupCandidates([
       cand({ fullName: "Jane Doe", linkedinUrl: "https://www.linkedin.com/in/janedoe" }),
       cand({ fullName: "J. Doe", linkedinUrl: "https://linkedin.com/in/JaneDoe/", githubLogin: "jd", sources: [{ provider: "parallel_entity", rank: 3 }] }),
       cand({ fullName: "Janie", githubLogin: "JD", emails: ["j@x.com"], sources: [{ provider: "github", rank: 2 }] }),
-      cand({ fullName: "Someone", emails: ["j@x.com"], apolloId: "a1", sources: [{ provider: "apollo", rank: 1 }] }),
-      cand({ fullName: "Other", apolloId: "a1" }),
+      cand({ fullName: "Someone", emails: ["j@x.com"], harmonicUrn: "urn:harmonic:person:9", sources: [{ provider: "harmonic", rank: 1 }] }),
+      cand({ fullName: "Other", harmonicUrn: "urn:harmonic:person:9" }),
     ]);
     expect(out).toHaveLength(1);
-    expect(out[0].sources.map((s) => s.provider)).toEqual(["exa", "parallel_entity", "github", "apollo", "exa"]);
+    expect(out[0].sources.map((s) => s.provider)).toEqual(["exa", "parallel_entity", "github", "harmonic", "exa"]);
     expect(out[0].githubLogin).toBe("jd");
-    expect(out[0].apolloId).toBe("a1");
+    expect(out[0].harmonicUrn).toBe("urn:harmonic:person:9");
   });
   it("fuzzy-matches name + company but never name alone or with conflicting ids", () => {
     const a = cand({ fullName: "Jonathan Smith", currentCompany: "Acme Inc" });
@@ -88,7 +88,7 @@ describe("dedup", () => {
   });
   it("scores multi-source agreement higher", () => {
     const one = cand({ sources: [{ provider: "exa", rank: 5 }] });
-    const two = cand({ sources: [{ provider: "exa", rank: 5 }, { provider: "apollo", rank: 5 }] });
+    const two = cand({ sources: [{ provider: "exa", rank: 5 }, { provider: "harmonic", rank: 5 }] });
     expect(sourcingScore(two)).toBeGreaterThan(sourcingScore(one));
   });
 });
@@ -115,15 +115,18 @@ describe("request builders match current docs", () => {
   it("webset people search", () => {
     expect(buildWebsetPeopleSearch({ role: "SRE", company: "Acme" }, 10, 3).search).toMatchObject({ entity: { type: "person" }, count: 10, maxPeoplePerCompany: 3 });
   });
-  it("apollo url from filters", () => {
-    const f = sanitizeFilters({ titles: ["ML Engineer"], seniorities: ["senior"], locations: ["California, US"], company_domains: ["acme.com"], skills: ["pytorch"] });
-    const url = new URL(buildApolloSearchUrl(f, 1, 500));
-    expect(url.pathname).toBe("/api/v1/mixed_people/api_search");
-    expect(url.searchParams.getAll("person_titles[]")).toEqual(["ML Engineer"]);
-    expect(url.searchParams.getAll("q_organization_domains_list[]")).toEqual(["acme.com"]);
-    expect(url.searchParams.get("q_keywords")).toBe("pytorch");
-    expect(url.searchParams.get("per_page")).toBe("100");
-    expect(hasApolloFilters(sanitizeFilters({}))).toBe(false);
+  it("harmonic + airscale builders", () => {
+    expect(buildHarmonicCompanyQuery("ml infra", { companies: ["Acme", "Globex"] })).toBe("Acme, Globex");
+    expect(buildHarmonicCompanyQuery("ml infra", { skills: ["cuda"] })).toBe("companies building cuda");
+    expect(harmonicEmployeeGroup({}, "founding engineer")).toBe("ALL");
+    expect(harmonicEmployeeGroup({ titles: ["VP Engineering"] }, "")).toBe("LEADERSHIP");
+    expect(harmonicEmployeeGroup({}, "ex-founder CEO")).toBe("FOUNDERS_AND_CEO");
+    expect(hasFilters(sanitizeFilters({}))).toBe(false);
+    expect(hasFilters(sanitizeFilters({ companies: ["Acme"] }))).toBe(true);
+    expect(buildAirscaleEmailInput({ fullName: "Jane Q Doe", currentCompany: "Acme" })).toEqual({ first_name: "Jane", last_name: "Doe", company_name: "Acme" });
+    expect(buildAirscaleEmailInput({ fullName: "Jane", linkedinUrl: "https://www.linkedin.com/in/j" })).toEqual({ linkedin_profile_url: "https://www.linkedin.com/in/j" });
+    expect(buildAirscaleEmailInput({ fullName: "Jane Doe" })).toBeNull();
+    expect(buildAirscaleEmailInput({ fullName: "Jane D***", currentCompany: "Acme" })).toBeNull();
   });
   it("people query", () => {
     expect(buildPeopleQuery("ML engineers", { skills: ["PyTorch"], locations: ["Seattle"] })).toBe("professional profiles of ML engineers with experience in PyTorch based in Seattle");
@@ -135,10 +138,15 @@ describe("flags", () => {
     expect(isParallelPeopleEnabled(env({}))).toBe(false);
     expect(isParallelPeopleEnabled(env({ PARALLEL_PEOPLE_SOURCES_ENABLED: "true" }))).toBe(true);
   });
-  it("apollo needs key; explicit off wins", () => {
-    expect(isApolloEnabled(env({}))).toBe(false);
-    expect(isApolloEnabled(env({ APOLLO_API_KEY: "k" }))).toBe(true);
-    expect(isApolloEnabled(env({ APOLLO_API_KEY: "k", APOLLO_SOURCE_ENABLED: "false" }))).toBe(false);
+  it("harmonic on with key unless disabled; airscale only with key", () => {
+    expect(isHarmonicEnabled(env({}))).toBe(false);
+    expect(isHarmonicEnabled(env({ HARMONIC_API_KEY: "k" }))).toBe(true);
+    expect(isHarmonicEnabled(env({ HARMONIC_API_KEY: "k", HARMONIC_SOURCE_ENABLED: "false" }))).toBe(false);
+    expect(harmonicBaseUrl(env({ HARMONIC_BASE_URL: "https://h.example/" }))).toBe("https://h.example");
+    expect(harmonicBaseUrl(env({}))).toBe("https://api.harmonic.ai");
+    expect(isAirscaleEnabled(env({}))).toBe(false);
+    expect(isAirscaleEnabled(env({ AIRSCALE_API_KEY: " " }))).toBe(false);
+    expect(isAirscaleEnabled(env({ AIRSCALE_API_KEY: "k" }))).toBe(true);
   });
   it("exa max results defaults to 25", () => {
     expect(exaMaxResults(env({}))).toBe(25);
@@ -173,12 +181,37 @@ describe("clients (mocked fetch, no network)", () => {
     expect(await parallelExtractV1("k", "u", undefined, f)).toBe("hello world");
     expect(f.mock.calls[0][0]).toBe("https://api.parallel.ai/v1/extract");
   });
-  it("apollo search maps people and surfaces errors", async () => {
-    const f = mockFetch({ people: [{ id: "1", first_name: "A", last_name_obfuscated: "B***" }], total_entries: 42 });
-    const r = await apolloPeopleSearch("k", { titles: ["x"] }, 1, 25, f);
-    expect(r.total).toBe(42);
-    expect(r.candidates[0].apolloId).toBe("1");
-    await expect(apolloPeopleSearch("k", {}, 1, 25, mockFetch({ error: "master key" }, 403))).rejects.toBeInstanceOf(ProviderError);
+  it("harmonic company-first: search_agent -> employees -> batchGet", async () => {
+    const cfg = { apiKey: "hk", baseUrl: "https://h.example" };
+    const f = vi.fn(async (url: string, _init?: RequestInit) => {
+      const body = url.includes("/search/search_agent")
+        ? { results: [{ entity_urn: "urn:harmonic:company:1" }, { entity_urn: "urn:harmonic:company:2" }] }
+        : url.includes("/employees")
+          ? { results: url.includes("company%3A1") ? ["urn:harmonic:person:a", "urn:harmonic:person:b"] : ["urn:harmonic:person:b"] }
+          : [{ entity_urn: "urn:harmonic:person:a", full_name: "A One" }, { entity_urn: "urn:harmonic:person:b", full_name: "B Two" }];
+      return new Response(JSON.stringify(body), { status: 200 });
+    });
+    const r = await harmonicCompanyFirstPeople(cfg, "ml infra", { companies: 2, perCompany: 5, group: "ALL" }, f);
+    expect(r.companyUrns).toEqual(["urn:harmonic:company:1", "urn:harmonic:company:2"]);
+    expect(r.candidates.map((c) => c.harmonicUrn)).toEqual(["urn:harmonic:person:a", "urn:harmonic:person:b"]);
+    const batch = f.mock.calls.find((c) => c[0].endsWith("/persons/batchGet"))!;
+    expect(JSON.parse(batch[1]!.body as string)).toEqual({ urns: ["urn:harmonic:person:a", "urn:harmonic:person:b"] });
+    expect((batch[1]!.headers as Record<string, string>).apikey).toBe("hk");
+  });
+  it("harmonic name lookup uses typeahead PERSON", async () => {
+    const f = vi.fn(async (url: string) => new Response(JSON.stringify(url.includes("typeahead") ? { results: [{ entity_urn: "urn:harmonic:person:z", type: "PERSON" }] } : [{ entity_urn: "urn:harmonic:person:z", full_name: "Zed Z" }])));
+    const out = await harmonicPeopleByName({ apiKey: "k", baseUrl: "https://h" }, "Zed", 5, f);
+    expect(f.mock.calls[0][0]).toContain("search_type=PERSON");
+    expect(out[0].fullName).toBe("Zed Z");
+    expect(extractUrns({ results: ["urn:harmonic:company:1"] }, "person")).toEqual([]);
+  });
+  it("airscale email finder: bearer auth, success and not_found", async () => {
+    const ok = mockFetch({ status: "success", email: "jane@acme.com", email_status: "valid" });
+    expect(await airscaleFindEmail("ak", { first_name: "Jane", last_name: "Doe", domain: "acme.com" }, ok)).toMatchObject({ status: "success", email: "jane@acme.com" });
+    expect(ok.mock.calls[0][0]).toBe("https://api.airscale.io/v1/email");
+    expect((ok.mock.calls[0][1]!.headers as Record<string, string>).Authorization).toBe("Bearer ak");
+    expect(await airscaleFindEmail("ak", { linkedin_profile_url: "x" }, mockFetch({ status: "not_found", email: null }))).toMatchObject({ status: "not_found", email: null });
+    await expect(airscaleFindEmail("bad", { linkedin_profile_url: "x" }, mockFetch({ error: "unauthorized" }, 401))).rejects.toBeInstanceOf(ProviderError);
   });
 });
 
@@ -189,7 +222,7 @@ describe("persist merge", () => {
     const existing = [toRow("u1", cand({ fullName: "Jane Doe", linkedinUrl: "https://linkedin.com/in/jane", sources: [{ provider: "github", rank: 1 }] }), "row-1")];
     const fresh = [
       cand({ fullName: "Jane Doe", linkedinUrl: "https://www.linkedin.com/in/Jane", currentTitle: "CTO", sources: [{ provider: "exa", rank: 2 }] }),
-      cand({ fullName: "Bob Roe", githubLogin: "bob", sources: [{ provider: "apollo", rank: 1 }] }),
+      cand({ fullName: "Bob Roe", githubLogin: "bob", sources: [{ provider: "harmonic", rank: 1 }] }),
     ];
     const out = mergeWithExisting("u1", fresh, existing);
     expect(out).toHaveLength(2);

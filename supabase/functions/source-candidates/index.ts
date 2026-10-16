@@ -3,10 +3,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { requireAuth, authErrorResponse } from "../_shared/auth.ts";
 import {
-  apolloPeopleSearch, exaPeopleSearch, githubUserSearch, parallelEntitySearchPeople,
+  exaPeopleSearch, githubUserSearch, harmonicCompanyFirstPeople, harmonicPeopleByName, harmonicPersonByLinkedin,
+  parallelEntitySearchPeople, type HarmonicConfig,
 } from "../_shared/providers/clients.ts";
-import { buildPeopleQuery, hasApolloFilters, sanitizeFilters } from "../_shared/providers/requests.ts";
-import { clamp, exaMaxResults, isApolloEnabled, isParallelPeopleEnabled } from "../_shared/providers/flags.ts";
+import {
+  buildHarmonicCompanyQuery, buildPeopleQuery, hasFilters, harmonicEmployeeGroup, sanitizeFilters,
+} from "../_shared/providers/requests.ts";
+import { clamp, exaMaxResults, harmonicBaseUrl, isHarmonicEnabled, isParallelPeopleEnabled } from "../_shared/providers/flags.ts";
 import { COST } from "../_shared/providers/persist.ts";
 import { persistCandidates } from "../_shared/providers/store.ts";
 import type { UnifiedCandidate } from "../_shared/providers/candidate.ts";
@@ -15,10 +18,12 @@ import type { UnifiedCandidate } from "../_shared/providers/candidate.ts";
  * source-candidates: one query -> fan out to all enabled people sources -> normalize -> dedup -> persist.
  *
  * Body: { query: string, filters?: { titles, seniorities, locations, skills, company_domains, companies, keywords },
- *         sources?: ("exa"|"parallel"|"apollo"|"github")[], limit?: number, persist?: boolean }
+ *         sources?: ("exa"|"parallel"|"harmonic"|"github")[], limit?: number, persist?: boolean,
+ *         person_name?: string (Harmonic typeahead PERSON lookup), harmonic_enrich?: boolean }
  * Consumes one pilot "search" unit per call (same as other search functions).
  */
-type SourceName = "exa" | "parallel" | "apollo" | "github";
+type SourceName = "exa" | "parallel" | "harmonic" | "github";
+const HARMONIC_ENRICH_TOP = 10;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
@@ -30,17 +35,18 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const query = typeof body.query === "string" ? body.query.trim().slice(0, 500) : "";
     const filters = sanitizeFilters(body.filters);
-    if (!query && !hasApolloFilters(filters)) {
+    const personName = typeof body.person_name === "string" ? body.person_name.trim().slice(0, 120) : "";
+    if (!query && !hasFilters(filters) && !personName) {
       return new Response(JSON.stringify({ error: "query or filters required" }), { status: 400, headers });
     }
     const getEnv = (n: string) => Deno.env.get(n);
     const limit = clamp(body.limit, 5, 200, 50);
-    const requested = new Set<SourceName>(Array.isArray(body.sources) && body.sources.length ? body.sources : ["exa", "parallel", "apollo", "github"]);
+    const requested = new Set<SourceName>(Array.isArray(body.sources) && body.sources.length ? body.sources : ["exa", "parallel", "harmonic", "github"]);
 
     const enabled: Record<SourceName, boolean> = {
       exa: !!getEnv("EXA_API_KEY"),
       parallel: isParallelPeopleEnabled(getEnv) && !!getEnv("PARALLEL_API_KEY"),
-      apollo: isApolloEnabled(getEnv) && hasApolloFilters(filters),
+      harmonic: isHarmonicEnabled(getEnv),
       github: !!query,
     };
 
@@ -54,10 +60,18 @@ serve(async (req) => {
       const n = Math.max(limit, 100); // first 100 results are included in the per-request price
       tasks.push({ source: "parallel", run: async () => ({ candidates: await parallelEntitySearchPeople(getEnv("PARALLEL_API_KEY")!, nl, n), cost: COST.parallelEntitySearch(n) }) });
     }
-    if (requested.has("apollo") && enabled.apollo) {
-      tasks.push({ source: "apollo", run: async () => {
-        const r = await apolloPeopleSearch(getEnv("APOLLO_API_KEY")!, filters, 1, Math.min(100, limit));
-        return { candidates: r.candidates, cost: 0, total: r.total };
+    const harmonicCfg: HarmonicConfig | null = enabled.harmonic ? { apiKey: getEnv("HARMONIC_API_KEY")!, baseUrl: harmonicBaseUrl(getEnv) } : null;
+    if (requested.has("harmonic") && harmonicCfg) {
+      tasks.push({ source: "harmonic", run: async () => {
+        const found: UnifiedCandidate[] = [];
+        if (personName) found.push(...await harmonicPeopleByName(harmonicCfg, personName, 10));
+        if (query || hasFilters(filters)) {
+          const r = await harmonicCompanyFirstPeople(harmonicCfg, buildHarmonicCompanyQuery(query, filters), {
+            companies: 5, perCompany: Math.max(5, Math.min(20, Math.ceil(limit / 5))), group: harmonicEmployeeGroup(filters, query),
+          });
+          found.push(...r.candidates);
+        }
+        return { candidates: found, cost: 0 };
       } });
     }
     if (requested.has("github") && enabled.github) {
@@ -72,7 +86,7 @@ serve(async (req) => {
     const settled = await Promise.allSettled(tasks.map((t) => t.run()));
     const sources: Record<string, { count: number; est_cost_usd: number; total?: number | null; error?: string }> = {};
     // Order = merge priority for field conflicts: structured sources first.
-    const priority: SourceName[] = ["apollo", "github", "exa", "parallel"];
+    const priority: SourceName[] = ["harmonic", "github", "exa", "parallel"];
     const bySource = new Map<SourceName, UnifiedCandidate[]>();
     settled.forEach((r, i) => {
       const s = tasks[i].source;
@@ -86,6 +100,13 @@ serve(async (req) => {
       }
     });
     const all = priority.flatMap((s) => bySource.get(s) || []);
+
+    // Optional: resolve top LinkedIn candidates to Harmonic people so they dedup by Harmonic URN.
+    if (harmonicCfg && body.harmonic_enrich === true) {
+      const targets = all.filter((c) => c.linkedinUrl && !c.harmonicUrn).slice(0, HARMONIC_ENRICH_TOP);
+      const enriched = await Promise.allSettled(targets.map((c) => harmonicPersonByLinkedin(harmonicCfg, c.linkedinUrl!)));
+      for (const r of enriched) if (r.status === "fulfilled" && r.value) all.push(r.value);
+    }
 
     const supabase = createClient(getEnv("SUPABASE_URL")!, getEnv("SUPABASE_SERVICE_ROLE_KEY")!);
     const persist = body.persist !== false;
