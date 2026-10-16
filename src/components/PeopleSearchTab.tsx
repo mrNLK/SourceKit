@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Globe, Loader2, Mail, Search, Telescope, ExternalLink, Github, Linkedin } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import {
-  enrichEmails, pollDeepSearch, providerBadges, sourceCandidates, splitList, startDeepSearch,
+  enrichEmails, pollDeepSearch, providerBadges, sourceCandidates, splitList, startDeepSearch, withTalentFlags,
   type SourceKey, type SourcedCandidate,
 } from '@/services/candidateSources'
 
@@ -35,6 +35,8 @@ export function CandidateRow({
           {badges.map((b) => (
             <span key={b.key} className={`text-[10px] px-1.5 py-0.5 rounded border ${b.className}`} data-testid="source-badge">{b.label}</span>
           ))}
+          {c.hidden_gem && <span className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/40 text-emerald-600" data-testid="gem-badge">Hidden gem</span>}
+          {c.ungettable && <span className="text-[10px] px-1.5 py-0.5 rounded border border-amber-500/40 text-amber-600" title={c.ungettable_reason ?? undefined} data-testid="ungettable-badge">Ungettable</span>}
           <span className="ml-auto text-xs text-muted-foreground">score {c.sourcing_score}</span>
         </div>
         <div className="text-sm text-muted-foreground truncate">
@@ -64,6 +66,8 @@ const PeopleSearchTab = () => {
   const [sourceStats, setSourceStats] = useState<Record<string, { count: number; error?: string }>>({})
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [enriching, setEnriching] = useState(false)
+  const [gemsOnly, setGemsOnly] = useState(false)
+  const [showUngettable, setShowUngettable] = useState(false)
 
   // Deep search
   const [dsRole, setDsRole] = useState('')
@@ -137,6 +141,13 @@ const PeopleSearchTab = () => {
     }
   }, [selected])
 
+  const applyFlagFilters = useCallback((list: SourcedCandidate[]) => list.map(withTalentFlags)
+    .filter((c) => showUngettable || !c.ungettable)
+    .filter((c) => !gemsOnly || c.hidden_gem), [gemsOnly, showUngettable])
+  const visible = useMemo(() => applyFlagFilters(results), [applyFlagFilters, results])
+  const visibleDs = useMemo(() => applyFlagFilters(dsResults), [applyFlagFilters, dsResults])
+  const hiddenCount = useMemo(() => results.map(withTalentFlags).filter((c) => c.ungettable).length, [results])
+
   const toggle = (id?: string) => id && setSelected((s) => {
     const n = new Set(s)
     if (n.has(id)) n.delete(id)
@@ -179,12 +190,16 @@ const PeopleSearchTab = () => {
       {results.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{results.length} candidates</span>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span>{visible.length} of {results.length} candidates</span>
+              <label className="inline-flex items-center gap-1 text-xs"><input type="checkbox" aria-label="hidden gems only" checked={gemsOnly} onChange={(e) => setGemsOnly(e.target.checked)} />Hidden gems only</label>
+              <label className="inline-flex items-center gap-1 text-xs"><input type="checkbox" aria-label="show ungettable" checked={showUngettable} onChange={(e) => setShowUngettable(e.target.checked)} />Show ungettable ({hiddenCount})</label>
+            </div>
             <button onClick={runEnrich} disabled={!selected.size || enriching} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs disabled:opacity-50">
               {enriching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}Find emails ({selected.size}/25)
             </button>
           </div>
-          {results.map((c, i) => <CandidateRow key={c.id ?? i} c={c} selected={!!c.id && selected.has(c.id)} onToggle={() => toggle(c.id)} />)}
+          {visible.map((c, i) => <CandidateRow key={c.id ?? i} c={c} selected={!!c.id && selected.has(c.id)} onToggle={() => toggle(c.id)} />)}
         </div>
       )}
 
@@ -200,7 +215,7 @@ const PeopleSearchTab = () => {
           <button onClick={runDeepSearch} disabled={!dsRole.trim() || (!!dsStatus && dsStatus.endsWith('…'))} className="rounded-md bg-secondary px-3 py-2 text-sm disabled:opacity-50">Start deep search</button>
         </div>
         {dsStatus && <div className="text-xs text-muted-foreground" data-testid="deep-status">{dsStatus}</div>}
-        {dsResults.map((c, i) => <CandidateRow key={c.id ?? `ds-${i}`} c={c} selected={!!c.id && selected.has(c.id)} onToggle={() => toggle(c.id)} />)}
+        {visibleDs.map((c, i) => <CandidateRow key={c.id ?? `ds-${i}`} c={c} selected={!!c.id && selected.has(c.id)} onToggle={() => toggle(c.id)} />)}
       </div>
     </div>
   )

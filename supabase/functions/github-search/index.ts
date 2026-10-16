@@ -4,6 +4,7 @@ import { anthropicCall } from "../_shared/anthropic.ts";
 import { checkSearchGate, incrementSearchCount } from "../_shared/gate.ts";
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { githubFetch, getTokenCount } from '../_shared/github.ts';
+import { classifyCandidate, contributionsOf } from '../_shared/talent-flags.ts';
 
 const GITHUB_API = "https://api.github.com";
 const EXA_API = "https://api.exa.ai/search";
@@ -403,9 +404,8 @@ SCORING BANDS:
 - 30-49: Weak match — minimal relevance or clearly unrecrutable (founders/CEOs with 10K+ followers)
 - 0-29: Poor match — wrong domain or bot accounts
 
-Return a JSON array (no markdown, no code fences): [{ "username": "string", "score": 0-100, "summary": "1 concise line mentioning repos and commit counts", "about": "2-3 sentences", "is_hidden_gem": true/false, "recruitable": true/false }]
+Return a JSON array (no markdown, no code fences): [{ "username": "string", "score": 0-100, "summary": "1 concise line mentioning repos and commit counts", "about": "2-3 sentences", "recruitable": true/false }]
 
-Hidden gem = high contributions but under 500 followers.
 recruitable = false if they are a founder, CEO, CTO, VP, or have >10K followers.`,
             `Search query: "${query}"\nCriteria: ${JSON.stringify(parsedCriteria)}\n\nCandidates:\n${JSON.stringify(candidateInfo)}`
           );
@@ -419,8 +419,9 @@ recruitable = false if they are a founder, CEO, CTO, VP, or have >10K followers.
                 candidate.score = s.score;
                 candidate.summary = s.summary;
                 candidate.about = s.about;
-                candidate.is_hidden_gem = s.is_hidden_gem;
                 candidate.recruitable = s.recruitable !== false; // default true if not specified
+                // Deterministic gem rule (the LLM's is_hidden_gem is ignored; see _shared/talent-flags.ts)
+                candidate.is_hidden_gem = classifyCandidate(toFlagInput(candidate)).hiddenGem;
               }
             }
           }
@@ -444,6 +445,7 @@ recruitable = false if they are a founder, CEO, CTO, VP, or have >10K followers.
       summary: c.summary,
       about: c.about,
       is_hidden_gem: c.is_hidden_gem,
+      recruitable: c.recruitable,
       query_hash: queryHash,
     }));
 
@@ -454,31 +456,30 @@ recruitable = false if they are a founder, CEO, CTO, VP, or have >10K followers.
   return [...alreadyScored, ...freshlyScored].sort((a, b) => (b.score || 0) - (a.score || 0));
 }
 
-// Step 5: Flag ungettable candidates (P10)
-const UNRECRUTABLE_TITLES = /\b(founder|co-founder|cofounder|ceo|chief executive|cto|chief technology|coo|chief operating|vp |vice president|managing partner|general partner|venture partner|president)\b/i;
-const FOLLOWER_THRESHOLD = 500;
+// Step 5: Classify bots / hidden gems / ungettable deterministically (see _shared/talent-flags.ts).
+function toFlagInput(c: any) {
+  return {
+    username: c.github_username,
+    bio: c.bio, // profile bio only; the AI-written "about" is not evidence of a title
+    followers: c.followers,
+    stars: c.stars,
+    score: c.score,
+    totalContributions: contributionsOf(c.contributed_repos),
+    recruitable: c.recruitable,
+  };
+}
 
 function flagUngettable(candidates: any[]): any[] {
-  return candidates.map(c => {
-    const bio = (c.bio || '') + ' ' + (c.about || '');
-    const highFollowers = (c.followers || 0) >= FOLLOWER_THRESHOLD;
-    const executiveTitle = UNRECRUTABLE_TITLES.test(bio);
-    const isUngettable = highFollowers || executiveTitle;
-    if (isUngettable) {
-      c.ungettable = true;
-      c.ungettableReason = highFollowers
-        ? `${(c.followers || 0).toLocaleString()} followers — likely industry leader`
-        : 'Bio mentions executive/founder role';
-      // Also check AI recruitable flag
-      if (c.recruitable === false) {
-        c.ungettable = true;
-      }
-    } else if (c.recruitable === false) {
-      c.ungettable = true;
-      c.ungettableReason = 'AI flagged as unlikely to be recruited';
-    }
-    return c;
-  });
+  return candidates
+    .map((c) => {
+      const f = classifyCandidate(toFlagInput(c));
+      c.is_bot = f.isBot;
+      c.is_hidden_gem = f.hiddenGem;
+      c.ungettable = f.ungettable;
+      c.ungettableReason = f.ungettableReason;
+      return c;
+    })
+    .filter((c) => !c.is_bot); // bots (e.g. pytorchmergebot) are not candidates
 }
 
 serve(async (req) => {

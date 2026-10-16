@@ -174,6 +174,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
 
   const filtered = useMemo(() => {
     let list = resultsWithSkillMatch;
+    if (!showUngettable) list = list.filter((d) => !d.ungettable);
     if (showGemsOnly) list = list.filter((d) => d.hiddenGem);
     if (locationFilter) list = list.filter((d) => d.location && d.location.toLowerCase().includes(locationFilter.toLowerCase()));
     if (seniorityFilter !== "any") list = list.filter((d) => estimateSeniority(d) === seniorityFilter);
@@ -186,7 +187,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
       return 0;
     });
     return list.slice(0, resultLimit);
-  }, [resultsWithSkillMatch, showGemsOnly, locationFilter, resultLimit, seniorityFilter, languageFilter, minScore]);
+  }, [resultsWithSkillMatch, showGemsOnly, showUngettable, locationFilter, resultLimit, seniorityFilter, languageFilter, minScore]);
 
   const funnelCounts = useMemo(() => {
     const total = results.length;

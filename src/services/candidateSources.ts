@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client'
+import { classifyPerson } from '../../supabase/functions/_shared/talent-flags.ts'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
@@ -23,6 +24,10 @@ export interface SourcedCandidate {
   avatar_url?: string | null
   providers: string[]
   sourcing_score: number
+  github_followers?: number | null
+  hidden_gem?: boolean
+  ungettable?: boolean
+  ungettable_reason?: string | null
 }
 
 export interface CandidateFiltersInput {
@@ -156,4 +161,11 @@ export async function pollDeepSearch(
     await sleep(interval)
   }
   return last
+}
+
+/** Flags from the server, or computed from title/headline when absent (deep-search results). */
+export function withTalentFlags(c: SourcedCandidate): SourcedCandidate {
+  if (c.ungettable !== undefined) return c
+  const f = classifyPerson({ currentTitle: c.current_title, headline: c.headline, githubLogin: c.github_login, sourcingScore: c.sourcing_score })
+  return { ...c, hidden_gem: f.hiddenGem, ungettable: f.ungettable, ungettable_reason: f.ungettableReason }
 }

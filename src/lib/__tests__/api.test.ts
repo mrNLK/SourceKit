@@ -268,7 +268,10 @@ describe("api module", () => {
       expect(dev.username).toBe("alice");
       expect(dev.name).toBe("Alice Chen");
       expect(dev.score).toBe(85); // row.score takes precedence
-      expect(dev.hiddenGem).toBe(true);
+      // Flags are recomputed with the shared rules: 1,200 followers is too visible for a gem
+      // (stored is_hidden_gem is ignored), but well under the 10K ungettable bar.
+      expect(dev.hiddenGem).toBe(false);
+      expect(dev.ungettable).toBe(false);
       expect(dev.bio).toBe("Summary text"); // summary preferred over bio
     });
   });

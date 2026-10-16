@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- mixed row shapes */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { githubFetch } from "../_shared/github.ts";
+import { classifyPerson } from "../_shared/talent-flags.ts";
 import { requireAuth, authErrorResponse } from "../_shared/auth.ts";
 import {
   exaPeopleSearch, githubUserSearch, harmonicCompanyFirstPeople, harmonicPeopleByName, harmonicPersonByLinkedin,
@@ -24,6 +27,28 @@ import type { UnifiedCandidate } from "../_shared/providers/candidate.ts";
  */
 type SourceName = "exa" | "parallel" | "harmonic" | "github";
 const HARMONIC_ENRICH_TOP = 10;
+const GITHUB_FLAG_LOOKUPS = 25; // free GitHub /users lookups for follower counts (hidden gem / ungettable)
+
+/** Attach hidden_gem / ungettable flags (and GitHub follower counts) and drop bot accounts. */
+async function addTalentFlags(rows: any[]): Promise<any[]> {
+  const login = (c: any) => c.github_login ?? c.githubLogin ?? null;
+  const logins = [...new Set(rows.map(login).filter(Boolean))].slice(0, GITHUB_FLAG_LOOKUPS) as string[];
+  const gh = new Map<string, any>();
+  await Promise.allSettled(logins.map(async (l) => {
+    const u = await githubFetch(`https://api.github.com/users/${encodeURIComponent(l)}`);
+    if (u?.login) gh.set(l.toLowerCase(), u);
+  }));
+  return rows.map((c) => {
+    const l = login(c);
+    const u = l ? gh.get(String(l).toLowerCase()) : undefined;
+    const f = classifyPerson({
+      currentTitle: c.current_title ?? c.currentTitle, headline: c.headline, githubLogin: l,
+      githubFollowers: u?.followers ?? null, githubPublicRepos: u?.public_repos ?? null, githubType: u?.type ?? null,
+      sourcingScore: c.sourcing_score,
+    });
+    return { ...c, github_followers: u?.followers ?? null, is_bot: f.isBot, hidden_gem: f.hiddenGem, ungettable: f.ungettable, ungettable_reason: f.ungettableReason };
+  }).filter((c) => !c.is_bot);
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
@@ -118,6 +143,8 @@ serve(async (req) => {
       candidates = dedupCandidates(all).map((c) => ({ ...c, sourcing_score: sourcingScore(c) }))
         .sort((a, b) => b.sourcing_score - a.sourcing_score).slice(0, limit);
     }
+
+    candidates = await addTalentFlags(candidates as any[]);
 
     return new Response(JSON.stringify({
       candidates,
