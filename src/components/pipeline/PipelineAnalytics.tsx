@@ -194,8 +194,8 @@ const PipelineAnalytics = ({ candidates, stages }: PipelineAnalyticsProps) => {
                 </div>
                 {conversion && count > 0 && (
                   <div className="ml-20 pl-3 flex items-center gap-1 py-0.5">
-                    <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/50" />
-                    <span className="text-[9px] font-display text-muted-foreground/60">
+                    <ArrowRight className="w-2.5 h-2.5 text-muted-foreground" />
+                    <span className="text-[9px] font-display text-muted-foreground">
                       {conversion.rate}% → {conversion.toLabel}
                     </span>
                   </div>

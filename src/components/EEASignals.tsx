@@ -89,7 +89,7 @@ function DimensionBar({ dim, expanded, onToggle }: { dim: EEADimension; expanded
       {expanded && (
         <div className="ml-7 space-y-1.5 pb-2">
           {dim.criterion === 'uscis' && (
-            <p className="text-[10px] text-muted-foreground/70 font-display italic">{dim.uscisMapping}</p>
+            <p className="text-[10px] text-muted-foreground font-display italic">{dim.uscisMapping}</p>
           )}
           <p className="text-[11px] text-muted-foreground">{dim.description}</p>
           {dim.evidence.length > 0 && (
@@ -211,18 +211,18 @@ export function EEAFull({ developer }: { developer: any }) {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="space-y-2">
+        <div>
           <h2 className="font-display text-sm font-semibold text-foreground" title="EEA measures signals like publications, patents, open-source impact, and top-company experience based on USCIS O-1A visa criteria.">Evidence of Exceptional Ability</h2>
+        </div>
+        <div className="flex items-center gap-2">
           <span className={`text-[10px] font-display font-bold px-2 py-0.5 rounded-full border ${eea.tier.bgColor} ${eea.tier.color} ${eea.tier.borderColor}`}>
             {eea.tier.label}
           </span>
-        </div>
-        <div className="flex items-center gap-2">
           <span className="text-[10px] font-display text-muted-foreground">
             {eea.strongCount} strong signal{eea.strongCount !== 1 ? 's' : ''}
           </span>
-          <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-display text-sm font-bold border ${eea.tier.bgColor} ${eea.tier.color} ${eea.tier.borderColor}`}>
+          <div className={`ml-auto w-9 h-9 rounded-lg flex items-center justify-center font-display text-sm font-bold border ${eea.tier.bgColor} ${eea.tier.color} ${eea.tier.borderColor}`}>
             {eea.overallScore}
           </div>
         </div>

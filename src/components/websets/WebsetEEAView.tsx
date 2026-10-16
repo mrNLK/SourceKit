@@ -180,7 +180,7 @@ const WebsetEEAView = ({ items, signals, onAddToPipeline, onBatchImport, addedIt
                 }`}
                 title={`${s.signal} (${pct}% pass)`}
               >
-                {s.signal} <span className="text-muted-foreground/60">{pct}%</span>
+                {s.signal} <span className="text-muted-foreground">{pct}%</span>
               </button>
             );
           })}

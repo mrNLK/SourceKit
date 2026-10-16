@@ -509,7 +509,7 @@ const BulkActionsTab = () => {
                   onClick={() => handleQuickAction(action.id)}
                   disabled={!!disabled}
                   title={action.tip}
-                  className="flex items-center gap-1 text-[10px] font-display px-2 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 text-[10px] font-display px-2 py-1 rounded-md border border-border text-secondary-foreground hover:text-primary hover:border-primary/30 transition-colors disabled:text-muted-foreground disabled:bg-secondary/60 disabled:cursor-not-allowed"
                 >
                   <action.icon className="w-3 h-3" />
                   {action.label}

@@ -117,7 +117,7 @@ const SearchResults = ({
       <div className="flex justify-center mt-6">
         <button onClick={onExpandSearch} disabled={!canExpand || isExpanding}
           className={`flex items-center gap-2 text-xs font-display px-5 py-2.5 rounded-xl border transition-colors ${
-            !canExpand ? "border-border text-muted-foreground/50 cursor-not-allowed" : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-primary/5"
+            !canExpand ? "border-border text-muted-foreground cursor-not-allowed" : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-primary/5"
           }`}
           title={currentResultCount >= maxResults ? "Maximum results reached" : "Expand to find more candidates"}>
           {isExpanding ? (<><Loader2 className="w-3.5 h-3.5 animate-spin" /> Expanding...</>) : (<><Plus className="w-3.5 h-3.5" /> {currentResultCount >= maxResults ? "Maximum results reached" : "Expand Search"}</>)}

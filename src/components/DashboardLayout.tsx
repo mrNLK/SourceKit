@@ -81,7 +81,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  : "text-secondary-foreground hover:text-primary hover:bg-secondary"
               }`}
             >
               <item.icon className="w-4 h-4 shrink-0" />

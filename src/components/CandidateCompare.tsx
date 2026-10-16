@@ -136,7 +136,7 @@ const CandidateCompare = ({ open, onOpenChange, candidates }: CandidateComparePr
                       {c.location}
                     </span>
                   ) : (
-                    <span className="text-xs text-muted-foreground/50">—</span>
+                    <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </div>
               ))}
@@ -204,7 +204,7 @@ const CandidateCompare = ({ open, onOpenChange, candidates }: CandidateComparePr
                       </span>
                     ))}
                     {(!c.top_languages || c.top_languages.length === 0) && (
-                      <span className="text-xs text-muted-foreground/50">—</span>
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </div>
                 </div>
@@ -235,7 +235,7 @@ const CandidateCompare = ({ open, onOpenChange, candidates }: CandidateComparePr
                       ))}
                     </ul>
                   ) : (
-                    <span className="text-xs text-muted-foreground/50">—</span>
+                    <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </div>
               ))}

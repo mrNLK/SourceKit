@@ -308,7 +308,7 @@ const WebsetsTab = () => {
 
         {!isLoading && items.length === 0 && !error && (
           <div className="rounded-xl border border-dashed border-border bg-card/50 py-12 text-center">
-            <Layers className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+            <Layers className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">
               {activeWebset?.status === 'running' ? 'Items will appear as the webset processes' : 'This webset has no items'}
             </p>
@@ -462,7 +462,7 @@ const WebsetsTab = () => {
         </div>
       ) : (
         <div className="rounded-xl border border-dashed border-border bg-card/50 py-12 text-center">
-          <Layers className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+          <Layers className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
           <p className="text-sm font-medium text-muted-foreground">No websets yet</p>
           <p className="text-xs text-muted-foreground mt-1">Create a webset to find and verify candidates with AI-powered search</p>
         </div>

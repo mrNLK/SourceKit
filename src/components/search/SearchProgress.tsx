@@ -95,7 +95,7 @@ const SearchProgress = ({ isLoading, hasTargetRepos, repoCount }: SearchProgress
               <span className={`text-xs font-display ${
                 isActive ? "text-foreground font-medium" :
                 isComplete ? "text-muted-foreground" :
-                "text-muted-foreground/50"
+                "text-muted-foreground"
               }`}>
                 {step.label}
                 {step.id === "repos" && repoCount ? ` (${repoCount} repos)` : ""}

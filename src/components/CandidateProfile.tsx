@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { craftSeries } from "@/lib/constants";
 import {
   ArrowLeft, MessageSquare, Bookmark, BookmarkCheck, Link as LinkIcon, Briefcase, GraduationCap, BookOpen,
   CheckCircle2, XCircle, Star, MapPin, Clock, ExternalLink, Loader2, Sparkles, Copy, ClipboardCheck,
@@ -377,10 +378,10 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
               </div>
               {/* Language bar */}
               <div className="flex gap-0.5 h-2 rounded-full overflow-hidden mt-4">
-                {topLanguages.map((lang: Language) => (
+                {topLanguages.map((lang: Language, i: number) => (
                   <div
                     key={lang.name}
-                    style={{ width: `${lang.percentage}%`, backgroundColor: lang.color }}
+                    style={{ width: `${lang.percentage}%`, backgroundColor: craftSeries(i) }}
                     className="rounded-full"
                   />
                 ))}

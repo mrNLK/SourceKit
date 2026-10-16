@@ -212,7 +212,7 @@ const EEASignalEditor = ({ signals, onChange, roleCategory }: EEASignalEditorPro
               {showTemplates ? 'Hide Templates' : 'Load Templates'}
             </button>
             {roleCategory && (
-              <span className="text-[10px] text-muted-foreground/60 font-display ml-auto truncate max-w-[180px]">
+              <span className="text-[10px] text-muted-foreground font-display ml-auto truncate max-w-[180px]">
                 Category: {roleCategory}
               </span>
             )}
@@ -241,7 +241,7 @@ const EEASignalEditor = ({ signals, onChange, roleCategory }: EEASignalEditorPro
                         <button
                           key={`${tpl.id || i}`}
                           onClick={() => applyTemplate(tpl)}
-                          className="text-[10px] font-display px-2 py-0.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors truncate max-w-[200px]"
+                          className="text-[10px] font-display px-2 py-0.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors break-words text-left"
                           title={tpl.signal_name}
                         >
                           {tpl.signal_name}

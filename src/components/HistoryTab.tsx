@@ -155,7 +155,7 @@ const HistoryTab = ({ onRerun }: HistoryTabProps) => {
           </div>
           <h2 className="font-display text-base font-semibold text-foreground mb-1">No searches yet</h2>
           <p className="text-sm text-muted-foreground mb-1">Your past searches and research sessions will appear here.</p>
-          <p className="text-xs text-muted-foreground/70 mb-4">Click any entry to re-run the same search with fresh results.</p>
+          <p className="text-xs text-muted-foreground mb-4">Click any entry to re-run the same search with fresh results.</p>
           <button
             onClick={() => onRerun("")}
             className="text-xs font-display px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"

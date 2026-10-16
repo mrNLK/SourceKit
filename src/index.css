@@ -109,8 +109,8 @@
     --surface-hover: 214 36% 91%;
     --text-dim: 221 13% 46%;
     --text-secondary: 221 13% 46%;
-    --success: 123 46% 34%;           /* #2E7D32 */
-    --warning: 30 80% 32%;            /* AA on white */
+    --success: 209 59% 30%;           /* section blue; true status uses craft-success */
+    --warning: 209 59% 30%;           /* section blue (no amber in palette) */
     --info: 209 59% 30%;
 
     --font-body: 'Inter', 'DM Sans', system-ui, sans-serif;

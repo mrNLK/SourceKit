@@ -292,7 +292,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
             <Skeleton key={i} className="h-7 w-20 rounded-full" />
           ))}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3">
           {[1, 2, 3, 4, 5].map((col) => (
             <div key={col} className="glass rounded-xl p-3 min-h-[400px]">
               <Skeleton className="h-6 w-16 rounded-md mb-3" />
@@ -409,7 +409,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
                 <span className={`text-[10px] font-display font-semibold px-2 py-1 rounded-md border ${stage.color}`} title={stage.tip}>
                   {stage.label}
                 </span>
-                {i < STAGES.length - 1 && <ArrowRight className="w-3 h-3 text-muted-foreground/40" />}
+                {i < STAGES.length - 1 && <ArrowRight className="w-3 h-3 text-muted-foreground" />}
               </div>
             ))}
           </div>
@@ -448,7 +448,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3">
           {STAGES.map((stage) => {
             const items = (sortByScore
               ? [...filteredCandidates].sort((a: PipelineCandidate, b: PipelineCandidate) => (candidateScores[b.github_username] || 0) - (candidateScores[a.github_username] || 0))
@@ -469,7 +469,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
                 </div>
                 <div className="space-y-2">
                   {items.length === 0 && (
-                    <p className="text-[11px] text-muted-foreground/30 text-center py-4">Drop candidates here</p>
+                    <p className="text-[11px] text-craft-muted text-center py-4">Drop candidates here</p>
                   )}
                   {items.map((c: PipelineCandidate) => (
                     <PipelineCard
@@ -628,7 +628,7 @@ function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, o
 
       {/* Notes preview */}
       {c.notes && !showNotes && (
-        <p className="text-[10px] text-muted-foreground/60 ml-5 mt-1 truncate italic cursor-pointer" onClick={(e) => { e.stopPropagation(); setShowNotes(true); }}>
+        <p className="text-[10px] text-muted-foreground ml-5 mt-1 truncate italic cursor-pointer" onClick={(e) => { e.stopPropagation(); setShowNotes(true); }}>
           {c.notes}
         </p>
       )}
@@ -679,7 +679,7 @@ function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, o
       )}
 
       {/* Action buttons row */}
-      <div className={`flex items-center justify-between gap-1 mt-1.5 transition-opacity ${isTouch ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+      <div className={`flex items-center justify-between gap-1 mt-1.5 ${isTouch ? "flex" : "hidden group-hover:flex focus-within:flex"}`}>
         <div className="flex items-center gap-1 ml-5">
           <button onClick={(e) => { e.stopPropagation(); setShowNotes(!showNotes); }} className="p-1 rounded text-muted-foreground hover:text-foreground" title="Notes">
             <StickyNote className="w-3 h-3" />
