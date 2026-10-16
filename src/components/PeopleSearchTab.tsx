@@ -54,6 +54,25 @@ export function CandidateRow({
   )
 }
 
+/** Human summary of an email lookup batch, e.g. "Found 3 new emails · 1 already had one · 2 not found". */
+export function summarizeEmailResults(results: { status: string; email?: string | null }[], checked: number) {
+  const already = results.filter((r) => r.status === 'already_has_email').length
+  const found = results.filter((r) => r.status !== 'already_has_email' && !!r.email).length
+  const failed = results.filter((r) => r.status === 'error').length
+  const insufficient = results.filter((r) => r.status === 'insufficient_input').length
+  const notFound = Math.max(0, checked - found - already - failed - insufficient)
+  const parts = [
+    already ? `${already} already had one` : '',
+    notFound ? `${notFound} not found` : '',
+    insufficient ? `${insufficient} missing name/company` : '',
+    failed ? `${failed} failed` : '',
+  ].filter(Boolean)
+  return {
+    title: found ? `Found ${found} new email${found === 1 ? '' : 's'}` : 'No new emails found',
+    description: `Checked ${checked} candidate${checked === 1 ? '' : 's'}${parts.length ? ` · ${parts.join(' · ')}` : ''}. Selection cleared.`,
+  }
+}
+
 const PeopleSearchTab = () => {
   const [query, setQuery] = useState('')
   const [titles, setTitles] = useState('')
@@ -133,7 +152,8 @@ const PeopleSearchTab = () => {
       })
       setResults(apply)
       setDsResults(apply)
-      toast({ title: `Found ${res.found} email${res.found === 1 ? '' : 's'}`, description: `${ids.length} checked` })
+      toast(summarizeEmailResults(res.results, ids.length))
+      setSelected(new Set())
     } catch (e) {
       toast({ title: 'Email lookup failed', description: e instanceof Error ? e.message : String(e), variant: 'destructive' })
     } finally {

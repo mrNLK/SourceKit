@@ -37,7 +37,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [linkedinCopied, setLinkedinCopied] = useState(false);
   const [stageOpen, setStageOpen] = useState(false);
-  const [localStage, setLocalStage] = useState<string>(pipelineCandidate.stage || "contacted");
+  const [localStage, setLocalStage] = useState<string>(pipelineCandidate.stage || "sourced");
   const [localNotes, setLocalNotes] = useState(pipelineCandidate.notes || "");
   const [savingNotes, setSavingNotes] = useState(false);
 

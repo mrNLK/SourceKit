@@ -1,3 +1,4 @@
+import { upsertPipelineCandidate, notifyPipelineAdded } from "@/lib/pipeline-add";
 import { useState, useEffect, useCallback } from "react";
 import {
   X, Star, MapPin, Clock, MessageSquare, Loader2, Sparkles, Copy, ClipboardCheck,
@@ -51,7 +52,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
   const [toneOpen, setToneOpen] = useState(false);
   const [outreachMode, setOutreachMode] = useState<"ai" | "template">("ai");
   const [stageOpen, setStageOpen] = useState(false);
-  const [localStage, setLocalStage] = useState<string>("contacted");
+  const [localStage, setLocalStage] = useState<string>("sourced");
   const [copiedHistoryId, setCopiedHistoryId] = useState<string | null>(null);
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
   // FEAT-004: Notes and tags
@@ -83,7 +84,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
       setAddedToPipeline(true);
       setNotes(pipelineRow.notes || "");
       setTags(pipelineRow.tags || []);
-      setLocalStage(pipelineRow.stage || "contacted");
+      setLocalStage(pipelineRow.stage || "sourced");
     }
   }, [pipelineRow]);
 
@@ -131,23 +132,19 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
     try {
       // Migrate pre-pipeline notes if any
       const prePipelineNotes = notes.trim() || localStorage.getItem(`sourcekit-notes:${dev.username}`) || "";
-      await supabase.from("pipeline").upsert({
-        github_username: dev.username,
-        name: dev.name,
-        avatar_url: dev.avatarUrl,
-        stage: "contacted",
-        ...(prePipelineNotes ? { notes: prePipelineNotes } : {}),
-      }, { onConflict: "user_id,github_username" });
+      await upsertPipelineCandidate({ username: dev.username, name: dev.name, avatarUrl: dev.avatarUrl, score: dev.score, notes: prePipelineNotes || undefined });
       // Clean up localStorage notes after migration
       localStorage.removeItem(`sourcekit-notes:${dev.username}`);
       setAddedToPipeline(true);
       queryClient.invalidateQueries({ queryKey: ["pipeline"] });
       queryClient.invalidateQueries({ queryKey: ["pipeline-usernames"] });
       queryClient.invalidateQueries({ queryKey: ["pipeline-check", dev.username] });
-      toast({ title: `Added ${dev.name || dev.username} to pipeline` });
+      queryClient.invalidateQueries({ queryKey: ["bulk-pipeline"] });
+      setLocalStage("sourced");
+      notifyPipelineAdded(1, 0, dev.name || dev.username);
     } catch (err) {
       console.error("Failed to add to pipeline:", err);
-      toast({ title: "Failed to add to pipeline", variant: "destructive" });
+      notifyPipelineAdded(0, 1);
     } finally {
       setPipelineLoading(false);
     }

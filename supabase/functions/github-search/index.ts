@@ -667,16 +667,16 @@ serve(async (req) => {
     }
 
     console.log(`[${Date.now() - t0}ms] Found ${contributorMap.size} candidates (contributors: ${contributorMap.size - userSearchMap.size - exaUsernames.length}, user search: ${userSearchMap.size}, exa: ${exaUsernames.length})`);
-    emitProgress('found', `Found ${contributorMap.size} candidates from ${parsedCriteria.repos.length} repos`);
+    emitProgress('found', `Discovered ${contributorMap.size} potential contributors across ${parsedCriteria.repos.length} repos`);
 
     // Step 3: Enrich with profiles (with caching + batch upsert)
     emitProgress('enriching', `Fetching profiles for ${contributorMap.size} candidates...`);
     const candidates = await enrichCandidates(contributorMap, supabase);
     console.log(`[${Date.now() - t0}ms] Enriched ${candidates.length} candidates`);
-    emitProgress('enriched', `Enriched ${candidates.length} candidate profiles`);
+    emitProgress('enriched', `Shortlisted the top ${candidates.length} profiles for AI scoring`);
 
     // Step 4: AI scoring (batch size 25, concurrent, query-scoped cache)
-    emitProgress('scoring', `Scoring ${candidates.length} candidates with AI...`);
+    emitProgress('scoring', `Scoring ${candidates.length} shortlisted candidates with AI...`);
     const scored = await scoreCandidates(candidates, query, parsedCriteria, queryHash);
     console.log(`[${Date.now() - t0}ms] Scored ${scored.length} candidates`);
     emitProgress('scored', `Scored ${scored.length} candidates`);
@@ -769,7 +769,7 @@ serve(async (req) => {
       await incrementSearchCount(gate.userId).catch(e => console.error('Failed to increment search count:', e));
     }
 
-    emitProgress('complete', `${results.length} results ready`);
+    emitProgress('complete', `${results.length} candidates ranked and ready`);
 
     const responsePayload = {
       results,

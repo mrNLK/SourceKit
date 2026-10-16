@@ -10,6 +10,7 @@ import UpgradeModal from "@/components/UpgradeModal";
 import { PILOT_MODE } from "@/lib/pilot";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "@/hooks/use-toast";
+import { upsertPipelineCandidate, notifyPipelineAdded } from "@/lib/pipeline-add";
 import type { Developer } from "@/types/developer";
 import { useSavedSearches, type SavedSearch } from "@/hooks/useSavedSearches";
 import {
@@ -172,7 +173,8 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
     return results.map((dev) => ({ ...dev, skillMatch: computeSkillMatch(dev, activeSkills) }));
   }, [results, skillFilters]);
 
-  const filtered = useMemo(() => {
+  // All candidates that pass the active filters (before the display limit is applied).
+  const matching = useMemo(() => {
     let list = resultsWithSkillMatch;
     if (!showUngettable) list = list.filter((d) => !d.ungettable);
     if (showGemsOnly) list = list.filter((d) => d.hiddenGem);
@@ -180,23 +182,22 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
     if (seniorityFilter !== "any") list = list.filter((d) => estimateSeniority(d) === seniorityFilter);
     if (languageFilter) list = list.filter((d) => (d.topLanguages || []).some((l) => l.name === languageFilter));
     if (minScore > 0) list = list.filter((d) => (d.score || 0) >= minScore);
-    // Sort ungettable candidates to the bottom
-    list = [...list].sort((a, b) => {
-      if (a.ungettable && !b.ungettable) return 1;
-      if (!a.ungettable && b.ungettable) return -1;
-      return 0;
-    });
-    return list.slice(0, resultLimit);
-  }, [resultsWithSkillMatch, showGemsOnly, showUngettable, locationFilter, resultLimit, seniorityFilter, languageFilter, minScore]);
+    // Rank by score. When ungettable candidates are explicitly shown, keep them in score order
+    // so the toggle visibly changes the list instead of pushing them below the display limit.
+    list = [...list].sort((a, b) => (b.score || 0) - (a.score || 0));
+    return list;
+  }, [resultsWithSkillMatch, showGemsOnly, showUngettable, locationFilter, seniorityFilter, languageFilter, minScore]);
+
+  const filtered = useMemo(() => matching.slice(0, resultLimit), [matching, resultLimit]);
 
   const funnelCounts = useMemo(() => {
     const total = results.length;
-    let afterGems = results.length;
-    if (showGemsOnly) afterGems = results.filter((d) => d.hiddenGem).length;
-    let afterLocation = afterGems;
-    if (locationFilter) { const locResults = (showGemsOnly ? results.filter((d) => d.hiddenGem) : results); afterLocation = locResults.filter((d) => d.location && d.location.toLowerCase().includes(locationFilter.toLowerCase())).length; }
-    return { total, afterFiltered: afterGems, afterLocation, final: filtered.length };
-  }, [results, showGemsOnly, locationFilter, filtered]);
+    let base = showUngettable ? results : results.filter((d) => !d.ungettable);
+    if (showGemsOnly) base = base.filter((d) => d.hiddenGem);
+    const afterFiltered = base.length;
+    const afterLocation = locationFilter ? base.filter((d) => d.location && d.location.toLowerCase().includes(locationFilter.toLowerCase())).length : afterFiltered;
+    return { total, afterFiltered, afterLocation, final: matching.length };
+  }, [results, showGemsOnly, showUngettable, locationFilter, matching]);
 
   // -- Handlers --
   const buildSearchQuery = useCallback(() => {
@@ -255,24 +256,17 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
     const failedNames: string[] = [];
     for (const dev of toAdd) {
       try {
-        const { error } = await supabase.from('pipeline').upsert(
-          { github_username: dev.username, name: dev.name, avatar_url: dev.avatarUrl, stage: 'contacted' },
-          { onConflict: 'user_id,github_username' },
-        );
-        if (!error) { added++; } else { failed++; failedNames.push(dev.username); }
+        await upsertPipelineCandidate({ username: dev.username, name: dev.name, avatarUrl: dev.avatarUrl, score: dev.score, source: 'github_search', sourceQuery: query || undefined });
+        added++;
       } catch {
         failed++;
         failedNames.push(dev.username);
       }
     }
     queryClient.invalidateQueries({ queryKey: ["pipeline-usernames"] });
-    if (failed === 0) {
-      toast({ title: `Added ${added} candidate${added !== 1 ? 's' : ''} to pipeline`, description: `${added} candidate${added !== 1 ? 's' : ''} added to Contacted stage.` });
-    } else if (added > 0) {
-      toast({ title: `Added ${added} of ${toAdd.length} candidates`, description: `${failed} failed — please retry.`, variant: "destructive" });
-    } else {
-      toast({ title: "Failed to add candidates", description: "Please try again.", variant: "destructive" });
-    }
+    queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+    queryClient.invalidateQueries({ queryKey: ["bulk-pipeline"] });
+    notifyPipelineAdded(added, failed);
     if (failedNames.length > 0) console.warn("Failed to add to pipeline:", failedNames);
     setBatchSelected(new Set());
     setBatchAdding(false);
@@ -431,7 +425,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
         {!isLoading && results.length > 0 && (
           <>
             <SearchFilters
-              results={results} filtered={filtered}
+              results={results} filtered={filtered} matchingCount={matching.length}
               hasActiveFilters={hasActiveFilters} hasActiveSkills={hasActiveSkills}
               skillFilters={skillFilters} showSkillPanel={showSkillPanel} onToggleSkillPanel={() => setShowSkillPanel(!showSkillPanel)}
               locationFilter={locationFilter} onLocationChange={setLocationFilter} locationSuggestions={locationSuggestions}

@@ -80,6 +80,8 @@ const BulkActionsTab = () => {
         // Preserve pipeline id and stage
         id: p.id,
         stage: p.stage,
+        // Score captured when the candidate was added (query-scoped AI score) wins over a stale/zero cache score.
+        score: p.score || candidateMap.get(p.github_username)?.score || 0,
       }));
     },
   });
