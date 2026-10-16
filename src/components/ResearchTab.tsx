@@ -1,3 +1,4 @@
+import { readStrategyStream, type StrategyProgressStep } from "@/lib/strategy-stream";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +49,7 @@ interface ResearchTabProps {
 const ResearchTab = ({ state, onStateChange, onSearchWithStrategy, onNavigateToWebsets }: ResearchTabProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
+  const [progressSteps, setProgressSteps] = useState<StrategyProgressStep[]>([]);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
@@ -111,15 +113,24 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy, onNavigateToW
       }
 
       const { data: { session: authSession } } = await supabase.auth.getSession();
+      setProgressSteps([]);
       const res = await fetch(`${SUPABASE_URL}/functions/v1/research-role`, {
         method: 'POST',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${authSession?.access_token || SUPABASE_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ ...body, stream: true }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 402 || data.error === 'trial_limit_reached') { setShowUpgrade(true); return; }
-        throw new Error(data.error || `HTTP ${res.status}`);
+      let data: any;
+      if (res.ok && (res.headers.get('content-type') || '').includes('text/event-stream') && res.body) {
+        data = await readStrategyStream(res.body, (step) => {
+          setLoadingStep(step.detail);
+          setProgressSteps((prev) => [...prev, step]);
+        });
+      } else {
+        data = await res.json();
+        if (!res.ok) {
+          if (res.status === 402 || data.error === 'trial_limit_reached') { setShowUpgrade(true); return; }
+          throw new Error(data.error || `HTTP ${res.status}`);
+        }
       }
 
       if (data.strategy) {
@@ -166,7 +177,7 @@ const ResearchTab = ({ state, onStateChange, onSearchWithStrategy, onNavigateToW
         }}
       />
 
-      <StrategyBuilder isLoading={isLoading} loadingStep={loadingStep} inputMode={inputMode} error={state.error} />
+      <StrategyBuilder isLoading={isLoading} loadingStep={loadingStep} inputMode={inputMode} error={state.error} progressSteps={progressSteps} />
 
       {s && !isLoading && (
         <StrategyEditor
