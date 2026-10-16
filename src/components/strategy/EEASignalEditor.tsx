@@ -173,7 +173,7 @@ const EEASignalEditor = ({ signals, onChange, roleCategory }: EEASignalEditorPro
         <span className="font-display text-sm font-semibold text-foreground flex-1 text-left">
           Evidence of Exceptional Ability
         </span>
-        <span className="text-[10px] font-display text-muted-foreground px-1.5 py-0.5 rounded bg-secondary">
+        <span className="text-[11px] font-display text-muted-foreground px-1.5 py-0.5 rounded bg-secondary">
           {enabledCount}/{signals.length}
         </span>
         {expanded
@@ -194,7 +194,7 @@ const EEASignalEditor = ({ signals, onChange, roleCategory }: EEASignalEditorPro
             <button
               onClick={handleSave}
               disabled={isSaving || enabledCount === 0}
-              className="inline-flex items-center gap-1 text-[10px] font-display px-2.5 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors disabled:opacity-40"
+              className="inline-flex items-center gap-1 text-[11px] font-display px-2.5 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors disabled:opacity-40"
             >
               {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
               Save as Template
@@ -202,7 +202,7 @@ const EEASignalEditor = ({ signals, onChange, roleCategory }: EEASignalEditorPro
             <button
               onClick={handleLoadTemplates}
               disabled={isLoadingTemplates}
-              className={`inline-flex items-center gap-1 text-[10px] font-display px-2.5 py-1 rounded-full border transition-colors ${
+              className={`inline-flex items-center gap-1 text-[11px] font-display px-2.5 py-1 rounded-full border transition-colors ${
                 showTemplates
                   ? 'bg-primary/10 text-primary border-primary/30'
                   : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
@@ -212,7 +212,7 @@ const EEASignalEditor = ({ signals, onChange, roleCategory }: EEASignalEditorPro
               {showTemplates ? 'Hide Templates' : 'Load Templates'}
             </button>
             {roleCategory && (
-              <span className="text-[10px] text-muted-foreground font-display ml-auto truncate max-w-[180px]">
+              <span className="text-[11px] text-muted-foreground font-display ml-auto truncate max-w-[260px]" title={roleCategory}>
                 Category: {roleCategory}
               </span>
             )}
@@ -227,11 +227,11 @@ const EEASignalEditor = ({ signals, onChange, roleCategory }: EEASignalEditorPro
                 Object.entries(templateGroups).map(([category, templates]) => (
                   <div key={category}>
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-[10px] font-display font-semibold text-foreground">{category}</span>
+                      <span className="text-[11px] font-display font-semibold text-foreground">{category}</span>
                       <span className="text-[10px] text-muted-foreground">({templates.length})</span>
                       <button
                         onClick={() => applyGroup(templates)}
-                        className="text-[10px] font-display text-primary hover:underline ml-auto"
+                        className="text-[11px] font-display text-primary hover:underline ml-auto"
                       >
                         Add All
                       </button>
@@ -241,7 +241,7 @@ const EEASignalEditor = ({ signals, onChange, roleCategory }: EEASignalEditorPro
                         <button
                           key={`${tpl.id || i}`}
                           onClick={() => applyTemplate(tpl)}
-                          className="text-[10px] font-display px-2 py-0.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors break-words text-left"
+                          className="text-[11px] font-display px-2 py-0.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors break-words text-left"
                           title={tpl.signal_name}
                         >
                           {tpl.signal_name}

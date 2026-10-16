@@ -329,7 +329,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
             <OnboardingCard />
             {savedSearches.length > 0 && (
               <div>
-                <p className="text-[10px] font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2">Saved Searches</p>
+                <p className="text-[11px] font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2">Saved Searches</p>
                 <div className="flex flex-wrap gap-2">
                   {savedSearches.map((s) => (
                     <div key={s.id} className="group flex items-center gap-1 bg-primary/10 border border-primary/20 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-primary/20 transition-colors" onClick={() => handleLoadSaved(s)}>
@@ -402,16 +402,16 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
           </div>
         )}
 
-        {parsedCriteria && !isLoading && (
+        {parsedCriteria && !isLoading && ((parsedCriteria.skills?.length ?? 0) > 0 || !!parsedCriteria.location || (!!parsedCriteria.seniority && parsedCriteria.seniority !== 'any') || reposSearched.length > 0) && (
           <div className="glass rounded-xl p-4 mb-6">
             <div className="flex items-center gap-2 mb-3">
               <SlidersHorizontal className="w-4 h-4 text-primary" />
               <span className="font-display text-xs font-semibold text-foreground">AI-Parsed Search Criteria</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {parsedCriteria.skills.map((s: string) => (<span key={s} title={s} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-display break-words">{s}</span>))}
+              {(parsedCriteria.skills || []).filter(Boolean).map((s: string) => (<span key={s} title={s} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-display break-words">{s}</span>))}
               {parsedCriteria.location && (<span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground border border-border font-display">{parsedCriteria.location}</span>)}
-              {parsedCriteria.seniority !== 'any' && (<span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground border border-border font-display">{parsedCriteria.seniority}</span>)}
+              {!!parsedCriteria.seniority && parsedCriteria.seniority !== 'any' && (<span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground border border-border font-display">{parsedCriteria.seniority}</span>)}
             </div>
             {reposSearched.length > 0 && (
               <div className="mt-3 pt-3 border-t border-border">

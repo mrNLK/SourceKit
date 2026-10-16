@@ -159,7 +159,7 @@ const PipelineAnalytics = ({ candidates, stages }: PipelineAnalyticsProps) => {
 
       {/* Stage funnel */}
       <div>
-        <span className="text-[10px] font-display font-semibold text-muted-foreground uppercase tracking-wider">Stage Funnel</span>
+        <span className="text-[11px] font-display font-semibold text-muted-foreground uppercase tracking-wider">Stage Funnel</span>
         <div className="mt-2 space-y-2">
           {stages.map((stage, idx) => {
             const count = stageCounts[stage.id];
@@ -176,18 +176,18 @@ const PipelineAnalytics = ({ candidates, stages }: PipelineAnalyticsProps) => {
                       className={`h-full rounded-md transition-all duration-700 ${stage.color.split(" ")[0]}`}
                       style={{ width: `${widthPct}%` }}
                     />
-                    <span className="absolute inset-0 flex items-center px-2 text-[10px] font-display font-bold text-foreground">
+                    <span className="absolute inset-0 flex items-center px-2 text-[11px] font-display font-bold text-foreground">
                       {count}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 w-20 shrink-0">
                     <Clock className="w-3 h-3 text-muted-foreground" />
-                    <span className={`text-[10px] font-display font-semibold ${timeColor(tis.avg)}`}>
+                    <span className={`text-[11px] font-display font-semibold ${timeColor(tis.avg)}`}>
                       {tis.avg}d avg
                     </span>
                   </div>
                   {tis.staleCount > 0 && (
-                    <span className="text-[9px] font-display text-red-400 shrink-0" title={`${tis.staleCount} candidates stuck >14 days`}>
+                    <span className="text-[10px] font-display text-red-400 shrink-0" title={`${tis.staleCount} candidates stuck >14 days`}>
                       ⚠ {tis.staleCount}
                     </span>
                   )}
@@ -195,7 +195,7 @@ const PipelineAnalytics = ({ candidates, stages }: PipelineAnalyticsProps) => {
                 {conversion && count > 0 && (
                   <div className="ml-20 pl-3 flex items-center gap-1 py-0.5">
                     <ArrowRight className="w-2.5 h-2.5 text-muted-foreground" />
-                    <span className="text-[9px] font-display text-muted-foreground">
+                    <span className="text-[10px] font-display text-muted-foreground">
                       {conversion.rate}% → {conversion.toLabel}
                     </span>
                   </div>

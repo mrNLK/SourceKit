@@ -159,7 +159,7 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
                 </span>
               )}
               {inPipeline && (
-                <span className="text-[10px] font-display px-1.5 py-0.5 rounded bg-info/10 text-info border border-info/20">
+                <span className="text-[11px] font-display px-1.5 py-0.5 rounded bg-info/10 text-info border border-info/20">
                   In Pipeline
                 </span>
               )}
@@ -179,7 +179,7 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
             {developer.contributedRepos && Object.keys(developer.contributedRepos).length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {Object.entries(developer.contributedRepos).map(([repo, count]) => (
-                  <span key={repo} className="text-[10px] font-display px-2 py-0.5 rounded bg-primary/8 text-primary/80 border border-primary/15">
+                  <span key={repo} className="text-[11px] font-display px-2 py-0.5 rounded bg-primary/8 text-primary/80 border border-primary/15">
                     {repo.split('/').pop()} · {count as number} commits
                   </span>
                 ))}

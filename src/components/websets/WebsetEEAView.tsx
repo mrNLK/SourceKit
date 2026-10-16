@@ -92,7 +92,7 @@ const WebsetEEAView = ({ items, signals, onAddToPipeline, onBatchImport, addedIt
       <div className="flex items-center gap-3 flex-wrap">
         <button
           onClick={() => setFilterStrength('all')}
-          className={`text-[10px] font-display px-2.5 py-1 rounded-full border transition-colors ${
+          className={`text-[11px] font-display px-2.5 py-1 rounded-full border transition-colors ${
             filterStrength === 'all'
               ? 'bg-primary/10 text-primary border-primary/30'
               : 'bg-secondary text-muted-foreground border-border hover:text-foreground'
@@ -104,7 +104,7 @@ const WebsetEEAView = ({ items, signals, onAddToPipeline, onBatchImport, addedIt
           <button
             key={strength}
             onClick={() => setFilterStrength(filterStrength === strength ? 'all' : strength)}
-            className={`text-[10px] font-display px-2.5 py-1 rounded-full border transition-colors ${
+            className={`text-[11px] font-display px-2.5 py-1 rounded-full border transition-colors ${
               filterStrength === strength
                 ? 'bg-primary/10 text-primary border-primary/30'
                 : 'bg-secondary text-muted-foreground border-border hover:text-foreground'
@@ -118,7 +118,7 @@ const WebsetEEAView = ({ items, signals, onAddToPipeline, onBatchImport, addedIt
         {enabledSignals.length > 0 && (
           <button
             onClick={() => setShowSignalFilter(!showSignalFilter)}
-            className={`inline-flex items-center gap-1 text-[10px] font-display px-2.5 py-1 rounded-full border transition-colors ${
+            className={`inline-flex items-center gap-1 text-[11px] font-display px-2.5 py-1 rounded-full border transition-colors ${
               signalFilter || showSignalFilter ? 'bg-primary/10 text-primary border-primary/30' : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
             }`}
           >
@@ -127,7 +127,7 @@ const WebsetEEAView = ({ items, signals, onAddToPipeline, onBatchImport, addedIt
         )}
         <button
           onClick={() => setSortByScore(!sortByScore)}
-          className={`inline-flex items-center gap-1 text-[10px] font-display px-2.5 py-1 rounded-full border transition-colors ${
+          className={`inline-flex items-center gap-1 text-[11px] font-display px-2.5 py-1 rounded-full border transition-colors ${
             sortByScore ? 'bg-primary/10 text-primary border-primary/30' : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
           }`}
         >
@@ -136,7 +136,7 @@ const WebsetEEAView = ({ items, signals, onAddToPipeline, onBatchImport, addedIt
         {filteredItems.length > 0 && (
           <button
             onClick={() => exportEEAItemsToCSV(filteredItems)}
-            className="inline-flex items-center gap-1 text-[10px] font-display px-2.5 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+            className="inline-flex items-center gap-1 text-[11px] font-display px-2.5 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
           >
             <Download className="w-3 h-3" /> Export CSV
           </button>
@@ -149,7 +149,7 @@ const WebsetEEAView = ({ items, signals, onAddToPipeline, onBatchImport, addedIt
               if (originalItems.length > 0) onBatchImport(originalItems);
             }}
             disabled={isBatchImporting}
-            className="inline-flex items-center gap-1 text-[10px] font-display px-2.5 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1 text-[11px] font-display px-2.5 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors disabled:opacity-50"
           >
             {isBatchImporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Users className="w-3 h-3" />}
             Import All ({filteredItems.filter(i => !addedItems?.has(i.id)).length})
@@ -162,7 +162,7 @@ const WebsetEEAView = ({ items, signals, onAddToPipeline, onBatchImport, addedIt
         <div className="flex flex-wrap gap-1.5 p-3 rounded-lg border border-border bg-secondary/20">
           <button
             onClick={() => setSignalFilter(null)}
-            className={`text-[10px] font-display px-2 py-0.5 rounded-full border transition-colors ${
+            className={`text-[11px] font-display px-2 py-0.5 rounded-full border transition-colors ${
               !signalFilter ? 'bg-primary/10 text-primary border-primary/30' : 'border-border text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -175,7 +175,7 @@ const WebsetEEAView = ({ items, signals, onAddToPipeline, onBatchImport, addedIt
               <button
                 key={s.id}
                 onClick={() => setSignalFilter(signalFilter === s.id ? null : s.id)}
-                className={`text-[10px] font-display px-2 py-0.5 rounded-full border transition-colors truncate max-w-[200px] ${
+                className={`text-[11px] font-display px-2 py-0.5 rounded-full border transition-colors truncate max-w-[200px] ${
                   signalFilter === s.id ? 'bg-primary/10 text-primary border-primary/30' : 'border-border text-muted-foreground hover:text-foreground'
                 }`}
                 title={`${s.signal} (${pct}% pass)`}
@@ -213,7 +213,7 @@ const WebsetEEAView = ({ items, signals, onAddToPipeline, onBatchImport, addedIt
                     <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
                     {item.eea_strength && <EEABadge strength={item.eea_strength} />}
                     {item.eeaScore > 0 && (
-                      <span className={`text-[10px] font-display font-bold px-1.5 py-0.5 rounded ${
+                      <span className={`text-[11px] font-display font-bold px-1.5 py-0.5 rounded ${
                         item.eeaScore >= 70 ? 'bg-emerald-500/15 text-emerald-400' :
                         item.eeaScore >= 40 ? 'bg-amber-500/15 text-amber-400' :
                         'bg-red-500/15 text-red-400'
@@ -270,7 +270,7 @@ const WebsetEEAView = ({ items, signals, onAddToPipeline, onBatchImport, addedIt
                         enrichment.verified ? 'bg-emerald-400' : 'bg-muted-foreground/40'
                       }`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-display text-muted-foreground">
+                        <p className="text-[11px] font-display text-muted-foreground">
                           {enrichment.signal_name}
                         </p>
                         <p className="text-xs text-foreground font-body mt-0.5">

@@ -37,7 +37,7 @@ const SkillPriorities = ({
           <div key={skill.id} draggable onDragStart={() => onDragStart(idx)} onDragOver={(e) => onDragOver(e, idx)} onDragEnd={onDragEnd}
             className={`flex items-center gap-1.5 p-1.5 rounded-lg border transition-all ${dragIdx === idx ? "border-primary/40 bg-primary/5" : "border-border bg-secondary/30"}`}>
             <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab shrink-0" />
-            <span className="w-4 h-4 rounded bg-primary/15 text-primary text-[9px] font-display font-bold flex items-center justify-center shrink-0">{idx + 1}</span>
+            <span className="w-4 h-4 rounded bg-primary/15 text-primary text-[10px] font-display font-bold flex items-center justify-center shrink-0">{idx + 1}</span>
             <input type="text" value={skill.text} onChange={(e) => onUpdate(skill.id, e.target.value)}
               placeholder="e.g. Transformer architectures" className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none font-body min-w-0" />
             <button onClick={() => onRemove(skill.id)} className="p-0.5 rounded text-muted-foreground hover:text-destructive shrink-0"><X className="w-3 h-3" /></button>

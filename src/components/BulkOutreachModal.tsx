@@ -331,14 +331,14 @@ const BulkOutreachModal = ({ open, onOpenChange, candidates }: BulkOutreachModal
                   {!generating && (
                     <button
                       onClick={generate}
-                      className="flex items-center gap-1 text-[10px] font-display px-2 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground transition-colors"
+                      className="flex items-center gap-1 text-[11px] font-display px-2 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <RefreshCw className="w-3 h-3" /> Regenerate All
                     </button>
                   )}
                   <button
                     onClick={handleCopyAll}
-                    className="flex items-center gap-1 text-[10px] font-display px-2 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex items-center gap-1 text-[11px] font-display px-2 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Copy className="w-3 h-3" /> Copy All
                   </button>
@@ -346,7 +346,7 @@ const BulkOutreachModal = ({ open, onOpenChange, candidates }: BulkOutreachModal
                     <button
                       onClick={handleSaveAndClose}
                       disabled={saving}
-                      className="flex items-center gap-1 text-[10px] font-display px-2 py-1 rounded-md border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1 text-[11px] font-display px-2 py-1 rounded-md border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
                     >
                       {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                       Save & Close

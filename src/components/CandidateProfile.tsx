@@ -471,7 +471,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
                           {new Date(h.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </span>
                         {/* Channel badge */}
-                        <span className={`flex items-center gap-1 text-[10px] font-display px-1.5 py-0.5 rounded border ${
+                        <span className={`flex items-center gap-1 text-[11px] font-display px-1.5 py-0.5 rounded border ${
                           channel === "linkedin" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
                           channel === "email" ? "bg-primary/10 text-primary border-primary/20" :
                           "bg-secondary text-muted-foreground border-border"
@@ -481,7 +481,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
                         </span>
                         {/* Sent status */}
                         {isSent ? (
-                          <span className="flex items-center gap-1 text-[10px] font-display text-emerald-400">
+                          <span className="flex items-center gap-1 text-[11px] font-display text-emerald-400">
                             <Check className="w-2.5 h-2.5" /> Sent {h.sent_at ? new Date(h.sent_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}
                           </span>
                         ) : (
@@ -507,7 +507,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
                                 queryClient.invalidateQueries({ queryKey: ["outreach-history", pc.id] });
                                 toast({ title: "Marked as sent" });
                               }}
-                              className="flex items-center gap-1 text-[10px] font-display px-2 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/15 transition-colors"
+                              className="flex items-center gap-1 text-[11px] font-display px-2 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/15 transition-colors"
                             >
                               <Send className="w-2.5 h-2.5" /> Mark Sent
                             </button>
@@ -545,13 +545,13 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {fromStage && (
-                            <span className={`text-[10px] font-display font-semibold px-1.5 py-0.5 rounded border ${fromStage.color}`}>
+                            <span className={`text-[11px] font-display font-semibold px-1.5 py-0.5 rounded border ${fromStage.color}`}>
                               {fromStage.label}
                             </span>
                           )}
                           <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
                           {toStage && (
-                            <span className={`text-[10px] font-display font-semibold px-1.5 py-0.5 rounded border ${toStage.color}`}>
+                            <span className={`text-[11px] font-display font-semibold px-1.5 py-0.5 rounded border ${toStage.color}`}>
                               {toStage.label}
                             </span>
                           )}
@@ -569,7 +569,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <Plus className="w-3 h-3 text-emerald-400" />
-                      <span className="text-[10px] font-display font-semibold text-emerald-400">Added to Pipeline</span>
+                      <span className="text-[11px] font-display font-semibold text-emerald-400">Added to Pipeline</span>
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                       {new Date(pc.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}

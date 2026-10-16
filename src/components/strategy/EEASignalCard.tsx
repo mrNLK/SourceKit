@@ -65,7 +65,7 @@ const EEASignalCard = ({ signal, onChange, onRemove }: EEASignalCardProps) => {
             <div className="mt-2 space-y-2">
               {/* Criterion editor */}
               <div>
-                <label className="text-[10px] font-display text-muted-foreground uppercase tracking-wider">
+                <label className="text-[11px] font-display text-muted-foreground uppercase tracking-wider">
                   Webset Criterion
                 </label>
                 <textarea
@@ -77,7 +77,7 @@ const EEASignalCard = ({ signal, onChange, onRemove }: EEASignalCardProps) => {
               </div>
               {/* Enrichment editor */}
               <div>
-                <label className="text-[10px] font-display text-muted-foreground uppercase tracking-wider">
+                <label className="text-[11px] font-display text-muted-foreground uppercase tracking-wider">
                   Enrichment Query
                 </label>
                 <input
@@ -90,13 +90,13 @@ const EEASignalCard = ({ signal, onChange, onRemove }: EEASignalCardProps) => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleSave}
-                  className="flex items-center gap-1 text-[10px] font-display px-2.5 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="flex items-center gap-1 text-[11px] font-display px-2.5 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   <Check className="w-3 h-3" /> Save
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="text-[10px] font-display px-2.5 py-1 rounded border border-border text-muted-foreground hover:text-foreground"
+                  className="text-[11px] font-display px-2.5 py-1 rounded border border-border text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>
@@ -110,12 +110,12 @@ const EEASignalCard = ({ signal, onChange, onRemove }: EEASignalCardProps) => {
               </p>
               {/* Enrichment tag */}
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <span className="text-[10px] font-display px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                <span className="text-[11px] font-display px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
                   Enrichment: {signal.enrichment_description.length > 50
                     ? signal.enrichment_description.slice(0, 50) + '...'
                     : signal.enrichment_description}
                 </span>
-                <span className="text-[10px] font-display px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                <span className="text-[11px] font-display px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
                   {FORMAT_LABELS[signal.enrichment_format] || signal.enrichment_format}
                 </span>
               </div>

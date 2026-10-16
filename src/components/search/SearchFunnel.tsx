@@ -13,7 +13,7 @@ interface SearchFunnelProps {
 }
 
 const SearchFunnel = ({ counts, locationFilter }: SearchFunnelProps) => (
-  <div className="flex items-center gap-1.5 text-[10px] font-display text-muted-foreground overflow-x-auto py-1">
+  <div className="flex items-center gap-1.5 text-[11px] font-display text-muted-foreground overflow-x-auto py-1">
     <div className="flex items-center gap-1 px-2 py-1 rounded bg-secondary border border-border shrink-0">
       <span className="font-bold text-foreground">{counts.total}</span> found
     </div>

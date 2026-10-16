@@ -55,7 +55,7 @@ function RepoCard({ repo }: { repo: RepoQuality }) {
       >
         <div className="flex items-center gap-2">
           <span className="text-xs font-display text-foreground font-medium">{repo.name}</span>
-          <span className={`text-[10px] font-display font-bold px-1.5 py-0.5 rounded border ${scoreBg(repo.score)} ${scoreColor(repo.score)}`}>
+          <span className={`text-[11px] font-display font-bold px-1.5 py-0.5 rounded border ${scoreBg(repo.score)} ${scoreColor(repo.score)}`}>
             {repo.score}
           </span>
         </div>
@@ -70,7 +70,7 @@ function RepoCard({ repo }: { repo: RepoQuality }) {
           {repo.signals.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {repo.signals.map((s) => (
-                <span key={s} className="inline-flex items-center gap-1 text-[10px] font-display px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span key={s} className="inline-flex items-center gap-1 text-[11px] font-display px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   <CheckCircle2 className="w-2.5 h-2.5" />{s}
                 </span>
               ))}
@@ -79,7 +79,7 @@ function RepoCard({ repo }: { repo: RepoQuality }) {
           {repo.concerns.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {repo.concerns.map((c) => (
-                <span key={c} className="inline-flex items-center gap-1 text-[10px] font-display px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <span key={c} className="inline-flex items-center gap-1 text-[11px] font-display px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   <AlertTriangle className="w-2.5 h-2.5" />{c}
                 </span>
               ))}
@@ -190,22 +190,22 @@ const CodeQualityReportComponent = ({ username }: CodeQualityReportProps) => {
       {report.aiSignals && (
         <div className="flex flex-wrap gap-1">
           {report.aiSignals.claudeCodeUsage && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-display px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            <span className="inline-flex items-center gap-1 text-[11px] font-display px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
               <Terminal className="w-2.5 h-2.5" />Claude Code
             </span>
           )}
           {report.aiSignals.aiFrameworksDetected.slice(0, 5).map((f) => (
-            <span key={f} className="inline-flex items-center gap-1 text-[10px] font-display px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <span key={f} className="inline-flex items-center gap-1 text-[11px] font-display px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
               <Brain className="w-2.5 h-2.5" />{f}
             </span>
           ))}
           {report.aiSignals.aiCodingTools.map((t) => (
-            <span key={t} className="inline-flex items-center gap-1 text-[10px] font-display px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <span key={t} className="inline-flex items-center gap-1 text-[11px] font-display px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
               <Zap className="w-2.5 h-2.5" />{t}
             </span>
           ))}
           {report.aiSignals.genaiRepoCount > 0 && (
-            <span className="text-[10px] font-display px-1.5 py-0.5 rounded bg-secondary/80 text-muted-foreground border border-border">
+            <span className="text-[11px] font-display px-1.5 py-0.5 rounded bg-secondary/80 text-muted-foreground border border-border">
               {report.aiSignals.genaiRepoCount} GenAI repos
             </span>
           )}
@@ -237,12 +237,12 @@ const CodeQualityReportComponent = ({ username }: CodeQualityReportProps) => {
           {(report.commitQuality.claudeCodeCommits > 0 || report.commitQuality.aiAssistedCommits > 0) && (
             <div className="flex items-center gap-3 pl-5">
               {report.commitQuality.claudeCodeCommits > 0 && (
-                <span className="text-[10px] font-display text-violet-400">
+                <span className="text-[11px] font-display text-violet-400">
                   {report.commitQuality.claudeCodeCommits} via Claude Code
                 </span>
               )}
               {report.commitQuality.aiAssistedCommits > report.commitQuality.claudeCodeCommits && (
-                <span className="text-[10px] font-display text-blue-400">
+                <span className="text-[11px] font-display text-blue-400">
                   {report.commitQuality.aiAssistedCommits} AI-assisted
                 </span>
               )}
@@ -254,7 +254,7 @@ const CodeQualityReportComponent = ({ username }: CodeQualityReportProps) => {
       {/* Strengths and Improvements */}
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <span className="text-[10px] font-display font-semibold text-emerald-400">Strengths</span>
+          <span className="text-[11px] font-display font-semibold text-emerald-400">Strengths</span>
           {report.strengths.map((s) => (
             <div key={s} className="flex items-start gap-1">
               <CheckCircle2 className="w-3 h-3 text-emerald-400 mt-0.5 shrink-0" />
@@ -263,7 +263,7 @@ const CodeQualityReportComponent = ({ username }: CodeQualityReportProps) => {
           ))}
         </div>
         <div className="space-y-1">
-          <span className="text-[10px] font-display font-semibold text-amber-400">Gaps</span>
+          <span className="text-[11px] font-display font-semibold text-amber-400">Gaps</span>
           {report.improvements.map((i) => (
             <div key={i} className="flex items-start gap-1">
               <AlertTriangle className="w-3 h-3 text-amber-400 mt-0.5 shrink-0" />

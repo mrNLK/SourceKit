@@ -87,7 +87,7 @@ const DashboardLayout = ({ activeTab, onTabChange, children }: DashboardLayoutPr
               <item.icon className="w-4 h-4 shrink-0" />
               <span className="font-display text-xs tracking-wide flex-1 text-left">{item.label}</span>
               {item.id === "watchlist" && watchlistCount > 0 && (
-                <span className="ml-auto text-[10px] font-display font-semibold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20">
+                <span className="ml-auto text-[11px] font-display font-semibold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20">
                   {watchlistCount}
                 </span>
               )}

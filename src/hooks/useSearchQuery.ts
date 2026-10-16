@@ -239,6 +239,7 @@ export function useSearchQuery({
               skills: parsedCriteria?.skills || [],
               location: parsedCriteria?.location || null,
               seniority: parsedCriteria?.seniority || null,
+              repos_searched: reposSearched,
               status: baseResults.length > 0 ? "success" : "no_results",
             },
           };

@@ -64,7 +64,7 @@ const SearchProgress = ({ isLoading, hasTargetRepos, repoCount }: SearchProgress
             {steps[activeStep].activeLabel}
           </span>
         </div>
-        <span className="text-[10px] font-display text-muted-foreground tabular-nums">
+        <span className="text-[11px] font-display text-muted-foreground tabular-nums">
           {elapsed}s
         </span>
       </div>

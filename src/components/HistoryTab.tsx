@@ -211,7 +211,7 @@ const HistoryTab = ({ onRerun }: HistoryTabProps) => {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="text-[10px] font-display font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20 cursor-help inline-flex items-center gap-1">
+                              <span className="text-[11px] font-display font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20 cursor-help inline-flex items-center gap-1">
                                 <AlertCircle className="w-3 h-3" />
                                 Failed
                               </span>
@@ -223,17 +223,17 @@ const HistoryTab = ({ onRerun }: HistoryTabProps) => {
                         </TooltipProvider>
                         <button
                           onClick={(e) => { e.stopPropagation(); onRerun(item.query, meta.expanded_query); }}
-                          className="text-[10px] font-display font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                          className="text-[11px] font-display font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
                         >
                           Retry
                         </button>
                       </div>
                     ) : meta.status === 'no_results' ? (
-                      <span className="text-[10px] font-display font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+                      <span className="text-[11px] font-display font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
                         0 results
                       </span>
                     ) : item.result_count != null ? (
-                      <span className="text-[10px] font-display font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border shrink-0">
+                      <span className="text-[11px] font-display font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border shrink-0">
                         {item.result_count} found
                       </span>
                     ) : null}

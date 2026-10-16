@@ -299,7 +299,7 @@ const BulkActionsTab = () => {
               <option value="">All Stages</option>
               {PIPELINE_STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
-            <div className="flex items-center gap-1.5 text-[10px] font-display text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-[11px] font-display text-muted-foreground">
               <span>Score</span>
               <input
                 type="range"
@@ -406,14 +406,14 @@ const BulkActionsTab = () => {
                         </span>
                       </td>
                       <td className="p-2">
-                        <span className={`text-[10px] font-display font-semibold px-2 py-0.5 rounded-md border ${STAGE_COLORS[c.stage] || ""}`}>
+                        <span className={`text-[11px] font-display font-semibold px-2 py-0.5 rounded-md border ${STAGE_COLORS[c.stage] || ""}`}>
                           {c.stage}
                         </span>
                       </td>
                       <td className="p-2 hidden md:table-cell">
                         <div className="flex gap-1">
                           {languages.map((l: Language) => (
-                            <span key={l.name} className="text-[9px] font-display px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground">
+                            <span key={l.name} className="text-[10px] font-display px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground">
                               {l.name}
                             </span>
                           ))}
@@ -509,7 +509,7 @@ const BulkActionsTab = () => {
                   onClick={() => handleQuickAction(action.id)}
                   disabled={!!disabled}
                   title={action.tip}
-                  className="flex items-center gap-1 text-[10px] font-display px-2 py-1 rounded-md border border-border text-secondary-foreground hover:text-primary hover:border-primary/30 transition-colors disabled:text-muted-foreground disabled:bg-secondary/60 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 text-[11px] font-display px-2 py-1 rounded-md border border-border text-secondary-foreground hover:text-primary hover:border-primary/30 transition-colors disabled:text-muted-foreground disabled:bg-secondary/60 disabled:cursor-not-allowed"
                 >
                   <action.icon className="w-3 h-3" />
                   {action.label}

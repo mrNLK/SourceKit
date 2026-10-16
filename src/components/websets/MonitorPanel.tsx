@@ -102,7 +102,7 @@ const MonitorPanel = ({ websetId, defaultQuery }: MonitorPanelProps) => {
           </button>
           <button
             onClick={() => setShowCreate(!showCreate)}
-            className="inline-flex items-center gap-1 text-[10px] font-display px-2 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+            className="inline-flex items-center gap-1 text-[11px] font-display px-2 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
           >
             <Plus className="w-3 h-3" /> New
           </button>
@@ -112,13 +112,13 @@ const MonitorPanel = ({ websetId, defaultQuery }: MonitorPanelProps) => {
       {/* Create form */}
       {showCreate && (
         <div className="space-y-2 p-3 rounded-lg border border-border bg-secondary/20">
-          <p className="text-[10px] font-display text-muted-foreground">Schedule</p>
+          <p className="text-[11px] font-display text-muted-foreground">Schedule</p>
           <div className="flex flex-wrap gap-1.5">
             {CRON_PRESETS.map(preset => (
               <button
                 key={preset.cron}
                 onClick={() => { setSelectedCron(preset.cron); setCustomCron(''); }}
-                className={`text-[10px] font-display px-2 py-0.5 rounded-full border transition-colors ${
+                className={`text-[11px] font-display px-2 py-0.5 rounded-full border transition-colors ${
                   selectedCron === preset.cron && !customCron
                     ? 'bg-primary/10 text-primary border-primary/30'
                     : 'border-border text-muted-foreground hover:text-foreground'
@@ -177,7 +177,7 @@ const MonitorPanel = ({ websetId, defaultQuery }: MonitorPanelProps) => {
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-display font-medium text-foreground">{monitor.cron}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className={`text-[10px] font-display px-1.5 py-0.5 rounded-full border ${
+                  <span className={`text-[11px] font-display px-1.5 py-0.5 rounded-full border ${
                     monitor.status === 'active'
                       ? 'bg-green-500/15 text-green-400 border-green-500/30'
                       : 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30'

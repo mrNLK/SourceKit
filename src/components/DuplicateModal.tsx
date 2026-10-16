@@ -45,7 +45,7 @@ const DuplicateModal = ({ open, onClose, existing, onSaveAnyway, onViewExisting 
                 <p className="font-display text-sm font-semibold text-foreground">{existing.name || existing.github_username}</p>
                 <p className="text-[11px] text-muted-foreground">@{existing.github_username}</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] font-display px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                  <span className="text-[11px] font-display px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
                     {existing.stage}
                   </span>
                   <span className="text-[10px] text-muted-foreground">

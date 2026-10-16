@@ -375,7 +375,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
             <button
               key={tag}
               onClick={() => toggleTagFilter(tag)}
-              className={`text-[10px] font-display px-2 py-1 rounded-full border whitespace-nowrap transition-colors ${
+              className={`text-[11px] font-display px-2 py-1 rounded-full border whitespace-nowrap transition-colors ${
                 activeTagFilters.has(tag) ? "bg-primary/15 text-primary border-primary/30" : "border-border text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -406,7 +406,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
           <div className="flex items-center gap-1.5 mb-5 flex-wrap justify-center">
             {STAGES.map((stage, i) => (
               <div key={stage.id} className="flex items-center gap-1.5">
-                <span className={`text-[10px] font-display font-semibold px-2 py-1 rounded-md border ${stage.color}`} title={stage.tip}>
+                <span className={`text-[11px] font-display font-semibold px-2 py-1 rounded-md border ${stage.color}`} title={stage.tip}>
                   {stage.label}
                 </span>
                 {i < STAGES.length - 1 && <ArrowRight className="w-3 h-3 text-muted-foreground" />}
@@ -469,7 +469,7 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
                 </div>
                 <div className="space-y-2">
                   {items.length === 0 && (
-                    <p className="text-[11px] text-craft-muted text-center py-4">Drop candidates here</p>
+                    <p className="text-xs text-craft-muted text-center py-4">Drop candidates here</p>
                   )}
                   {items.map((c: PipelineCandidate) => (
                     <PipelineCard
@@ -588,13 +588,13 @@ function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, o
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {score > 0 && (
-            <span className={`text-[10px] font-display font-bold px-1.5 py-0.5 rounded ${
+            <span className={`text-[11px] font-display font-bold px-1.5 py-0.5 rounded ${
               score >= 70 ? "bg-emerald-500/15 text-emerald-400" :
               score >= 40 ? "bg-amber-500/15 text-amber-400" :
               "bg-red-500/15 text-red-400"
             }`}>{score}</span>
           )}
-          <span className={`flex items-center gap-0.5 text-[9px] font-display font-semibold ${stageTime.color}`} title={`${stageTime.days} day${stageTime.days !== 1 ? 's' : ''} in ${stage.label}`}>
+          <span className={`flex items-center gap-0.5 text-[10px] font-display font-semibold ${stageTime.color}`} title={`${stageTime.days} day${stageTime.days !== 1 ? 's' : ''} in ${stage.label}`}>
             <Clock className="w-2.5 h-2.5" />
             {stageTime.label}
           </span>
@@ -616,7 +616,7 @@ function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, o
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-1.5 ml-5">
           {tags.map(tag => (
-            <span key={tag} className="text-[9px] font-display px-1.5 py-0.5 rounded-full bg-primary/10 text-primary/80 border border-primary/15 flex items-center gap-0.5">
+            <span key={tag} className="text-[10px] font-display px-1.5 py-0.5 rounded-full bg-primary/10 text-primary/80 border border-primary/15 flex items-center gap-0.5">
               #{tag}
               <button onClick={(e) => { e.stopPropagation(); removeTag(tag); }} className="hover:text-destructive">
                 <X className="w-2 h-2" />
@@ -659,7 +659,7 @@ function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, o
             autoFocus
             className="bg-secondary/50 border border-border rounded px-2 py-0.5 text-[10px] text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/40 w-24"
           />
-          <button onClick={addTag} className="text-primary text-[10px] font-display">Add</button>
+          <button onClick={addTag} className="text-primary text-[11px] font-display">Add</button>
         </div>
       )}
 
@@ -703,7 +703,7 @@ function PipelineCard({ c, score, stage, stageChangedAt, onDragStart, onClick, o
                     <button
                       key={s.id}
                       onClick={(e) => { e.stopPropagation(); onMove(s.id); setShowMoveMenu(false); }}
-                      className={`w-full text-left text-[10px] font-display px-3 py-1.5 hover:bg-accent transition-colors ${
+                      className={`w-full text-left text-[11px] font-display px-3 py-1.5 hover:bg-accent transition-colors ${
                         s.id === c.stage ? "text-primary font-semibold" : "text-foreground"
                       }`}
                     >

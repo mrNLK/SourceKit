@@ -219,7 +219,7 @@ const PeopleSearchTab = () => {
           {ALL_SOURCES.map((s) => {
             const off = enabledSources[s.key] === false
             return (
-              <label key={s.key} className={`inline-flex items-center gap-1.5 ${off ? 'opacity-50 cursor-not-allowed' : ''}`} title={off ? 'Not enabled for this workspace' : undefined}>
+              <label key={s.key} className={`inline-flex items-center gap-1.5 ${off ? 'text-craft-muted cursor-not-allowed' : ''}`} title={off ? 'Not enabled for this workspace' : undefined}>
                 <input type="checkbox" aria-label={`source ${s.key}`} disabled={off} checked={!off && sources.has(s.key)} onChange={() => setSources((cur) => { const n = new Set(cur); if (n.has(s.key)) n.delete(s.key); else n.add(s.key); return n })} />
                 {s.label}{off ? ' (not enabled)' : sourceStats[s.key] ? ` (${sourceStats[s.key].count}${sourceStats[s.key].error ? ', failed' : ''})` : ''}
               </label>
@@ -255,7 +255,7 @@ const PeopleSearchTab = () => {
           <input aria-label="deep search role" className={inputCls} placeholder="Role (required)" value={dsRole} onChange={(e) => setDsRole(e.target.value)} />
           <input className={inputCls} placeholder="Company" value={dsCompany} onChange={(e) => setDsCompany(e.target.value)} />
           <input className={inputCls} placeholder="Location" value={dsLocation} onChange={(e) => setDsLocation(e.target.value)} />
-          <button onClick={runDeepSearch} disabled={!dsRole.trim() || (!!dsStatus && dsStatus.endsWith('…'))} className="rounded-md bg-secondary px-3 py-2 text-sm disabled:opacity-50">Start deep search</button>
+          <button onClick={runDeepSearch} disabled={!dsRole.trim() || (!!dsStatus && dsStatus.endsWith('…'))} className="rounded-md bg-secondary text-secondary-foreground px-3 py-2 text-sm disabled:text-craft-muted disabled:cursor-not-allowed">Start deep search</button>
         </div>
         {dsStatus && <div className="text-xs text-muted-foreground" data-testid="deep-status">{dsStatus}</div>}
         {visibleDs.map((c, i) => <CandidateRow key={c.id ?? `ds-${i}`} c={c} selected={!!c.id && selected.has(c.id)} onToggle={() => toggle(c.id)} />)}
