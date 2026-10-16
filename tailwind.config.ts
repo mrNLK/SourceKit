@@ -1,5 +1,15 @@
 import type { Config } from "tailwindcss";
 
+// AI Fund Craft palette: remap Tailwind accent scales onto the palette so legacy
+// emerald/amber/purple/etc. utilities stay on-palette and AA-legible on light surfaces.
+const scale = (w50: string, w100: string, w200: string, base: string, deep: string) => ({
+  50: w50, 100: w100, 200: w200, 300: base, 400: base, 500: base, 600: base, 700: deep, 800: deep, 900: deep, 950: deep,
+});
+const craftGreen = scale("#EAF3EA", "#DCEBDD", "#C3DEC4", "#2E7D32", "#1F5F23");
+const craftRed = scale("#FBEDEC", "#F6DAD8", "#EDB8B4", "#B42318", "#8C1B12");
+const craftMuted = scale("#F2F4F7", "#EAECF0", "#D0D5DD", "#667085", "#475467");
+const craftBlue = scale("#EEF3F8", "#DCE6F0", "#C2D3E5", "#1F4E79", "#163B63");
+
 export default {
   darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
@@ -14,12 +24,17 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'DM Sans', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
         display: ['JetBrains Mono', 'monospace'],
-        body: ['DM Sans', 'system-ui', 'sans-serif'],
+        body: ['Inter', 'DM Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
+        emerald: craftGreen, green: craftGreen, lime: craftGreen, teal: craftGreen,
+        red: craftRed, rose: craftRed, pink: craftRed,
+        amber: craftMuted, yellow: craftMuted, orange: craftMuted,
+        purple: craftBlue, violet: craftBlue, fuchsia: craftBlue, indigo: craftBlue, sky: craftBlue, cyan: craftBlue, blue: craftBlue,
+        craft: { title: "#163B63", section: "#1F4E79", body: "#172A3A", muted: "#667085", line: "#D8DEE8", wash: "#EEF3F8", success: "#2E7D32", risk: "#B42318" },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

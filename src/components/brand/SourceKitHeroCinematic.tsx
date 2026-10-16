@@ -51,7 +51,7 @@ export default function SourceKitHeroCinematic({
             cx={p.x}
             cy={p.y}
             r="1.6"
-            fill="#00E5A0"
+            fill="#1F4E79"
             initial={{ opacity: 0 }}
             animate={{
               opacity: [0, 0.6, 0.15],
@@ -72,7 +72,7 @@ export default function SourceKitHeroCinematic({
           cx="128"
           cy="128"
           r="10"
-          fill="#00E5A0"
+          fill="#1F4E79"
           initial={{ scale: 0 }}
           animate={{
             scale: [0, 1.2, 1],
@@ -91,7 +91,7 @@ export default function SourceKitHeroCinematic({
           y1="64"
           x2="128"
           y2="88"
-          stroke="#00E5A0"
+          stroke="#1F4E79"
           strokeWidth="11"
           strokeLinecap="round"
           initial={{ opacity: 0, y: -12 }}
@@ -110,7 +110,7 @@ export default function SourceKitHeroCinematic({
           y1="168"
           x2="128"
           y2="192"
-          stroke="#00E5A0"
+          stroke="#1F4E79"
           strokeWidth="11"
           strokeLinecap="round"
           initial={{ opacity: 0, y: 12 }}
@@ -126,7 +126,7 @@ export default function SourceKitHeroCinematic({
         {/* LEFT BRACKET */}
         <motion.path
           d="M88 72 L56 128 L88 184"
-          stroke="#00E5A0"
+          stroke="#1F4E79"
           strokeWidth="20"
           strokeLinecap="round"
           fill="none"
@@ -143,7 +143,7 @@ export default function SourceKitHeroCinematic({
         {/* RIGHT BRACKET */}
         <motion.path
           d="M168 72 L200 128 L168 184"
-          stroke="#00E5A0"
+          stroke="#1F4E79"
           strokeWidth="20"
           strokeLinecap="round"
           fill="none"
