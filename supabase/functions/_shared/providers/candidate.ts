@@ -9,7 +9,8 @@ export type Provider =
   | "parallel_findall"
   | "parallel_search"
   | "airscale"
-  | "harmonic";
+  | "harmonic"
+  | "firecrawl";
 
 export interface SourceHit {
   provider: Provider;
