@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Menu, X, Users, Sparkles, Crown, Layers, Sun, Moon, BookOpen } from "lucide-react";
+import { Search, Clock, Kanban, Bookmark, Settings, LogOut, Menu, X, Users, Sparkles, Crown, Layers, Sun, Moon, BookOpen, Globe } from "lucide-react";
 import { SourceKitMark } from "@/components/brand/SourceKitMark";
 import { PILOT_MODE } from "@/lib/pilot";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -8,7 +8,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 
-export type ActiveTab = "search" | "research" | "history" | "pipeline" | "watchlist" | "bulk" | "websets" | "settings" | "guide";
+export type ActiveTab = "search" | "people" | "research" | "history" | "pipeline" | "watchlist" | "bulk" | "websets" | "settings" | "guide";
 
 interface DashboardLayoutProps {
   activeTab: ActiveTab;
@@ -18,6 +18,7 @@ interface DashboardLayoutProps {
 
 const NAV_ITEMS: { id: ActiveTab; label: string; icon: React.ElementType; tip: string }[] = [
   { id: "research", label: "New Search", icon: Sparkles, tip: "Build a sourcing strategy from a role or job description" },
+  { id: "people", label: "People Search", icon: Globe, tip: "Multi-source people search (Exa, Harmonic, GitHub, Parallel) with deep search" },
   { id: "search", label: "Results", icon: Search, tip: "View search results and score candidates" },
   { id: "history", label: "History", icon: Clock, tip: "Your past searches and research sessions" },
   { id: "pipeline", label: "Pipeline", icon: Kanban, tip: "Active recruiting funnel \u2014 candidates you're pursuing now" },

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { requireAuth, authErrorResponse } from '../_shared/auth.ts';
+import { parallelExtractV1 } from '../_shared/providers/clients.ts';
 
 /**
  * Extract text from a JD URL using Parallel.ai (JS-rendered pages) with
@@ -9,27 +10,9 @@ import { requireAuth, authErrorResponse } from '../_shared/auth.ts';
 
 async function extractWithParallel(url: string, apiKey: string): Promise<string | null> {
   try {
-    const res = await fetch('https://api.parallel.ai/v1beta/extract', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json',
-        'parallel-beta': 'true',
-      },
-      body: JSON.stringify({ url }),
-    });
-
-    if (!res.ok) {
-      console.error('Parallel.ai extract error:', res.status, await res.text());
-      return null;
-    }
-
-    const data = await res.json();
-    // Parallel may return text in various fields
-    const text = data.content || data.text || data.extracted_text || '';
-    if (typeof text === 'string' && text.length >= 100) {
-      return text;
-    }
+    // Parallel Extract GA (/v1/extract): full_content lives under advanced_settings.
+    const text = await parallelExtractV1(apiKey, url, 'Full job description: responsibilities, requirements, qualifications, location, compensation');
+    if (text && text.length >= 100) return text;
     console.log('Parallel.ai returned insufficient text, falling back to HTML fetch');
     return null;
   } catch (e) {
@@ -39,7 +22,7 @@ async function extractWithParallel(url: string, apiKey: string): Promise<string 
 }
 
 function extractWithFetch(html: string): string {
-  let text = html
+  const text = html
     // Remove script and style blocks entirely
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')

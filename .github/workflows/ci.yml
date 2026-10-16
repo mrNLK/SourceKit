@@ -47,4 +47,4 @@ jobs:
           deno-version: v2.x
       - name: Type-check shared edge-function modules (non-blocking)
         continue-on-error: true
-        run: deno check supabase/functions/_shared/pilot.ts supabase/functions/_shared/auth.ts supabase/functions/_shared/gate.ts
+        run: deno check supabase/functions/_shared/pilot.ts supabase/functions/_shared/auth.ts supabase/functions/_shared/gate.ts supabase/functions/source-candidates/index.ts supabase/functions/map-company-talent/index.ts supabase/functions/search-candidates/index.ts supabase/functions/parse-jd/index.ts supabase/functions/enrich-candidate-emails/index.ts
