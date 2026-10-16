@@ -114,8 +114,8 @@ export default function OutreachStudio() {
   const [queueFilter, setQueueFilter] = useState<
     'all' | 'draft' | 'ready' | 'hold'
   >('all');
-  const [tone, setTone] = useState(OUTREACH_TONES[0].id);
-  const [sequenceStep, setSequenceStep] = useState(SEQUENCE_STEPS[0].id);
+  const [tone, setTone] = useState<string>(OUTREACH_TONES[0].id);
+  const [sequenceStep, setSequenceStep] = useState<string>(SEQUENCE_STEPS[0].id);
   const [message, setMessage] = useState('');
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [copied, setCopied] = useState(false);

@@ -7,6 +7,7 @@ import { enrichLinkedIn } from "@/lib/api";
 import { useSearchQuery, type StreamStep, type StrategyHandoff } from "@/hooks/useSearchQuery";
 import CandidateSlideOut from "@/components/CandidateSlideOut";
 import UpgradeModal from "@/components/UpgradeModal";
+import { PILOT_MODE } from "@/lib/pilot";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "@/hooks/use-toast";
 import type { Developer } from "@/types/developer";
@@ -466,7 +467,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
                 </div>
               </div>
             )}
-            {(error as Error).message === 'TRIAL_LIMIT_REACHED' && (
+            {!PILOT_MODE && (error as Error).message === 'TRIAL_LIMIT_REACHED' && (
               <button onClick={() => setShowUpgrade(true)} className="mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-display text-xs font-semibold hover:bg-primary/90 transition-colors">Upgrade to Pro</button>
             )}
           </div>
@@ -506,7 +507,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
       )}
 
       {slideOutDev && <CandidateSlideOut developer={slideOutDev} onClose={() => setSlideOutDev(null)} />}
-      <UpgradeModal open={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      {!PILOT_MODE && <UpgradeModal open={showUpgrade} onClose={() => setShowUpgrade(false)} />}
     </div>
   );
 };

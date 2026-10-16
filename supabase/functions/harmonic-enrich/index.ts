@@ -116,7 +116,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
   try {
-    await requireAuth(req)
+    await requireAuth(req, { usage: 'enrich' })
     const body = await req.json()
     const { action, ...params } = body
 

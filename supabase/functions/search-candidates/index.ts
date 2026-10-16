@@ -8,7 +8,7 @@ serve(async (req) => {
   }
 
   try {
-    await requireAuth(req);
+    await requireAuth(req, { usage: 'search' });
 
     const { query, role, company } = await req.json()
 

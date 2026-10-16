@@ -9,7 +9,7 @@ serve(async (req) => {
   }
 
   try {
-    await requireAuth(req);
+    await requireAuth(req, { usage: 'ai' });
 
     const { action, candidates, messages } = await req.json();
 

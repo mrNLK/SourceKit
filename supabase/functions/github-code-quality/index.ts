@@ -390,7 +390,7 @@ serve(async (req) => {
   }
 
   try {
-    await requireAuth(req);
+    await requireAuth(req, { usage: 'enrich' });
 
     const url = new URL(req.url);
     const username = url.searchParams.get("username");

@@ -493,9 +493,10 @@ serve(async (req) => {
       const isAuthError = gate.error === 'authentication_required' || gate.error === 'invalid_token';
       return new Response(JSON.stringify({
         error: gate.error,
-        ...(isAuthError ? {} : { upgrade: true, searches_used: gate.searchesUsed, search_limit: gate.searchLimit }),
+        ...(gate.message ? { message: gate.message } : {}),
+        ...(isAuthError || gate.status ? {} : { upgrade: true, searches_used: gate.searchesUsed, search_limit: gate.searchLimit }),
       }), {
-        status: isAuthError ? 401 : 402,
+        status: isAuthError ? 401 : (gate.status ?? 402),
         headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       });
     }

@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { checkPilotAccess } from "./pilot.ts";
+import { isPilotEnforced } from "./pilot-policy.ts";
 
 function getSupabase() {
   return createClient(
@@ -14,6 +16,9 @@ export interface GateResult {
   error?: string;
   searchesUsed?: number;
   searchLimit?: number | null;
+  /** HTTP status for pilot denials (403 not_invited, 429 daily_cap_reached). */
+  status?: number;
+  message?: string;
 }
 
 /**
@@ -34,6 +39,22 @@ export async function checkSearchGate(authHeader: string | null): Promise<GateRe
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) {
     return { allowed: false, userId: null, plan: null, error: 'invalid_token' };
+  }
+
+  // Pilot mode: allowlist + daily search cap replace the trial/Stripe limits.
+  if (isPilotEnforced((n) => Deno.env.get(n))) {
+    const pilot = await checkPilotAccess(user.id, 'search');
+    if (!pilot.allowed) {
+      return {
+        allowed: false,
+        userId: user.id,
+        plan: null,
+        error: pilot.body?.error ?? 'pilot_check_failed',
+        status: pilot.status,
+        message: pilot.body?.message,
+      };
+    }
+    return { allowed: true, userId: user.id, plan: 'pro', searchLimit: null };
   }
 
   const { data: sub } = await supabase

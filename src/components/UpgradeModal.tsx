@@ -1,3 +1,4 @@
+import { PILOT_MODE } from "@/lib/pilot";
 import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +18,7 @@ interface UpgradeModalProps {
   onClose: () => void;
 }
 
-const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
+const UpgradeModalInner = ({ open, onClose }: UpgradeModalProps) => {
   const [upgrading, setUpgrading] = useState(false);
 
   const handleUpgrade = async () => {
@@ -85,5 +86,8 @@ const UpgradeModal = ({ open, onClose }: UpgradeModalProps) => {
     </Dialog>
   );
 };
+
+// Free pilot: no Stripe upgrade prompts.
+const UpgradeModal = (props: UpgradeModalProps) => (PILOT_MODE ? null : <UpgradeModalInner {...props} />);
 
 export default UpgradeModal;
