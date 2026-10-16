@@ -17,6 +17,7 @@ import { clamp, exaMaxResults, harmonicBaseUrl, isHarmonicEnabled, isParallelPeo
 import { COST } from "../_shared/providers/persist.ts";
 import { persistCandidates } from "../_shared/providers/store.ts";
 import type { UnifiedCandidate } from "../_shared/providers/candidate.ts";
+import { evidenceBoost, firecrawlDiscover, firecrawlScrapeEvidence, isFirecrawlEnabled, isPersonalSiteUrl, FIRECRAWL_LIMITS } from "../_shared/providers/firecrawl.ts";
 
 /**
  * source-candidates: one query -> fan out to all enabled people sources -> normalize -> dedup -> persist.
@@ -26,7 +27,7 @@ import type { UnifiedCandidate } from "../_shared/providers/candidate.ts";
  *         person_name?: string (Harmonic typeahead PERSON lookup), harmonic_enrich?: boolean }
  * Consumes one pilot "search" unit per call (same as other search functions).
  */
-type SourceName = "exa" | "parallel" | "harmonic" | "github";
+type SourceName = "exa" | "parallel" | "harmonic" | "github" | "firecrawl";
 const HARMONIC_ENRICH_TOP = 10;
 const GITHUB_FLAG_LOOKUPS = 25;
 const GITHUB_NAME_LOOKUPS = 10; // free name+company -> GitHub handle lookups for top Exa results // free GitHub /users lookups for follower counts (hidden gem / ungettable)
@@ -50,8 +51,8 @@ async function addTalentFlags(rows: any[]): Promise<any[]> {
     });
     const providers: string[] = Array.isArray(c.providers) ? c.providers : Array.isArray(c.sources) ? c.sources.map((h: any) => h?.provider).filter(Boolean) : [];
     const summary = u ? chooseSummary(c.summary, u.bio, providers) : c.summary;
-    return { ...c, summary, github_followers: u?.followers ?? null, is_bot: f.isBot, hidden_gem: f.hiddenGem, ungettable: f.ungettable, ungettable_reason: f.ungettableReason };
-  }).filter((c) => !c.is_bot);
+    return { ...c, summary, gh_type: u?.type ?? null, blog_url: u?.blog || null, github_followers: u?.followers ?? null, is_bot: f.isBot, hidden_gem: f.hiddenGem, ungettable: f.ungettable, ungettable_reason: f.ungettableReason };
+  }).filter((c) => !c.is_bot && c.gh_type !== "Organization"); // orgs (e.g. README owners) are not people
 }
 
 serve(async (req) => {
@@ -70,6 +71,7 @@ serve(async (req) => {
         parallel: isParallelPeopleEnabled(ge) && !!ge("PARALLEL_API_KEY"),
         harmonic: isHarmonicEnabled(ge),
         github: true,
+        firecrawl: isFirecrawlEnabled(ge),
       } }), { headers });
     }
     const { user } = await requireAuth(req, { usage: "search" });
@@ -82,13 +84,14 @@ serve(async (req) => {
     }
     const getEnv = (n: string) => Deno.env.get(n);
     const limit = clamp(body.limit, 5, 200, 50);
-    const requested = new Set<SourceName>(Array.isArray(body.sources) && body.sources.length ? body.sources : ["exa", "parallel", "harmonic", "github"]);
+    const requested = new Set<SourceName>(Array.isArray(body.sources) && body.sources.length ? body.sources : ["exa", "parallel", "harmonic", "github", "firecrawl"]);
 
     const enabled: Record<SourceName, boolean> = {
       exa: !!getEnv("EXA_API_KEY"),
       parallel: isParallelPeopleEnabled(getEnv) && !!getEnv("PARALLEL_API_KEY"),
       harmonic: isHarmonicEnabled(getEnv),
       github: !!query,
+      firecrawl: isFirecrawlEnabled(getEnv) && !!(query || filters.skills?.length),
     };
 
     const nl = buildPeopleQuery(query, filters);
@@ -123,6 +126,19 @@ serve(async (req) => {
       } });
     }
 
+    if (requested.has("firecrawl") && enabled.firecrawl) {
+      tasks.push({ source: "firecrawl", run: async () => {
+        const fq = [query, ...(filters.skills || []).slice(0, 4)].filter(Boolean).join(" ");
+        const r = await firecrawlDiscover(getEnv("FIRECRAWL_API_KEY")!, fq, {
+          issueAuthor: async (o, rp, n) => {
+            const it = await githubFetch(`https://api.github.com/repos/${encodeURIComponent(o)}/${encodeURIComponent(rp)}/issues/${n}`);
+            return it?.user?.type === "User" ? it.user.login : null;
+          },
+        });
+        return { candidates: r.candidates, cost: 0, detail: r.detail };
+      } });
+    }
+
     if (!tasks.length) {
       return new Response(JSON.stringify({ error: "No enabled people sources for this request", enabled }), { status: 422, headers });
     }
@@ -130,7 +146,7 @@ serve(async (req) => {
     const settled = await Promise.allSettled(tasks.map((t) => t.run()));
     const sources: Record<string, { count: number; est_cost_usd: number; total?: number | null; error?: string; detail?: Record<string, unknown> }> = {};
     // Order = merge priority for field conflicts: structured sources first.
-    const priority: SourceName[] = ["harmonic", "github", "exa", "parallel"];
+    const priority: SourceName[] = ["harmonic", "github", "exa", "parallel", "firecrawl"];
     const bySource = new Map<SourceName, UnifiedCandidate[]>();
     settled.forEach((r, i) => {
       const s = tasks[i].source;
@@ -176,6 +192,28 @@ serve(async (req) => {
     }
 
     candidates = await addTalentFlags(candidates as any[]);
+
+    // Firecrawl profile enrichment: scrape a few personal sites/blogs for scoring evidence (fail soft, capped).
+    if (enabled.firecrawl && requested.has("firecrawl")) {
+      const kw = extractSearchTerms(query, filters).keywords;
+      const targets = (candidates as any[]).filter((c) => isPersonalSiteUrl(c.blog_url)).slice(0, FIRECRAWL_LIMITS.scrapes);
+      const ev = await Promise.allSettled(targets.map((c) => firecrawlScrapeEvidence(getEnv("FIRECRAWL_API_KEY")!, String(c.blog_url).startsWith("http") ? c.blog_url : `https://${c.blog_url}`)));
+      let scraped = 0;
+      ev.forEach((r, i) => {
+        const text = r.status === "fulfilled" ? r.value : null;
+        if (!text) return;
+        scraped++;
+        const c = targets[i];
+        c.web_evidence = text;
+        c.sourcing_score = (c.sourcing_score || 0) + evidenceBoost(text, kw);
+        if (!c.summary) c.summary = text.slice(0, 280);
+        if (persist && c.id) {
+          supabase.from("candidate_source_hits").insert({ candidate_id: c.id, user_id: user.id, provider: "firecrawl", snippet: text.slice(0, 500) }).then(() => {}, () => {});
+        }
+      });
+      sources.firecrawl = { ...(sources.firecrawl || { count: 0, est_cost_usd: 0 }), detail: { ...(sources.firecrawl?.detail || {}), scraped } };
+      (candidates as any[]).sort((a, b) => (b.sourcing_score || 0) - (a.sourcing_score || 0));
+    }
 
     return new Response(JSON.stringify({
       candidates,

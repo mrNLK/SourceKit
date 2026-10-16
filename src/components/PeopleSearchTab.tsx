@@ -11,6 +11,7 @@ const ALL_SOURCES: { key: SourceKey; label: string }[] = [
   { key: 'exa', label: 'Exa people' },
   { key: 'harmonic', label: 'Harmonic' },
   { key: 'github', label: 'GitHub' },
+  { key: 'firecrawl', label: 'Firecrawl (GitHub PRs + papers)' },
   { key: 'parallel', label: 'Parallel' },
 ]
 
@@ -88,6 +89,7 @@ const PeopleSearchTab = () => {
       if (!alive) return
       setEnabledSources(e)
       if (e.parallel) setSources((cur) => new Set([...cur, 'parallel']))
+      if (e.firecrawl) setSources((cur) => new Set([...cur, 'firecrawl']))
     }).catch(() => { /* keep Parallel disabled if the probe fails */ })
     return () => { alive = false }
   }, [])

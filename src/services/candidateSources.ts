@@ -4,7 +4,7 @@ import { classifyPerson } from '../../supabase/functions/_shared/talent-flags.ts
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
-export type SourceKey = 'exa' | 'parallel' | 'harmonic' | 'github'
+export type SourceKey = 'exa' | 'parallel' | 'harmonic' | 'github' | 'firecrawl'
 
 export interface SourcedCandidate {
   id?: string
@@ -71,6 +71,7 @@ export const PROVIDER_LABELS: Record<string, { label: string; className: string 
   parallel_search: { label: 'Parallel', className: 'bg-violet-500/15 text-violet-300 border-violet-500/30' },
   harmonic: { label: 'Harmonic', className: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
   airscale: { label: 'Airscale', className: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
+  firecrawl: { label: 'Firecrawl', className: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
 }
 
 /** Badge descriptors for a candidate's providers (deduped, unknown providers shown verbatim). */
