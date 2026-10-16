@@ -621,7 +621,7 @@ const CandidateProfile = ({ pipelineCandidate, onBack }: CandidateProfileProps) 
                   { label: "Since", value: candidate.joined_year || "N/A" },
                 ].map((stat) => (
                   <div key={stat.label} className="text-center p-3 rounded-lg bg-secondary/50 border border-border">
-                    <div className="font-display text-lg font-bold text-foreground">{typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}</div>
+                    <div className="font-display text-lg font-bold text-foreground">{typeof stat.value === "number" && stat.label !== "Since" ? stat.value.toLocaleString() : stat.value}</div>
                     <div className="text-[11px] font-display text-muted-foreground mt-0.5">{stat.label}</div>
                   </div>
                 ))}
