@@ -32,7 +32,8 @@ export interface UseSearchQueryOptions {
   activeQuery: string;
   activeSearchId: string | undefined;
   activeStrategy: StrategyHandoff | undefined;
-  showUngettable: boolean;
+  /** @deprecated ungettable filtering is now client-side; kept for call-site compatibility */
+  showUngettable?: boolean;
   query: string;
   expandedQuery: string;
 }
@@ -73,7 +74,6 @@ export function useSearchQuery({
   activeQuery,
   activeSearchId,
   activeStrategy,
-  showUngettable,
   query,
   expandedQuery,
 }: UseSearchQueryOptions): UseSearchQueryResult {
@@ -96,7 +96,9 @@ export function useSearchQuery({
 
   // ---- Fresh search (streaming) ----
   const { data: freshData, isLoading: freshLoading, error: freshError } = useQuery({
-    queryKey: ["github-search", activeQuery, activeStrategy?.targetRepos?.join(","), showUngettable],
+    // Ungettable candidates are always fetched and filtered client-side, so toggling
+    // "Show Ungettable" no longer re-runs (and re-charges) the whole search.
+    queryKey: ["github-search", activeQuery, activeStrategy?.targetRepos?.join(",")],
     queryFn: () => {
       setStreamSteps([]);
       return searchDevelopersStreaming(
@@ -104,7 +106,7 @@ export function useSearchQuery({
         {
           targetRepos: activeStrategy?.targetRepos,
           skills: activeStrategy?.skills,
-          hideUngettable: !showUngettable,
+          hideUngettable: false,
         },
         (p: StreamProgress) => {
           setStreamSteps((prev) => {
@@ -123,7 +125,7 @@ export function useSearchQuery({
           return searchDevelopers(activeQuery, {
             targetRepos: activeStrategy?.targetRepos,
             skills: activeStrategy?.skills,
-            hideUngettable: !showUngettable,
+            hideUngettable: false,
           });
         }
         throw err;
