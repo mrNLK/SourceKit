@@ -2,6 +2,7 @@
 // Import this everywhere instead of duplicating stage arrays.
 
 export const PIPELINE_STAGES = [
+  { id: "sourced", label: "Sourced", color: "bg-sky-500/15 text-sky-400 border-sky-500/30", tip: "Added from search. Not yet contacted." },
   { id: "contacted", label: "Contacted", color: "bg-amber-500/15 text-amber-400 border-amber-500/30", tip: "Message sent. Waiting for response." },
   { id: "not_interested", label: "Not Interested", color: "bg-red-500/15 text-red-400 border-red-500/30", tip: "Candidate declined or not interested." },
   { id: "recruiter_screen", label: "Recruiter Screen", color: "bg-purple-500/15 text-purple-400 border-purple-500/30", tip: "Recruiter screen scheduled or completed." },
@@ -17,4 +18,4 @@ export const STAGE_COLORS: Record<string, string> = Object.fromEntries(
   PIPELINE_STAGES.map((s) => [s.id, s.color])
 );
 
-export const DEFAULT_STAGE: PipelineStageId = "contacted";
+export const DEFAULT_STAGE: PipelineStageId = "sourced";

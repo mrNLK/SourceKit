@@ -26,6 +26,8 @@ interface SearchFiltersProps {
   onToggleGems: () => void;
   // Ungettable
   showUngettable: boolean;
+  /** Number of candidates passing filters before the display limit. */
+  matchingCount?: number;
   onToggleUngettable: () => void;
   // Results limit
   resultLimit: number;
@@ -50,7 +52,7 @@ const SearchFilters = ({
   showSkillPanel, onToggleSkillPanel,
   locationFilter, onLocationChange, locationSuggestions,
   showGemsOnly, onToggleGems,
-  showUngettable, onToggleUngettable,
+  showUngettable, onToggleUngettable, matchingCount,
   resultLimit, onResultLimitChange,
   enrichProgress, onBatchEnrich,
   availableLanguages, languageFilter, onLanguageChange,
@@ -66,14 +68,11 @@ const SearchFilters = ({
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="font-display text-lg font-semibold text-foreground">
-            {hasActiveFilters ? (
-              <>Showing <span className="text-primary">{filtered.length}</span> of {results.length} engineers</>
-            ) : (
-              <>Found <span className="text-primary">{filtered.length}</span> engineers</>
-            )}
+            Showing <span className="text-primary">{filtered.length}</span> of {matchingCount ?? filtered.length} {hasActiveFilters ? "matching " : ""}candidates
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5 font-display">
-            Sorted by AI relevance score{hasActiveSkills && " + skill priorities"}
+            {results.length} scored in total{hasActiveFilters && (matchingCount ?? filtered.length) < results.length ? ` · ${results.length - (matchingCount ?? filtered.length)} hidden by filters` : ""}
+            {(matchingCount ?? filtered.length) > filtered.length ? ` · display limit ${filtered.length}` : ""} · sorted by AI relevance score{hasActiveSkills && " + skill priorities"}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

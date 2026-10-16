@@ -1,3 +1,4 @@
+import { upsertPipelineCandidate, notifyPipelineAdded } from "@/lib/pipeline-add";
 import { Star, GitFork, MapPin, Gem, Bookmark, BookmarkCheck, Linkedin, Loader2, UserPlus, Check, Copy, ClipboardCheck, Github, Mail, Twitter, AlertTriangle, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -32,21 +33,12 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
 
   const doAddToPipeline = async () => {
     try {
-      const { error } = await supabase.from('pipeline').upsert({
-        github_username: developer.username,
-        name: developer.name,
-        avatar_url: developer.avatarUrl,
-        stage: 'contacted',
-      }, { onConflict: 'user_id,github_username' });
-      if (error) throw error;
+      await upsertPipelineCandidate({ username: developer.username, name: developer.name, avatarUrl: developer.avatarUrl, score: developer.score });
       setAddedToPipeline(true);
-      toast({
-        title: `${developer.name || developer.username} added to pipeline`,
-        description: "Added to Contacted stage.",
-      });
+      notifyPipelineAdded(1, 0, developer.name || developer.username);
     } catch (err) {
       console.error('Failed to add to pipeline:', err);
-      toast({ title: "Failed to add to pipeline", variant: "destructive" });
+      notifyPipelineAdded(0, 1);
     }
   };
 
@@ -72,7 +64,7 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
       await doAddToPipeline();
     } catch (err) {
       console.error('Failed to add to pipeline:', err);
-      toast({ title: "Failed to add to pipeline", variant: "destructive" });
+      notifyPipelineAdded(0, 1);
     } finally {
       setPipelineLoading(false);
     }
