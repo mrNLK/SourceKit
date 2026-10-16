@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Globe, Loader2, Mail, Search, Telescope, ExternalLink, Github, Linkedin } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import {
-  enrichEmails, pollDeepSearch, providerBadges, sourceCandidates, splitList, startDeepSearch, withTalentFlags,
+  enrichEmails, getEnabledSources, pollDeepSearch, providerBadges, sourceCandidates, splitList, startDeepSearch, withTalentFlags,
   type SourceKey, type SourcedCandidate,
 } from '@/services/candidateSources'
 
@@ -79,7 +79,17 @@ const PeopleSearchTab = () => {
   const [locations, setLocations] = useState('')
   const [skills, setSkills] = useState('')
   const [companies, setCompanies] = useState('')
-  const [sources, setSources] = useState<Set<SourceKey>>(new Set(['exa', 'harmonic', 'github', 'parallel']))
+  const [sources, setSources] = useState<Set<SourceKey>>(new Set(['exa', 'harmonic', 'github']))
+  const [enabledSources, setEnabledSources] = useState<Partial<Record<SourceKey, boolean>>>({ parallel: false })
+  useEffect(() => {
+    let alive = true
+    getEnabledSources().then((e) => {
+      if (!alive) return
+      setEnabledSources(e)
+      if (e.parallel) setSources((cur) => new Set([...cur, 'parallel']))
+    }).catch(() => { /* keep Parallel disabled if the probe fails */ })
+    return () => { alive = false }
+  }, [])
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<SourcedCandidate[]>([])
   const [sourceStats, setSourceStats] = useState<Record<string, { count: number; error?: string }>>({})
@@ -105,7 +115,7 @@ const PeopleSearchTab = () => {
       const res = await sourceCandidates({
         query: query.trim(),
         filters: { titles: splitList(titles), locations: splitList(locations), skills: splitList(skills), companies: splitList(companies) },
-        sources: [...sources],
+        sources: [...sources].filter((k) => enabledSources[k] !== false),
         limit: 50,
       })
       setResults(res.candidates)
@@ -117,7 +127,7 @@ const PeopleSearchTab = () => {
     } finally {
       setLoading(false)
     }
-  }, [query, titles, locations, skills, companies, sources])
+  }, [query, titles, locations, skills, companies, sources, enabledSources])
 
   const runDeepSearch = useCallback(async () => {
     if (!dsRole.trim()) return
@@ -198,12 +208,15 @@ const PeopleSearchTab = () => {
           <input className={inputCls} placeholder="Target companies" value={companies} onChange={(e) => setCompanies(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-3 text-xs">
-          {ALL_SOURCES.map((s) => (
-            <label key={s.key} className="inline-flex items-center gap-1.5">
-              <input type="checkbox" checked={sources.has(s.key)} onChange={() => setSources((cur) => { const n = new Set(cur); if (n.has(s.key)) n.delete(s.key); else n.add(s.key); return n })} />
-              {s.label}{sourceStats[s.key] ? ` (${sourceStats[s.key].count}${sourceStats[s.key].error ? ', failed' : ''})` : ''}
-            </label>
-          ))}
+          {ALL_SOURCES.map((s) => {
+            const off = enabledSources[s.key] === false
+            return (
+              <label key={s.key} className={`inline-flex items-center gap-1.5 ${off ? 'opacity-50 cursor-not-allowed' : ''}`} title={off ? 'Not enabled for this workspace' : undefined}>
+                <input type="checkbox" aria-label={`source ${s.key}`} disabled={off} checked={!off && sources.has(s.key)} onChange={() => setSources((cur) => { const n = new Set(cur); if (n.has(s.key)) n.delete(s.key); else n.add(s.key); return n })} />
+                {s.label}{off ? ' (not enabled)' : sourceStats[s.key] ? ` (${sourceStats[s.key].count}${sourceStats[s.key].error ? ', failed' : ''})` : ''}
+              </label>
+            )
+          })}
         </div>
       </div>
 
@@ -211,12 +224,14 @@ const PeopleSearchTab = () => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span>{visible.length} of {results.length} candidates</span>
+              <span>Showing {visible.length} of {results.length} candidates</span>
               <label className="inline-flex items-center gap-1 text-xs"><input type="checkbox" aria-label="hidden gems only" checked={gemsOnly} onChange={(e) => setGemsOnly(e.target.checked)} />Hidden gems only</label>
               <label className="inline-flex items-center gap-1 text-xs"><input type="checkbox" aria-label="show ungettable" checked={showUngettable} onChange={(e) => setShowUngettable(e.target.checked)} />Show ungettable ({hiddenCount})</label>
             </div>
-            <button onClick={runEnrich} disabled={!selected.size || enriching} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs disabled:opacity-50">
-              {enriching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}Find emails ({selected.size}/25)
+            <button onClick={runEnrich} disabled={!selected.size || enriching} title="Select up to 25 candidates, then look up their work emails" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs disabled:opacity-50">
+              {enriching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+              {selected.size ? `Find emails for ${selected.size} selected` : 'Select candidates to find emails'}
+              <span className="text-muted-foreground">(max 25)</span>
             </button>
           </div>
           {visible.map((c, i) => <CandidateRow key={c.id ?? i} c={c} selected={!!c.id && selected.has(c.id)} onToggle={() => toggle(c.id)} />)}

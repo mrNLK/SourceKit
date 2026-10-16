@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { githubFetch } from "../_shared/github.ts";
 import { classifyPerson } from "../_shared/talent-flags.ts";
+import { chooseSummary } from "../_shared/providers/bio.ts";
 import { requireAuth, authErrorResponse } from "../_shared/auth.ts";
 import {
   exaPeopleSearch, githubContributorSearch, githubHandleByNameCompany, harmonicCompanyFirstPeople, harmonicPeopleByName, harmonicPersonByLinkedin,
@@ -47,7 +48,9 @@ async function addTalentFlags(rows: any[]): Promise<any[]> {
       githubFollowers: u?.followers ?? null, githubPublicRepos: u?.public_repos ?? null, githubType: u?.type ?? null,
       sourcingScore: c.sourcing_score,
     });
-    return { ...c, github_followers: u?.followers ?? null, is_bot: f.isBot, hidden_gem: f.hiddenGem, ungettable: f.ungettable, ungettable_reason: f.ungettableReason };
+    const providers: string[] = Array.isArray(c.providers) ? c.providers : Array.isArray(c.sources) ? c.sources.map((h: any) => h?.provider).filter(Boolean) : [];
+    const summary = u ? chooseSummary(c.summary, u.bio, providers) : c.summary;
+    return { ...c, summary, github_followers: u?.followers ?? null, is_bot: f.isBot, hidden_gem: f.hiddenGem, ungettable: f.ungettable, ungettable_reason: f.ungettableReason };
   }).filter((c) => !c.is_bot);
 }
 
@@ -57,6 +60,18 @@ serve(async (req) => {
   if (req.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
 
   try {
+    // Lightweight capability probe (no usage charge): which sources are enabled server-side.
+    const probe = await req.clone().json().catch(() => ({}));
+    if (probe && probe.probe === true) {
+      await requireAuth(req);
+      const ge = (n: string) => Deno.env.get(n);
+      return new Response(JSON.stringify({ enabled: {
+        exa: !!ge("EXA_API_KEY"),
+        parallel: isParallelPeopleEnabled(ge) && !!ge("PARALLEL_API_KEY"),
+        harmonic: isHarmonicEnabled(ge),
+        github: true,
+      } }), { headers });
+    }
     const { user } = await requireAuth(req, { usage: "search" });
     const body = await req.json().catch(() => ({}));
     const query = typeof body.query === "string" ? body.query.trim().slice(0, 500) : "";

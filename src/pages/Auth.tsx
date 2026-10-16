@@ -12,6 +12,13 @@ type AuthMode = "sign-in" | "sign-up";
 type AuthAction = "google" | "email-sign-in" | "email-sign-up" | null;
 
 const Auth = () => {
+  // The app runs in the light theme; keep sign-in consistent (body/background too, not just this card).
+  useEffect(() => {
+    const root = document.documentElement;
+    const hadLight = root.classList.contains("light");
+    root.classList.add("light");
+    return () => { if (!hadLight && localStorage.getItem("sourcekit-theme") === "dark") root.classList.remove("light"); };
+  }, []);
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<AuthMode>("sign-in");
   const [email, setEmail] = useState<string>("");
@@ -109,7 +116,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="light min-h-screen bg-background text-foreground flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6 text-center">
         <div className="flex flex-col items-center gap-4">
           {isSellKit ? (

@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
@@ -15,7 +16,34 @@ const WebsetsTab = lazy(() => import("@/components/WebsetsTab"));
 const SettingsTab = lazy(() => import("@/components/SettingsTab"));
 const ResearchTab = lazy(() => import("@/components/ResearchTab"));
 const GuideTab = lazy(() => import("@/components/GuideTab"));
-const PeopleSearchTab = lazy(() => import("@/components/PeopleSearchTab"));
+const loadPeopleSearchTab = () => import("@/components/PeopleSearchTab");
+const PeopleSearchTab = lazy(loadPeopleSearchTab);
+// Warm the People Search chunk once the app is idle so switching tabs doesn't flash a blank area.
+if (typeof window !== "undefined") {
+  const warm = () => { void loadPeopleSearchTab(); };
+  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
+  if (ric) ric(warm); else setTimeout(warm, 2000);
+}
+
+const PeopleSearchSkeleton = () => (
+  <div className="max-w-5xl mx-auto p-6 space-y-6" data-testid="people-search-skeleton" aria-busy="true">
+    <div className="space-y-2">
+      <Skeleton className="h-6 w-48" />
+      <Skeleton className="h-4 w-96 max-w-full" />
+    </div>
+    <div className="space-y-3 rounded-lg border border-border p-4">
+      <Skeleton className="h-10 w-full" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+        {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-9 w-full" />)}
+      </div>
+      <Skeleton className="h-4 w-72" />
+    </div>
+    <div className="space-y-3 rounded-lg border border-border p-4">
+      <Skeleton className="h-5 w-32" />
+      <Skeleton className="h-9 w-full" />
+    </div>
+  </div>
+);
 
 const TabFallback = () => (
   <div className="flex items-center justify-center py-24">
@@ -129,6 +157,8 @@ const Index = () => {
         {activeTab === "websets" && <WebsetsTab />}
         {activeTab === "settings" && <SettingsTab />}
         {activeTab === "guide" && <GuideTab />}
+      </Suspense>
+      <Suspense fallback={<PeopleSearchSkeleton />}>
         {activeTab === "people" && <PeopleSearchTab />}
       </Suspense>
     </DashboardLayout>
