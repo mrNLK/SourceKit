@@ -1,34 +1,59 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SourceKit Pilot Guide</title><meta name="theme-color" content="#163B63"><style>
-:root{--bg:#F6F7F9;--title:#163B63;--sect:#1F4E79;--body:#172A3A;--muted:#667085;--line:#D8DEE8}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--body);font:15px/1.5 Lato,Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:860px;margin:0 auto;padding:28px 24px 48px}
-h1{color:var(--title);font-size:28px;margin:0 0 2px}.sub{color:var(--muted);font-size:13px;margin:0 0 10px}
-.bar{display:flex;gap:10px;margin:12px 0 6px}.btn{display:inline-block;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--sect);font-size:13px;font-weight:600;text-decoration:none}.btn.primary{background:var(--title);color:#fff;border-color:var(--title)}
-h2{color:var(--sect);font-size:12.5px;letter-spacing:.08em;margin:22px 0 6px}h3{color:var(--sect);font-size:17px;margin:20px 0 4px}h4{color:var(--sect);font-size:14.5px;margin:12px 0 4px}
-p{margin:0 0 8px}ol{margin:0 0 8px;padding-left:22px}li{margin:0 0 3px}
-figure{margin:6px 0 8px}img{max-width:100%;height:auto;display:block;border:2px solid var(--line);border-radius:4px;background:#fff}
-.why{color:var(--muted);font-size:13.5px}.why strong{color:var(--muted)}
-.side{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center}
-table{border-collapse:collapse;width:100%;font-size:14px;margin:4px 0}th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}th{background:var(--sect);color:#fff}tr:nth-child(odd) td{background:#fff}tr:nth-child(even) td{background:#F9FAFB}td:first-child{font-weight:600;white-space:nowrap}
-dl{margin:0}dt{font-weight:700;margin:10px 0 2px}dd{margin:0}
-footer{border-top:1px solid var(--line);margin-top:24px;padding-top:8px;color:var(--muted);font-size:12.5px}
-@media(max-width:700px){.side{grid-template-columns:1fr}td:first-child{white-space:normal}}
+:root{--bg:#F6F7F9;--title:#163B63;--sect:#1F4E79;--body:#172A3A;--muted:#667085;--line:#D8DEE8;--wash:#EEF3F8;--zebra:#F4F6FA}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--body);font:16.5px/1.6 Lato,Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:720px;margin:32px auto 56px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 3px rgba(16,24,40,.06);padding:44px 48px 36px}
+h1{color:var(--title);font-size:32px;line-height:1.2;margin:0 0 6px}
+.sub{color:var(--muted);font-size:14.5px;margin:0 0 18px}
+p{margin:0 0 14px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0 8px}
+.btn{display:inline-block;padding:9px 16px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--sect);font-size:14.5px;font-weight:700;text-decoration:none}
+.btn.primary{background:var(--title);color:#fff;border-color:var(--title)}
+h2{color:var(--sect);font-size:13px;letter-spacing:.1em;margin:40px 0 14px;padding-top:28px;border-top:1px solid var(--line)}
+ol.quick{margin:0;padding-left:24px}ol.quick li{margin:0 0 8px;padding-left:4px}
+.step{padding:32px 0;border-top:1px solid var(--line)}
+h2+.step{border-top:0;padding-top:4px}
+.step h3{display:flex;align-items:center;gap:14px;color:var(--sect);font-size:21px;line-height:1.3;margin:0 0 14px}
+.num{flex:none;width:36px;height:36px;border-radius:50%;background:var(--sect);color:#fff;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center}
+figure{margin:18px 0}
+img{display:block;width:100%;height:auto;margin:0 auto;border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+.why{background:var(--wash);border-left:3px solid var(--sect);border-radius:8px;padding:14px 18px;margin:18px 0 0}
+.why b{display:block;color:var(--sect);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.why p{margin:0}
+h4{color:var(--sect);font-size:17px;margin:30px 0 12px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:15.5px;line-height:1.5}
+th,td{padding:12px 16px;text-align:left;vertical-align:top}
+th{background:var(--sect);color:#fff;font-weight:700}
+td{border-top:1px solid var(--line)}
+tbody tr:nth-child(odd) td{background:#fff}tbody tr:nth-child(even) td{background:var(--zebra)}
+td:first-child{font-weight:700;white-space:nowrap}
+.faq{margin:0}.faq dt{font-weight:700;color:var(--sect);margin:22px 0 6px}.faq dt:first-child{margin-top:0}.faq dd{margin:0}
+.faq ul{margin:8px 0 8px;padding-left:22px}.faq li{margin:0 0 4px}.faq dd p{margin:0 0 6px}
+footer{border-top:1px solid var(--line);margin-top:36px;padding-top:14px;color:var(--muted);font-size:13.5px;line-height:1.5}
+@media(max-width:760px){main{margin:0;border:0;border-radius:0;box-shadow:none;padding:28px 20px 28px}body{font-size:16px}h1{font-size:27px}.step h3{font-size:19px}td:first-child{white-space:normal}th,td{padding:10px 12px}table{font-size:15px}}
 </style></head><body><main>
 <h1>SourceKit Pilot Guide</h1><p class="sub">Quick start for AI Fund portfolio CEOs. Michael Rubino, AI Fund, 2026-10-16.</p><p>SourceKit turns a job description into a sourcing strategy, then finds engineers and scores each one 0-100 on their actual open-source work. The pilot is free and invite-only; a first session takes about 10 minutes.</p>
 <div class="bar"><a class="btn primary" href="SourceKit-Pilot-Guide.pdf" download>Download PDF</a><a class="btn" href="https://getsourcekit.vercel.app" target="_top">Open SourceKit</a></div>
-<h2>QUICK START</h2><ol><li><strong>Sign in</strong> at getsourcekit.vercel.app with the email your invitation was sent to.</li><li><strong>Paste a job description</strong> in New Search and click Build Sourcing Strategy.</li><li><strong>Check the strategy</strong>, then click Search with this strategy.</li><li><strong>Turn on Hidden Gems</strong> and scan the scored candidates.</li><li><strong>Open a candidate</strong> and click Add to Pipeline.</li></ol>
+<h2>QUICK START</h2><ol class="quick"><li><strong>Sign in</strong> at getsourcekit.vercel.app with the email your invitation was sent to.</li><li><strong>Paste a job description</strong> in New Search and click Build Sourcing Strategy.</li><li><strong>Check the strategy</strong>, then click Search with this strategy.</li><li><strong>Turn on Hidden Gems</strong> and scan the scored candidates.</li><li><strong>Open a candidate</strong> and click Add to Pipeline.</li></ol>
 <h2>STEP BY STEP</h2>
-<h3>1. Sign in</h3>
-<div class="side"><div><p>Go to <strong>getsourcekit.vercel.app</strong> and sign in with <strong>Continue with Google</strong> or email and password, using the address your invitation was sent to.</p><p class="why"><strong>Why it matters:</strong> The pilot is invite-only, so other addresses are not let in.</p></div><figure><img src="q1-signin.webp" width="430" height="595" style="width:260px" alt="SourceKit sign-in page" loading="lazy"></figure></div>
-<h3>2. Paste a job description</h3>
-<p>In <strong>New Search</strong>, choose <strong>Job Description</strong>, paste the full text or a posting link, and click <strong>Build Sourcing Strategy</strong>.</p><figure><img src="q2-jd.webp" width="907" height="432" style="width:100%" alt="New Search with a pasted job description" loading="lazy"></figure><p class="why"><strong>Why it matters:</strong> More detail on role, team and must-haves gives a sharper strategy and better scores; the build takes 30-60 seconds.</p>
-<h3>3. Check the strategy, then search</h3>
-<p>Edit any of the four parts below, then click <strong>Search with this strategy</strong> at the bottom of the page.</p><figure><img src="q3-companies.webp" width="903" height="350" style="width:100%" alt="Companies to Source From in the strategy" loading="lazy"></figure><p class="why"><strong>Why it matters:</strong> Every entry is a suggestion, and a minute of edits here steers the whole search.</p>
-<h4>The four parts of a strategy</h4><table><tr><th>Part</th><th>What it shows</th><th>What you can do</th></tr><tr><td>Target repositories</td><td>Open-source projects where the right engineers work, each with a one-line reason.</td><td>Remove off-target repos or add your own.</td></tr><tr><td>Companies</td><td>Teams likely to have the talent, tagged Competitor, Adjacent or Talent Hub.</td><td>Change a tag or add a company.</td></tr><tr><td>Skills</td><td>Must Have (blue chips) and Nice to Have (gray chips). Must-haves weigh most in scoring.</td><td>Add or remove skills.</td></tr><tr><td>EEA signals</td><td>Evidence of Exceptional Ability, such as owning a core project or published technical work.</td><td>Switch off any you do not need.</td></tr></table>
-<h3>4. Scan results and Hidden Gems</h3>
-<p>Candidates are ranked by a 0-100 fit score with a one-line reason; click <strong>Hidden Gems</strong> to see only strong engineers with a low public profile.</p><figure><img src="q4-gems.webp" width="836" height="410" style="width:100%" alt="Results with the Hidden Gems filter on" loading="lazy"></figure><p class="why"><strong>Why it matters:</strong> Hidden gems hear from recruiters less often, so they are more likely to reply.</p>
-<h3>5. Add to your pipeline</h3>
-<div class="side"><div><p>Click a name to open the profile, then click <strong>Add to Pipeline</strong>. The candidate lands in the Sourced column of the <strong>Pipeline</strong> tab.</p><p class="why"><strong>Why it matters:</strong> The board tracks each person from Sourced to Contacted, Recruiter Screen and Moved to ATS.</p></div><figure><img src="q5-profile.webp" width="545" height="203" style="width:420px" alt="Candidate profile with Add to Pipeline" loading="lazy"></figure></div>
-<h2>MORE TOOLS</h2><table><tr><th>Tool</th><th>What it does</th></tr><tr><td>People Search</td><td>Runs one query across Exa, Harmonic, GitHub and now <strong>Firecrawl</strong>, which finds people through their GitHub issues and pull requests and their research papers. Results are deduplicated, with a badge showing each source.</td></tr><tr><td>Find emails</td><td>Tick up to 25 people and click Find emails; a note reports how many new addresses were found.</td></tr><tr><td>Bulk Actions</td><td>Candidate briefs, outreach drafts, a refined shortlist or a side-by-side comparison for the people you select.</td></tr><tr><td>History</td><td>Every search is saved; reopen or rerun one at any time.</td></tr></table>
-<h2>FAQ</h2><dl><dt>How long does a search take?</dt><dd>A strategy takes under a minute and a full search a couple of minutes. You can switch tabs while it runs.</dd><dt>What are the daily limits?</dt><dd>Per account: <strong>25 searches, 150 enrichments and 100 AI calls</strong> a day. Enrichments cover email lookups and extra profile details; AI calls cover strategy building, outreach drafts and Bulk Actions. Limits reset at <strong>midnight UTC (5 pm PT)</strong>.</dd><dt>How do I get the best results?</dt><dd>Paste the full job description, start with Hidden Gems, and find emails only for your shortlist so enrichments last.</dd><dt>Why do I not see founders or executives?</dt><dd>Ungettable candidates (founders, executives, board members and very famous engineers) are hidden by default. Click <strong>Show Ungettable</strong> to include them.</dd><dt>Who do I contact for help?</dt><dd>Reply to <strong>Michael Rubino</strong> for access issues, questions or feedback. Every note feeds the next build.</dd></dl>
+<section class="step"><h3><span class="num">1</span><span>Sign in</span></h3>
+<p>Go to <strong>getsourcekit.vercel.app</strong> and sign in with <strong>Continue with Google</strong> or email and password, using the address your invitation was sent to.</p><figure><img src="q1-signin.webp" width="430" height="595" style="max-width:320px" alt="SourceKit sign-in page" loading="lazy"></figure><div class="why"><b>Why it matters</b><p>The pilot is invite-only, so other addresses are not let in.</p></div>
+</section>
+<section class="step"><h3><span class="num">2</span><span>Paste a job description</span></h3>
+<p>In <strong>New Search</strong>, choose <strong>Job Description</strong>, paste the full text or a posting link, and click <strong>Build Sourcing Strategy</strong>.</p><figure><img src="q2-jd.webp" width="907" height="432" alt="New Search with a pasted job description" loading="lazy"></figure><div class="why"><b>Why it matters</b><p>More detail on role, team and must-haves gives a sharper strategy and better scores; the build takes 30-60 seconds.</p></div>
+</section>
+<section class="step"><h3><span class="num">3</span><span>Check the strategy, then search</span></h3>
+<p>Edit any of the four parts below, then click <strong>Search with this strategy</strong> at the bottom of the page.</p><figure><img src="q3-companies.webp" width="903" height="350" alt="Companies to Source From in the strategy" loading="lazy"></figure><div class="why"><b>Why it matters</b><p>Every entry is a suggestion, and a minute of edits here steers the whole search.</p></div>
+<h4>The four parts of a strategy</h4><div class="tw"><table><thead><tr><th>Part</th><th>What it shows</th><th>What you can do</th></tr></thead><tbody><tr><td>Target repositories</td><td>Open-source projects where the right engineers work, each with a one-line reason.</td><td>Remove off-target repos or add your own.</td></tr><tr><td>Companies</td><td>Teams likely to have the talent, tagged Competitor, Adjacent or Talent Hub.</td><td>Change a tag or add a company.</td></tr><tr><td>Skills</td><td>Must Have (blue chips) and Nice to Have (gray chips). Must-haves weigh most in scoring.</td><td>Add or remove skills.</td></tr><tr><td>EEA signals</td><td>Evidence of Exceptional Ability, such as owning a core project or published technical work.</td><td>Switch off any you do not need.</td></tr></tbody></table></div>
+</section>
+<section class="step"><h3><span class="num">4</span><span>Scan results and Hidden Gems</span></h3>
+<p>Candidates are ranked by a 0-100 fit score with a one-line reason; click <strong>Hidden Gems</strong> to see only strong engineers with a low public profile.</p><figure><img src="q4-gems.webp" width="845" height="410" alt="Results with the Hidden Gems filter on" loading="lazy"></figure><div class="why"><b>Why it matters</b><p>Hidden gems hear from recruiters less often, so they are more likely to reply.</p></div>
+</section>
+<section class="step"><h3><span class="num">5</span><span>Add to your pipeline</span></h3>
+<p>Click a name to open the profile, then click <strong>Add to Pipeline</strong>. The candidate lands in the Sourced column of the <strong>Pipeline</strong> tab.</p><figure><img src="q5-profile.webp" width="545" height="203" style="max-width:520px" alt="Candidate profile with Add to Pipeline" loading="lazy"></figure><div class="why"><b>Why it matters</b><p>The board tracks each person from Sourced to Contacted, Recruiter Screen and Moved to ATS.</p></div>
+</section>
+<h2>MORE TOOLS</h2><div class="tw"><table><thead><tr><th>Tool</th><th>What it does</th></tr></thead><tbody><tr><td>People Search</td><td>Runs one query across Exa, Harmonic, GitHub and now <strong>Firecrawl</strong>. Firecrawl finds people through their GitHub issues, pull requests and research papers. Results are deduplicated, with a badge showing each source.</td></tr><tr><td>Find emails</td><td>Tick up to 25 people and click Find emails; a note reports how many new addresses were found.</td></tr><tr><td>Bulk Actions</td><td>Candidate briefs, outreach drafts, a refined shortlist or a side-by-side comparison for the people you select.</td></tr><tr><td>History</td><td>Every search is saved; reopen or rerun one at any time.</td></tr></tbody></table></div>
+<h2>FAQ</h2><dl class="faq"><dt>How long does a search take?</dt><dd>A strategy takes under a minute and a full search a couple of minutes. You can switch tabs while it runs.</dd><dt>What are the daily limits?</dt><dd><p>Per account, each day:</p><ul><li><strong>25 searches</strong></li><li><strong>150 enrichments</strong>, used by email lookups and extra profile details</li><li><strong>100 AI calls</strong>, used by strategy building, outreach drafts and Bulk Actions</li></ul><p>Limits reset at <strong>midnight UTC (5pm PT, 4pm PT after Nov 1)</strong>.</p></dd><dt>How do I get the best results?</dt><dd>Paste the full job description, start with Hidden Gems, and find emails only for your shortlist so enrichments last.</dd><dt>Why do I not see founders or executives?</dt><dd>Ungettable candidates (founders, executives, board members and very famous engineers) are hidden by default. Click <strong>Show Ungettable</strong> to include them.</dd><dt>Who do I contact for help?</dt><dd>Reply to <strong>Michael Rubino</strong> for access issues, questions or feedback. Every note feeds the next build.</dd></dl>
 <footer><strong>Source:</strong> SourceKit pilot build (getsourcekit.vercel.app), screenshots from a demo account.  <strong>Owner:</strong> Michael Rubino, AI Fund.  <strong>Last updated:</strong> 2026-10-16.</footer></main></body></html>
