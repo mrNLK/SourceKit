@@ -48,7 +48,7 @@ function ParticleField() {
   return (
     <Points ref={ref} positions={positions} stride={3}>
       <PointMaterial
-        color="#00E5A0"
+        color="#1F4E79"
         size={0.025}
         transparent
         opacity={0.4}
@@ -70,7 +70,7 @@ function FocusNode() {
   return (
     <mesh ref={ref}>
       <sphereGeometry args={[0.12, 32, 32]} />
-      <meshBasicMaterial color="#00E5A0" />
+      <meshBasicMaterial color="#1F4E79" />
     </mesh>
   );
 }

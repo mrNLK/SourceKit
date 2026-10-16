@@ -47,7 +47,7 @@ export function SourceKitLogo({
         </span>
         <span
           className={kitClassName}
-          style={{ fontFamily: "DM Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif", fontWeight: 500, color: "#9E9E9E" }}
+          style={{ fontFamily: "DM Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif", fontWeight: 500, color: "var(--fg-secondary, #667085)" }}
         >
           Kit
         </span>

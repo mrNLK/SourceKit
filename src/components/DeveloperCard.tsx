@@ -146,13 +146,13 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
                 )}
               </div>
               {developer.hiddenGem && (
-                <span className="flex items-center gap-1 text-warning text-xs font-display" title="Strong contributor with low visibility - often easier to recruit">
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-craft-section/30 bg-craft-wash text-craft-section text-xs font-display font-medium" title="Strong contributor with low visibility - often easier to recruit">
                   <Gem className="w-3 h-3" />
                   Hidden Gem
                 </span>
               )}
               {developer.ungettable && (
-                <span className="flex items-center gap-1 text-amber-400 text-xs font-display" title={developer.ungettableReason || 'Likely not recruitable'}>
+                <span className="flex items-center gap-1 text-craft-muted text-xs font-display" title={developer.ungettableReason || 'Likely not recruitable'}>
                   <AlertTriangle className="w-3 h-3" />
                   Ungettable
                 </span>

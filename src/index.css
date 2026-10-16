@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -73,66 +73,66 @@
   }
 
   /* FEAT-007: Light mode override */
+  /* AI Fund Craft palette (light theme) */
   .light {
-    --background: 0 0% 98%;
-    --foreground: 240 20% 12%;
-
+    --background: 220 20% 97%;        /* #F6F7F9 */
+    --foreground: 207 43% 16%;        /* #172A3A */
     --card: 0 0% 100%;
-    --card-foreground: 240 20% 12%;
-
+    --card-foreground: 207 43% 16%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 20% 12%;
-
-    --primary: 162 100% 35%;
+    --popover-foreground: 207 43% 16%;
+    --primary: 211 64% 24%;           /* #163B63 */
     --primary-foreground: 0 0% 100%;
-
-    --secondary: 240 10% 93%;
-    --secondary-foreground: 240 10% 40%;
-
-    --muted: 240 10% 95%;
-    --muted-foreground: 222 5% 50%;
-
-    --accent: 162 100% 35%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 72% 50%;
+    --secondary: 210 45% 95%;         /* #EEF3F8 */
+    --secondary-foreground: 207 43% 16%;
+    --muted: 210 45% 95%;
+    --muted-foreground: 221 13% 46%;  /* #667085 */
+    --accent: 210 45% 95%;
+    --accent-foreground: 209 59% 30%; /* #1F4E79 */
+    --destructive: 4 76% 40%;         /* #B42318 */
     --destructive-foreground: 0 0% 100%;
-
-    --border: 240 10% 88%;
-    --input: 240 10% 88%;
-    --ring: 162 100% 35%;
+    --border: 218 27% 88%;            /* #D8DEE8 */
+    --input: 218 27% 88%;
+    --ring: 209 59% 30%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 20% 12%;
-    --sidebar-primary: 162 100% 35%;
+    --sidebar-foreground: 207 43% 16%;
+    --sidebar-primary: 211 64% 24%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 10% 95%;
-    --sidebar-accent-foreground: 240 20% 12%;
-    --sidebar-border: 240 10% 88%;
-    --sidebar-ring: 162 100% 35%;
+    --sidebar-accent: 210 45% 95%;
+    --sidebar-accent-foreground: 211 64% 24%;
+    --sidebar-border: 218 27% 88%;
+    --sidebar-ring: 209 59% 30%;
 
-    --glow: 162 100% 35%;
-    --surface: 240 10% 96%;
-    --surface-hover: 240 10% 92%;
-    --text-dim: 240 4% 55%;
-    --text-secondary: 240 5% 42%;
-    --success: 142 60% 42%;
-    --warning: 38 92% 50%;
-    --info: 210 80% 50%;
+    --glow: 209 59% 30%;
+    --surface: 210 45% 95%;
+    --surface-hover: 214 36% 91%;
+    --text-dim: 221 13% 46%;
+    --text-secondary: 221 13% 46%;
+    --success: 123 46% 34%;           /* #2E7D32 */
+    --warning: 30 80% 32%;            /* AA on white */
+    --info: 209 59% 30%;
 
-    /* Brand system v2.0 light mode overrides */
-    --accent-primary: #00A97A;
-    --accent-strong: #009068;
-    --accent-subtle: rgba(0,169,122,0.10);
-    --bg-base: #FFFFFF;
-    --bg-elevated: #F6F7F9;
-    --bg-surface: #EEEEF0;
-    --fg-primary: #0A0A0F;
-    --fg-secondary: #52525B;
-    --fg-muted: #6B7280;
-    --border-subtle: #E4E4E7;
-    --border-focus: #00A97A;
+    --font-body: 'Inter', 'DM Sans', system-ui, sans-serif;
+
+    --accent-primary: #1F4E79;
+    --accent-strong: #163B63;
+    --accent-subtle: #EEF3F8;
+    --bg-base: #F6F7F9;
+    --bg-elevated: #FFFFFF;
+    --bg-surface: #EEF3F8;
+    --fg-primary: #172A3A;
+    --fg-secondary: #667085;
+    --fg-muted: #667085;
+    --border-subtle: #D8DEE8;
+    --border-focus: #1F4E79;
   }
+  .light .text-gradient { background-image: none; color: hsl(var(--primary)); -webkit-text-fill-color: currentColor; }
+  .light .glow-sm, .light .glow-md { box-shadow: none; }
+  .light .glass { background-color: hsl(var(--card)); backdrop-filter: none; }
+  .light .grid-pattern, .light .hero-mark-container { background-image: none; background: none; }
+  .light .logo-mark:hover, .light .logo-mark.active { filter: none; }
+
 }
 
 @layer base {

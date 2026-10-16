@@ -36,8 +36,8 @@ export function CandidateRow({
           {badges.map((b) => (
             <span key={b.key} className={`text-[10px] px-1.5 py-0.5 rounded border ${b.className}`} data-testid="source-badge">{b.label}</span>
           ))}
-          {c.hidden_gem && <span className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/40 text-emerald-600" data-testid="gem-badge">Hidden gem</span>}
-          {c.ungettable && <span className="text-[10px] px-1.5 py-0.5 rounded border border-amber-500/40 text-amber-600" title={c.ungettable_reason ?? undefined} data-testid="ungettable-badge">Ungettable</span>}
+          {c.hidden_gem && <span className="text-[10px] px-1.5 py-0.5 rounded border border-craft-section/30 bg-craft-wash text-craft-section font-medium" data-testid="gem-badge">Hidden gem</span>}
+          {c.ungettable && <span className="text-[10px] px-1.5 py-0.5 rounded border border-craft-line bg-craft-wash/50 text-craft-muted" title={c.ungettable_reason ?? undefined} data-testid="ungettable-badge">Ungettable</span>}
           <span className="ml-auto text-xs text-muted-foreground">score {c.sourcing_score}</span>
         </div>
         <div className="text-sm text-muted-foreground truncate">

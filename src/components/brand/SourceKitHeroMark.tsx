@@ -24,7 +24,7 @@ export default function SourceKitHeroMark({ size = 140 }) {
         cx="128"
         cy="128"
         r="10"
-        fill="#00E5A0"
+        fill="#1F4E79"
         variants={{
           hidden: { scale: 0, opacity: 0 },
           visible: {
@@ -49,7 +49,7 @@ export default function SourceKitHeroMark({ size = 140 }) {
         y1="64"
         x2="128"
         y2="88"
-        stroke="#00E5A0"
+        stroke="#1F4E79"
         strokeWidth="11"
         strokeLinecap="round"
         variants={{
@@ -68,7 +68,7 @@ export default function SourceKitHeroMark({ size = 140 }) {
         y1="168"
         x2="128"
         y2="192"
-        stroke="#00E5A0"
+        stroke="#1F4E79"
         strokeWidth="11"
         strokeLinecap="round"
         variants={{
@@ -84,7 +84,7 @@ export default function SourceKitHeroMark({ size = 140 }) {
       {/* LEFT BRACKET */}
       <motion.path
         d="M88 72 L56 128 L88 184"
-        stroke="#00E5A0"
+        stroke="#1F4E79"
         strokeWidth="20"
         strokeLinecap="round"
         fill="none"
@@ -101,7 +101,7 @@ export default function SourceKitHeroMark({ size = 140 }) {
       {/* RIGHT BRACKET */}
       <motion.path
         d="M168 72 L200 128 L168 184"
-        stroke="#00E5A0"
+        stroke="#1F4E79"
         strokeWidth="20"
         strokeLinecap="round"
         fill="none"
