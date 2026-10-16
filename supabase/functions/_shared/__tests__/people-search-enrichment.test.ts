@@ -22,7 +22,9 @@ describe("keyword extraction for long queries", () => {
   it("builds GitHub repo queries", () => {
     expect(buildGithubRepoQueries("CUDA kernel developer", {}, new Date("2026-10-16T00:00:00Z")))
       .toEqual(["CUDA kernel in:name,description,topics stars:>=500 pushed:>=2025-10-16"]);
-    expect(buildGithubRepoQueries("senior ML infrastructure engineer, PyTorch, distributed training")).toHaveLength(3); // one per keyword
+    const qs = buildGithubRepoQueries("senior ML infrastructure engineer, PyTorch, distributed training");
+    expect(qs).toHaveLength(5); // 2 keyword pairs + 3 single keywords
+    expect(qs[0]).toMatch(/^PyTorch ML infrastructure in:/);
   });
 });
 
@@ -81,7 +83,7 @@ describe("Harmonic company-first fallback", () => {
 describe("GitHub sources", () => {
   it("contributor search: repos -> human contributors -> profiles", async () => {
     const f = vi.fn(async (url: string) => {
-      if (url.includes("/search/repositories")) return ok({ items: [{ full_name: "org/repo" }] });
+      if (url.includes("/search/repositories")) return ok({ items: [{ full_name: "org/repo", name: "repo", description: "Distributed training toolkit" }] });
       if (url.includes("/contributors")) return ok([{ login: "alice", type: "User" }, { login: "pytorchmergebot", type: "User" }, { login: "dependabot[bot]", type: "Bot" }]);
       return ok({ login: "alice", id: 1, name: "Alice A", bio: "infra", followers: 50, html_url: "https://github.com/alice" });
     });

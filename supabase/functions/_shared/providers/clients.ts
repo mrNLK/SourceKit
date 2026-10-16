@@ -4,7 +4,7 @@ import {
   AIRSCALE_BASE, EXA_BASE, EXA_WEBSETS_BASE, PARALLEL_BASE,
   buildExaPeopleSearch, buildFindAllPeopleRun, buildParallelEntitySearch,
   buildParallelExtractV1, buildParallelSearchV1, buildWebsetPeopleSearch,
-  icTitleRank,
+  icTitleRank, scoreRepoRelevance, MIN_REPO_RELEVANCE,
   type AirscaleEmailInput, type DeepSearchInput, type ExaSearchType, type FindAllGenerator,
 } from "./requests.ts";
 import {
@@ -204,20 +204,22 @@ function ghHeaders(token?: string): Record<string, string> {
 export async function githubContributorSearch(
   token: string | undefined,
   repoQueries: string[],
-  opts: { repos?: number; perRepo?: number; maxUsers?: number } = {},
+  opts: { repos?: number; perRepo?: number; maxUsers?: number; keywords?: string[] } = {},
   f: FetchLike = fetch,
-): Promise<{ candidates: UnifiedCandidate[]; repos: string[] }> {
+): Promise<{ candidates: UnifiedCandidate[]; repos: string[]; rejected?: string[] }> {
   const headers = ghHeaders(token);
-  // Run each keyword query, merge, and keep the most-starred (core) repos overall.
-  const found = await Promise.allSettled(repoQueries.slice(0, 3).map(async (q) =>
-    (await json("github", await f(`https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=5`, { headers }))).items || []));
+  // Run each query, merge, then keep repos that actually match the query (not just a tag).
+  const found = await Promise.allSettled(repoQueries.slice(0, 5).map(async (q) =>
+    (await json("github", await f(`https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=10`, { headers }))).items || []));
   const byName = new Map<string, any>();
   for (const r of found) if (r.status === "fulfilled") for (const it of r.value) if (it?.full_name && !it.fork && !it.archived) byName.set(it.full_name, it);
-  // A repo literally named after a keyword (pytorch -> pytorch/pytorch) is the canonical core repo: put it first.
-  const kw = new Set(repoQueries.map((q) => q.split(" in:")[0].trim().toLowerCase()));
-  const canonical = (r: any) => Number(kw.has(String(r.name || "").toLowerCase()) && String(r.owner?.login || "").toLowerCase() === String(r.name || "").toLowerCase());
-  const repos = [...byName.values()].sort((a, b) => canonical(b) - canonical(a) || (b.stargazers_count || 0) - (a.stargazers_count || 0))
-    .slice(0, opts.repos ?? 3).map((r) => r.full_name as string);
+  const keywords = opts.keywords?.length ? opts.keywords : repoQueries.map((q) => q.split(" in:")[0].trim());
+  const scored = [...byName.values()].map((r) => ({ r, ...scoreRepoRelevance(r, keywords) }));
+  const minRel = keywords.length >= 2 ? MIN_REPO_RELEVANCE : 0.5;
+  const kept = scored.filter((x) => x.canonical || x.score >= minRel)
+    .sort((a, b) => Number(b.canonical) - Number(a.canonical) || b.score - a.score || (b.r.stargazers_count || 0) - (a.r.stargazers_count || 0));
+  const repos = kept.slice(0, opts.repos ?? 3).map((x) => x.r.full_name as string);
+  const rejected = scored.filter((x) => !kept.includes(x)).sort((a, b) => (b.r.stargazers_count || 0) - (a.r.stargazers_count || 0)).slice(0, 5).map((x) => x.r.full_name as string);
   const perRepo = opts.perRepo ?? 10;
   const lists = await Promise.allSettled(repos.map(async (full) => {
     const data = await json("github", await f(`https://api.github.com/repos/${full}/contributors?per_page=${perRepo + 5}`, { headers }));
@@ -230,7 +232,7 @@ export async function githubContributorSearch(
   const logins = [...new Set(order)].slice(0, opts.maxUsers ?? 25);
   const users = await Promise.allSettled(logins.map(async (l) => json("github", await f(`https://api.github.com/users/${encodeURIComponent(l)}`, { headers }))));
   const candidates = compact(users.map((r, i) => (r.status === "fulfilled" ? fromGithubUser(r.value, i + 1) : null)));
-  return { candidates, repos };
+  return { candidates, repos, rejected };
 }
 
 const norm = (s: string | null | undefined) => (s || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();

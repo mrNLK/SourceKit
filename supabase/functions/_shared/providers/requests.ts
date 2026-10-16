@@ -176,16 +176,47 @@ export function buildHarmonicCompanyQuery(query: string, f: CandidateFilters = {
 }
 
 /**
- * GitHub repository search queries from keywords. One query per keyword (multi-keyword AND
- * matching surfaces niche repos), restricted to established, recently active repos.
- * Results are merged and ranked by stars by the client.
+ * GitHub repository search queries: keyword pairs first (repos matching several query concepts),
+ * then single keywords. Restricted to established, recently active repos. Ranking/relevance
+ * filtering happens client-side (see scoreRepoRelevance).
  */
 export function buildGithubRepoQueries(query: string, f: CandidateFilters = {}, now: Date = new Date()): string[] {
   const { keywords } = extractSearchTerms(query, f);
   const since = new Date(now.getTime() - 365 * 86400000).toISOString().slice(0, 10);
-  return keywords.slice(0, 3).map((k) => `${k} in:name,description,topics stars:>=500 pushed:>=${since}`);
+  const k = keywords.slice(0, 3);
+  const pairs: string[] = [];
+  for (let i = 0; i < k.length && pairs.length < 2; i++) for (let j = i + 1; j < k.length && pairs.length < 2; j++) pairs.push(`${k[j]} ${k[i]}`);
+  return [
+    ...pairs.map((q) => `${q} in:name,description,topics stars:>=100 pushed:>=${since}`),
+    ...k.map((q) => `${q} in:name,description,topics stars:>=500 pushed:>=${since}`),
+  ];
 }
 
+const normText = (s: string) => s.toLowerCase().replace(/[-_/]+/g, " ").replace(/[^a-z0-9+#. ]+/g, " ").replace(/\s+/g, " ").trim();
+
+/**
+ * Repo-to-query relevance: each keyword phrase counts 1 if all its words appear in the repo
+ * name/description, 0.5 if only via topics (a tag alone is weak evidence). A repo literally named
+ * after a keyword and owned by the same org (pytorch/pytorch) is canonical.
+ */
+export function scoreRepoRelevance(repo: { name?: string; full_name?: string; description?: string | null; topics?: string[]; owner?: { login?: string } },
+  keywords: string[]): { score: number; canonical: boolean } {
+  const text = ` ${normText(`${repo.name || ""} ${repo.description || ""}`)} `;
+  const topics = ` ${normText((repo.topics || []).join(" "))} `;
+  let score = 0;
+  for (const kw of keywords) {
+    const words = normText(kw).split(" ").filter(Boolean);
+    if (!words.length) continue;
+    if (words.every((w) => text.includes(` ${w} `))) score += 1;
+    else if (words.every((w) => topics.includes(` ${w} `) || text.includes(` ${w} `))) score += 0.5;
+  }
+  const name = (repo.name || "").toLowerCase();
+  const canonical = keywords.some((k) => normText(k) === name) && (repo.owner?.login || "").toLowerCase() === name;
+  return { score, canonical };
+}
+
+/** Minimum relevance for a non-canonical repo (with 2+ keywords): more than a single tag match. */
+export const MIN_REPO_RELEVANCE = 1;
 /** Harmonic employee group filter: leadership roles -> LEADERSHIP, else NON_LEADERSHIP-inclusive ALL. */
 export function harmonicEmployeeGroup(f: CandidateFilters, query: string): "LEADERSHIP" | "FOUNDERS_AND_CEO" | "NON_LEADERSHIP" {
   const t = [query, ...(f.titles || []), ...(f.seniorities || [])].join(" ").toLowerCase();

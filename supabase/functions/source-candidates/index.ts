@@ -103,8 +103,8 @@ serve(async (req) => {
     }
     if (requested.has("github") && enabled.github) {
       tasks.push({ source: "github", run: async () => {
-        const r = await githubContributorSearch(getEnv("GITHUB_TOKEN"), buildGithubRepoQueries(query, filters), { repos: 3, perRepo: 10, maxUsers: Math.min(30, limit) });
-        return { candidates: r.candidates, cost: 0, detail: { repos: r.repos } };
+        const r = await githubContributorSearch(getEnv("GITHUB_TOKEN"), buildGithubRepoQueries(query, filters), { repos: 3, perRepo: 10, maxUsers: Math.min(30, limit), keywords: extractSearchTerms(query, filters).keywords });
+        return { candidates: r.candidates, cost: 0, detail: { repos: r.repos, rejected: r.rejected } };
       } });
     }
 
