@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Developer } from '@/types/developer';
+import { classifyCandidate } from '../../supabase/functions/_shared/talent-flags.ts';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -182,7 +183,7 @@ export async function loadSearchResults(searchId: string): Promise<SearchRespons
       candidate:candidate_id (
         id, github_username, name, avatar_url, bio, about, location,
         followers, public_repos, stars, top_languages, highlights,
-        score, summary, is_hidden_gem, joined_year, contributed_repos,
+        score, summary, is_hidden_gem, recruitable, joined_year, contributed_repos,
         linkedin_url, twitter_username, email, github_url
       )
     `)
@@ -197,6 +198,14 @@ export async function loadSearchResults(searchId: string): Promise<SearchRespons
   const results = data.map((row: any) => {
     const c = row.candidate;
     if (!c) return null;
+    const totalContributions = Object.values(c.contributed_repos || {}).reduce((a: number, b: any) => a + (Number(b) || 0), 0) as number;
+    const score = row.score ?? c.score ?? 0;
+    // Same deterministic rules as the github-search edge function (shared module).
+    const flags = classifyCandidate({
+      username: c.github_username, bio: c.bio, followers: c.followers, stars: c.stars,
+      score, totalContributions, recruitable: c.recruitable,
+    });
+    if (flags.isBot) return null;
     return {
       id: c.github_username,
       username: c.github_username,
@@ -205,14 +214,17 @@ export async function loadSearchResults(searchId: string): Promise<SearchRespons
       bio: row.summary || c.summary || c.bio,
       about: row.about || c.about || '',
       location: c.location,
-      totalContributions: Object.values(c.contributed_repos || {}).reduce((a: number, b: any) => a + (b as number), 0) as number,
+      totalContributions,
       publicRepos: c.public_repos,
       followers: c.followers,
       stars: c.stars,
       topLanguages: c.top_languages || [],
       highlights: c.highlights || [],
-      score: row.score ?? c.score ?? 0,
-      hiddenGem: c.is_hidden_gem || false,
+      score,
+      hiddenGem: flags.hiddenGem,
+      recruitable: c.recruitable !== false,
+      ungettable: flags.ungettable,
+      ungettableReason: flags.ungettableReason ?? undefined,
       joinedYear: c.joined_year,
       contributedRepos: c.contributed_repos || {},
       linkedinUrl: c.linkedin_url,

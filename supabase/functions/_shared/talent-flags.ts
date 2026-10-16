@@ -73,3 +73,41 @@ export function classifyCandidate(c: FlagInput): Flags {
 
   return { isBot: false, hiddenGem, ungettable, ungettableReason };
 }
+
+// ---------------------------------------------------------------------------
+// People Search (source-candidates / deep search). These candidates come from Exa,
+// Harmonic, Parallel and GitHub user search, so there is no repo-contribution data or
+// LLM fit score. Rules use what is reliably present:
+//   ungettable: current exec/founder title in current_title or headline, or >=10K GitHub followers.
+//   hidden gem: has a GitHub account with real output (>= PERSON_GEM_MIN_REPOS public repos)
+//               but low visibility (< GEM_MAX_FOLLOWERS followers), not ungettable, and a decent
+//               sourcing score. Without GitHub data we never call someone a gem (no evidence).
+// ---------------------------------------------------------------------------
+
+export const PERSON_GEM_MIN_REPOS = 10;
+export const PERSON_GEM_MIN_SOURCING_SCORE = 50;
+
+export interface PersonFlagInput {
+  currentTitle?: string | null;
+  headline?: string | null;
+  githubLogin?: string | null;
+  githubFollowers?: number | null; // null/undefined = unknown
+  githubPublicRepos?: number | null;
+  githubType?: string | null;
+  sourcingScore?: number | null;
+}
+
+export function classifyPerson(p: PersonFlagInput): Flags {
+  if (p.githubLogin && isBotAccount({ username: p.githubLogin, type: p.githubType })) {
+    return { isBot: true, hiddenGem: false, ungettable: false, ungettableReason: null };
+  }
+  const followers = p.githubFollowers ?? null;
+  const title = currentExecTitle(p.currentTitle) || currentExecTitle(p.headline);
+  let ungettableReason: string | null = null;
+  if (title) ungettableReason = `Current ${title} role`;
+  else if (followers !== null && followers >= UNGETTABLE_FOLLOWERS) ungettableReason = `${followers.toLocaleString("en-US")} GitHub followers: likely industry leader`;
+  const ungettable = ungettableReason !== null;
+  const hiddenGem = !ungettable && !!p.githubLogin && followers !== null && followers < GEM_MAX_FOLLOWERS &&
+    (p.githubPublicRepos || 0) >= PERSON_GEM_MIN_REPOS && (p.sourcingScore || 0) >= PERSON_GEM_MIN_SOURCING_SCORE;
+  return { isBot: false, hiddenGem, ungettable, ungettableReason };
+}

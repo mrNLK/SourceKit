@@ -445,6 +445,7 @@ recruitable = false if they are a founder, CEO, CTO, VP, or have >10K followers.
       summary: c.summary,
       about: c.about,
       is_hidden_gem: c.is_hidden_gem,
+      recruitable: c.recruitable,
       query_hash: queryHash,
     }));
 

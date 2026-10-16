@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { classifyCandidate, currentExecTitle, isBotAccount, contributionsOf } from "../talent-flags.ts";
+import { classifyCandidate, classifyPerson, currentExecTitle, isBotAccount, contributionsOf } from "../talent-flags.ts";
 
 // Fixtures mirror a real production search ("senior ML infrastructure engineer, PyTorch, distributed training", 2026-10-15).
 const base = { bio: "", stars: 0, recruitable: true };
@@ -55,5 +55,32 @@ describe("hidden gem (deterministic)", () => {
   it("contributionsOf sums repo commit counts", () => {
     expect(contributionsOf({ "pytorch/pytorch": 615, "pytorch/torchtitan": 26 })).toBe(641);
     expect(contributionsOf(null)).toBe(0);
+  });
+});
+
+describe("classifyPerson (People Search)", () => {
+  it("flags current execs from title/headline but not past roles", () => {
+    expect(classifyPerson({ currentTitle: "Co-Founder & CTO", sourcingScore: 80 }).ungettable).toBe(true);
+    expect(classifyPerson({ headline: "VP, ML Platform at Acme" }).ungettable).toBe(true);
+    expect(classifyPerson({ currentTitle: "Staff ML Engineer", headline: "ex-CTO of a startup" }).ungettable).toBe(false);
+    expect(classifyPerson({ currentTitle: "Founding Engineer" }).ungettable).toBe(false);
+  });
+  it("flags >=10K GitHub followers as ungettable", () => {
+    const f = classifyPerson({ currentTitle: "Engineer", githubLogin: "soumith", githubFollowers: 13723, githubPublicRepos: 80 });
+    expect(f.ungettable).toBe(true);
+    expect(f.ungettableReason).toMatch(/13,723/);
+  });
+  it("hidden gem needs GitHub evidence: low followers, real repos, decent sourcing score", () => {
+    const base = { currentTitle: "ML Infra Engineer", githubLogin: "dev", githubFollowers: 120, githubPublicRepos: 25, sourcingScore: 70 };
+    expect(classifyPerson(base).hiddenGem).toBe(true);
+    expect(classifyPerson({ ...base, githubFollowers: 300 }).hiddenGem).toBe(false);
+    expect(classifyPerson({ ...base, githubPublicRepos: 3 }).hiddenGem).toBe(false);
+    expect(classifyPerson({ ...base, sourcingScore: 40 }).hiddenGem).toBe(false);
+    expect(classifyPerson({ ...base, githubFollowers: null }).hiddenGem).toBe(false);
+    expect(classifyPerson({ currentTitle: "ML Infra Engineer", sourcingScore: 90 }).hiddenGem).toBe(false);
+  });
+  it("marks bots", () => {
+    expect(classifyPerson({ githubLogin: "pytorchmergebot" }).isBot).toBe(true);
+    expect(classifyPerson({ githubLogin: "someone", githubType: "Bot" }).isBot).toBe(true);
   });
 });

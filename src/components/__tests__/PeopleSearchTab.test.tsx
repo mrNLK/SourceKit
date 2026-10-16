@@ -28,6 +28,39 @@ describe("PeopleSearchTab", () => {
     expect(svc.sourceCandidates.mock.calls[0][0]).toMatchObject({ query: "ml infra", limit: 50 });
   });
 
+  it("hides ungettable by default, toggles them in, and filters to hidden gems", async () => {
+    svc.sourceCandidates.mockResolvedValue({ candidates: [
+      cand({ id: "g", full_name: "Gem Person", hidden_gem: true, ungettable: false }),
+      cand({ id: "n", full_name: "Normal Person", hidden_gem: false, ungettable: false }),
+      cand({ id: "u", full_name: "Cto Person", current_title: "CTO", hidden_gem: false, ungettable: true, ungettable_reason: "Current CTO role" }),
+    ], sources: {}, enabled: {}, raw_count: 3, est_cost_usd: 0 });
+    render(<PeopleSearchTab />);
+    fireEvent.change(screen.getByLabelText("people query"), { target: { value: "ml infra" } });
+    fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
+    await waitFor(() => expect(screen.getByText("Gem Person")).toBeInTheDocument());
+    expect(screen.queryByText("Cto Person")).toBeNull();
+    expect(screen.getByTestId("gem-badge")).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("show ungettable"));
+    expect(screen.getByText("Cto Person")).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("hidden gems only"));
+    expect(screen.queryByText("Normal Person")).toBeNull();
+    expect(screen.getByText("Gem Person")).toBeInTheDocument();
+    expect(svc.sourceCandidates).toHaveBeenCalledTimes(1); // filters are client-side, no re-search
+  });
+
+  it("flags deep-search results client-side from their title", async () => {
+    svc.startDeepSearch.mockResolvedValue({ run_id: "r1", engine: "webset", external_run_id: "w", status: "running", est_cost_usd: null });
+    svc.pollDeepSearch.mockImplementation(async (_id: string, onUpdate: (s: unknown) => void) => {
+      onUpdate({ status: "idle", is_active: false, candidates: [cand({ id: "d1", full_name: "Founder Fay", current_title: "Co-founder & CEO" }), cand({ id: "d2", full_name: "Ic Ian" })] });
+      return null;
+    });
+    render(<PeopleSearchTab />);
+    fireEvent.change(screen.getByLabelText("deep search role"), { target: { value: "SRE" } });
+    fireEvent.click(screen.getByRole("button", { name: /start deep search/i }));
+    await waitFor(() => expect(screen.getByText("Ic Ian")).toBeInTheDocument());
+    expect(screen.queryByText("Founder Fay")).toBeNull();
+  });
+
   it("starts deep search and renders polled results", async () => {
     svc.startDeepSearch.mockResolvedValue({ run_id: "r1", engine: "webset", external_run_id: "w", status: "running", est_cost_usd: null });
     svc.pollDeepSearch.mockImplementation(async (_id: string, onUpdate: (s: unknown) => void) => {
