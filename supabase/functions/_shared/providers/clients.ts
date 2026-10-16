@@ -4,6 +4,7 @@ import {
   AIRSCALE_BASE, EXA_BASE, EXA_WEBSETS_BASE, PARALLEL_BASE,
   buildExaPeopleSearch, buildFindAllPeopleRun, buildParallelEntitySearch,
   buildParallelExtractV1, buildParallelSearchV1, buildWebsetPeopleSearch,
+  icTitleRank,
   type AirscaleEmailInput, type DeepSearchInput, type ExaSearchType, type FindAllGenerator,
 } from "./requests.ts";
 import {
@@ -140,13 +141,33 @@ export async function harmonicCompanyFirstPeople(
     companyUrns = extractUrns(search, "company").slice(0, nCompanies);
     if (companyUrns.length) { queryUsed = cq; break; }
   }
-  const employeeLists = await Promise.allSettled(companyUrns.map(async (urn) => {
-    const eq = new URLSearchParams({ employee_group_type: opts.group ?? "ALL", employee_status: "ACTIVE", size: String(perCompany), page: "0" });
+  const group = opts.group ?? "ALL";
+  const ic = group === "NON_LEADERSHIP";
+  const fetchSize = ic ? Math.min(50, perCompany * 2) : perCompany; // over-fetch, then keep engineers
+  const employees = async (urn: string, g: string) => {
+    const eq = new URLSearchParams({ employee_group_type: g, employee_status: "ACTIVE", size: String(fetchSize), page: "0" });
     const data = await json("harmonic", await f(`${cfg.baseUrl}/companies/${encodeURIComponent(urn)}/employees?${eq}`, { headers: hHeaders(cfg) }));
-    return extractUrns(data, "person").slice(0, perCompany);
+    return extractUrns(data, "person");
+  };
+  const employeeLists = await Promise.allSettled(companyUrns.map(async (urn) => {
+    const urns = await employees(urn, group);
+    return urns.length || !ic ? urns : await employees(urn, "ALL"); // some companies lack group tags
   }));
   const personUrns = [...new Set(employeeLists.flatMap((r) => (r.status === "fulfilled" ? r.value : [])))];
-  return { candidates: await harmonicPersonsByUrns(cfg, personUrns, f), companyUrns, queryUsed, attempts };
+  let candidates = await harmonicPersonsByUrns(cfg, personUrns, f);
+  if (ic) {
+    // IC queries: drop founders/execs/board/non-technical, engineers first, cap per company.
+    candidates = candidates.filter((c) => icTitleRank(c.currentTitle) < 2)
+      .sort((a, b) => icTitleRank(a.currentTitle) - icTitleRank(b.currentTitle));
+    const perCo = new Map<string, number>();
+    candidates = candidates.filter((c) => {
+      const k = (c.currentCompany || "").toLowerCase();
+      const n = (perCo.get(k) ?? 0) + 1;
+      perCo.set(k, n);
+      return n <= perCompany;
+    });
+  }
+  return { candidates, companyUrns, queryUsed, attempts };
 }
 
 // ---------- Airscale (email enrichment) ----------
@@ -187,46 +208,84 @@ export async function githubContributorSearch(
   f: FetchLike = fetch,
 ): Promise<{ candidates: UnifiedCandidate[]; repos: string[] }> {
   const headers = ghHeaders(token);
-  let repos: string[] = [];
-  for (const q of repoQueries.slice(0, 2)) {
-    const data = await json("github", await f(`https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=${opts.repos ?? 3}`, { headers }));
-    repos = (data.items || []).map((r: any) => r.full_name).filter(Boolean);
-    if (repos.length) break;
-  }
+  // Run each keyword query, merge, and keep the most-starred (core) repos overall.
+  const found = await Promise.allSettled(repoQueries.slice(0, 3).map(async (q) =>
+    (await json("github", await f(`https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=5`, { headers }))).items || []));
+  const byName = new Map<string, any>();
+  for (const r of found) if (r.status === "fulfilled") for (const it of r.value) if (it?.full_name && !it.fork && !it.archived) byName.set(it.full_name, it);
+  // A repo literally named after a keyword (pytorch -> pytorch/pytorch) is the canonical core repo: put it first.
+  const kw = new Set(repoQueries.map((q) => q.split(" in:")[0].trim().toLowerCase()));
+  const canonical = (r: any) => Number(kw.has(String(r.name || "").toLowerCase()) && String(r.owner?.login || "").toLowerCase() === String(r.name || "").toLowerCase());
+  const repos = [...byName.values()].sort((a, b) => canonical(b) - canonical(a) || (b.stargazers_count || 0) - (a.stargazers_count || 0))
+    .slice(0, opts.repos ?? 3).map((r) => r.full_name as string);
   const perRepo = opts.perRepo ?? 10;
   const lists = await Promise.allSettled(repos.map(async (full) => {
     const data = await json("github", await f(`https://api.github.com/repos/${full}/contributors?per_page=${perRepo + 5}`, { headers }));
     return (Array.isArray(data) ? data : []).filter((u: any) => u?.type !== "Bot" && !/\[bot\]$|bot$/i.test(u?.login || "")).slice(0, perRepo).map((u: any) => u.login as string);
   }));
-  const logins = [...new Set(lists.flatMap((r) => (r.status === "fulfilled" ? r.value : [])))].slice(0, opts.maxUsers ?? 25);
+  // Interleave repos so the top contributors of each core repo come first.
+  const per = lists.map((r) => (r.status === "fulfilled" ? r.value : []));
+  const order: string[] = [];
+  for (let i = 0; i < perRepo; i++) for (const l of per) if (l[i]) order.push(l[i]);
+  const logins = [...new Set(order)].slice(0, opts.maxUsers ?? 25);
   const users = await Promise.allSettled(logins.map(async (l) => json("github", await f(`https://api.github.com/users/${encodeURIComponent(l)}`, { headers }))));
   const candidates = compact(users.map((r, i) => (r.status === "fulfilled" ? fromGithubUser(r.value, i + 1) : null)));
   return { candidates, repos };
 }
 
+const norm = (s: string | null | undefined) => (s || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+const CO_STOP = new Set(["inc", "llc", "ltd", "corp", "corporation", "co", "the", "ai", "labs", "lab", "technologies", "technology", "group", "company", "gmbh", "web", "services", "platforms"]);
+const LOC_STOP = new Set(["united", "states", "greater", "area", "bay", "metropolitan", "county", "the", "of", "and"]);
+
+/** Distinctive company tokens: "Amazon Web Services" -> ["amazon"], "Meta Platforms" -> ["meta"]. */
+export function companyTokens(company: string): string[] {
+  return norm(company).split(" ").filter((t) => t.length >= 2 && !CO_STOP.has(t)).slice(0, 2);
+}
+
+function locTokens(loc: string | null | undefined): string[] {
+  return norm(loc).split(" ").filter((t) => t.length >= 3 && !LOC_STOP.has(t));
+}
+
 /**
- * Find a GitHub handle for a named person at a known company (free). Only accepts a match whose
- * GitHub profile company/bio mentions the candidate's company, to avoid same-name false positives.
+ * Find a GitHub handle for a named person at a known company (free). Looser but safe:
+ * - accept when the company appears in the GitHub profile's company/bio/blog, or in a public org;
+ * - otherwise accept only a single exact-name hit whose location matches;
+ * - location (then followers) breaks ties between several company matches.
  */
 export async function githubHandleByNameCompany(
   token: string | undefined,
   fullName: string,
   company: string,
   f: FetchLike = fetch,
-): Promise<{ login: string; followers: number | null } | null> {
-  const name = fullName.replace(/[,(].*$/, "").replace(/\b(ph\.?d|mba|md)\.?\b/gi, "").trim();
-  const co = company.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ")[0];
-  if (name.split(/\s+/).length < 2 || !co || co.length < 2) return null;
+  location?: string | null,
+): Promise<{ login: string; followers: number | null; via: "company" | "org" | "location" } | null> {
+  const name = fullName.replace(/[,(|].*$/, "").replace(/\b(ph\.?d|mba|md|msc|ms)\.?\b/gi, "").replace(/\s+/g, " ").trim();
+  const parts = name.split(" ");
+  if (parts.length < 2 || parts.some((p) => /^[A-Z]\.?$/.test(p))) return null; // "Sertan A." is too ambiguous
+  const coToks = companyTokens(company);
+  if (!coToks.length) return null;
   const headers = ghHeaders(token);
   const data = await json("github", await f(`https://api.github.com/search/users?q=${encodeURIComponent(`fullname:"${name}" type:user`)}&per_page=5`, { headers }));
-  const items = (data.items || []).slice(0, 3);
-  if (!items.length || (data.total_count ?? items.length) > 5) return null;
+  const items = (data.items || []).slice(0, 4);
+  const total = data.total_count ?? items.length;
+  if (!items.length || total > 10) return null;
+  const wantLoc = locTokens(location);
+  type M = { login: string; followers: number | null; via: "company" | "org" | "location"; loc: boolean };
+  const matches: M[] = [];
   for (const it of items) {
     const u = await json("github", await f(`https://api.github.com/users/${encodeURIComponent(it.login)}`, { headers }));
-    const hay = `${u.company || ""} ${u.bio || ""}`.toLowerCase();
-    if (hay.includes(co)) return { login: u.login, followers: typeof u.followers === "number" ? u.followers : null };
+    const hay = ` ${norm(`${u.company || ""} ${u.bio || ""} ${u.blog || ""}`)} `;
+    const locOk = wantLoc.length > 0 && locTokens(u.location).some((t) => wantLoc.includes(t));
+    const followers = typeof u.followers === "number" ? u.followers : null;
+    if (coToks.some((t) => hay.includes(` ${t} `))) { matches.push({ login: u.login, followers, via: "company", loc: locOk }); continue; }
+    const orgs = await json("github", await f(`https://api.github.com/users/${encodeURIComponent(it.login)}/orgs`, { headers })).catch(() => []);
+    if (Array.isArray(orgs) && orgs.some((o: any) => coToks.some((t) => norm(o?.login).replace(/ /g, "").includes(t)))) { matches.push({ login: u.login, followers, via: "org", loc: locOk }); continue; }
+    if (total === 1 && locOk && norm(u.name) === norm(name)) matches.push({ login: u.login, followers, via: "location", loc: true });
   }
-  return null;
+  if (!matches.length) return null;
+  matches.sort((a, b) => Number(b.loc) - Number(a.loc) || (b.followers ?? 0) - (a.followers ?? 0));
+  const { login, followers, via } = matches[0];
+  return { login, followers, via };
 }
 
 // ---------- Deep search (async) ----------
