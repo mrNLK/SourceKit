@@ -33,36 +33,39 @@ serve(async (req) => {
     if (error) throw new Error(error.message);
 
     const apiKey = getEnv("AIRSCALE_API_KEY")!;
-    const results: { id: string; status: string; email?: string | null }[] = [];
     let found = 0;
-    for (const r of rows || []) {
-      if ((r.emails || []).length) {
-        results.push({ id: r.id, status: "already_has_email", email: r.emails[0] });
-        continue;
-      }
+    // Look up all candidates concurrently (bounded) instead of one at a time.
+    const lookup = async (r: any): Promise<{ id: string; status: string; email?: string | null }> => {
+      if ((r.emails || []).length) return { id: r.id, status: "already_has_email", email: r.emails[0] };
       const input = buildAirscaleEmailInput({ fullName: r.full_name, linkedinUrl: r.linkedin_url, companyDomain: r.company_domain, currentCompany: r.current_company });
-      if (!input) {
-        results.push({ id: r.id, status: "insufficient_input" });
-        continue;
-      }
+      if (!input) return { id: r.id, status: "insufficient_input" };
       try {
         const res = await airscaleFindEmail(apiKey, input);
         const now = new Date().toISOString();
         if (res.status === "success" && res.email) {
           found++;
-          await supabase.from("sourced_candidates").update({
-            emails: [res.email.toLowerCase()], email_provider: "airscale", email_status: res.email_status ?? "valid", email_checked_at: now, updated_at: now,
-          }).eq("id", r.id).eq("user_id", user.id);
-          await supabase.from("candidate_source_hits").insert({ candidate_id: r.id, user_id: user.id, provider: "airscale", snippet: res.email_status ?? null });
+          await Promise.all([
+            supabase.from("sourced_candidates").update({
+              emails: [res.email.toLowerCase()], email_provider: "airscale", email_status: res.email_status ?? "valid", email_checked_at: now, updated_at: now,
+            }).eq("id", r.id).eq("user_id", user.id),
+            supabase.from("candidate_source_hits").insert({ candidate_id: r.id, user_id: user.id, provider: "airscale", snippet: res.email_status ?? null }),
+          ]);
         } else {
           await supabase.from("sourced_candidates").update({ email_status: res.status, email_checked_at: now }).eq("id", r.id).eq("user_id", user.id);
         }
-        results.push({ id: r.id, status: res.status, email: res.email });
+        return { id: r.id, status: res.status, email: res.email };
       } catch (e) {
-        results.push({ id: r.id, status: "error" });
         console.error("airscale error:", e instanceof Error ? e.message : e);
+        return { id: r.id, status: "error" };
       }
-    }
+    };
+    const list = rows || [];
+    const results: { id: string; status: string; email?: string | null }[] = new Array(list.length);
+    const CONCURRENCY = 8;
+    let next = 0;
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, list.length) }, async () => {
+      while (next < list.length) { const i = next++; results[i] = await lookup(list[i]); }
+    }));
     return reply({ results, found, est_credits: found * 2 });
   } catch (e) {
     const authResp = authErrorResponse(e, getCorsHeaders(req));

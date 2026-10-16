@@ -56,18 +56,18 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
   const [activeTagFilters, setActiveTagFilters] = useState<Set<string>>(new Set());
   const [showAnalytics, setShowAnalytics] = useState(false);
 
-  const { data: candidates = [], isLoading } = useQuery({
+  const { data: candidates = [], isLoading: pipelineLoading, isFetching: pipelineFetching } = useQuery({
     queryKey: ["pipeline"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("pipeline").select("id, github_username, name, avatar_url, stage, notes, tags, created_at, updated_at").order("created_at", { ascending: false }).returns<PipelineCandidate[]>();
+      const { data, error } = await supabase.from("pipeline").select("id, github_username, name, avatar_url, stage, notes, tags, score, created_at, updated_at").order("created_at", { ascending: false }).returns<PipelineCandidate[]>();
       if (error) throw error;
       return data || [];
     },
   });
 
   // Fetch scores from candidates table
-  const { data: candidateScores = {} } = useQuery({
-    queryKey: ["candidate-scores"],
+  const { data: cachedScores = {}, isLoading: scoresLoading } = useQuery({
+    queryKey: ["candidate-scores", candidates.map((c: PipelineCandidate) => c.github_username).join(",")],
     queryFn: async () => {
       const usernames = candidates.map((c: PipelineCandidate) => c.github_username);
       if (usernames.length === 0) return {};
@@ -78,6 +78,14 @@ const PipelineTab = ({ onNavigateToSearch }: PipelineTabProps) => {
     },
     enabled: candidates.length > 0,
   });
+
+  // Same saved score shown in Results/Bulk Actions: score captured at add-time wins, cache is fallback.
+  const candidateScores: Record<string, number> = {};
+  candidates.forEach((c: PipelineCandidate & { score?: number | null }) => {
+    candidateScores[c.github_username] = c.score || cachedScores[c.github_username] || 0;
+  });
+  // Keep the skeleton until cards (and their scores) are ready, instead of flashing an empty board.
+  const isLoading = pipelineLoading || (candidates.length === 0 && pipelineFetching) || (candidates.length > 0 && scoresLoading);
 
   // Fetch last stage change time per candidate from pipeline_events
   const { data: stageChangeTimes = {} } = useQuery({
