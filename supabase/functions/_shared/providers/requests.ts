@@ -175,19 +175,39 @@ export function buildHarmonicCompanyQuery(query: string, f: CandidateFilters = {
   return buildHarmonicCompanyQueries(query, f)[0] ?? query;
 }
 
-/** GitHub repository search query from keywords (GitHub user search only matches login/name/email). */
-export function buildGithubRepoQueries(query: string, f: CandidateFilters = {}): string[] {
+/**
+ * GitHub repository search queries from keywords. One query per keyword (multi-keyword AND
+ * matching surfaces niche repos), restricted to established, recently active repos.
+ * Results are merged and ranked by stars by the client.
+ */
+export function buildGithubRepoQueries(query: string, f: CandidateFilters = {}, now: Date = new Date()): string[] {
   const { keywords } = extractSearchTerms(query, f);
-  const out = [keywords.slice(0, 2).join(" "), keywords[0]].filter((q): q is string => !!q);
-  return [...new Set(out)].map((q) => `${q} in:name,description,topics`);
+  const since = new Date(now.getTime() - 365 * 86400000).toISOString().slice(0, 10);
+  return keywords.slice(0, 3).map((k) => `${k} in:name,description,topics stars:>=500 pushed:>=${since}`);
 }
 
 /** Harmonic employee group filter: leadership roles -> LEADERSHIP, else NON_LEADERSHIP-inclusive ALL. */
-export function harmonicEmployeeGroup(f: CandidateFilters, query: string): "LEADERSHIP" | "FOUNDERS_AND_CEO" | "ALL" {
+export function harmonicEmployeeGroup(f: CandidateFilters, query: string): "LEADERSHIP" | "FOUNDERS_AND_CEO" | "NON_LEADERSHIP" {
   const t = [query, ...(f.titles || []), ...(f.seniorities || [])].join(" ").toLowerCase();
-  if (/\b(founder|ceo)\b/.test(t)) return "FOUNDERS_AND_CEO";
+  if (/\b(founders?|ceos?)\b/.test(t) && !/\bfounding\b/.test(t)) return "FOUNDERS_AND_CEO";
   if (/\b(vp|head of|director|chief|cto|c_suite|leadership)\b/.test(t)) return "LEADERSHIP";
-  return "ALL";
+  return "NON_LEADERSHIP"; // IC queries: engineers/staff, not founders/execs/board
+}
+
+/** True when the query targets individual contributors (not founders/execs). */
+export function isIcQuery(f: CandidateFilters, query: string): boolean {
+  return harmonicEmployeeGroup(f, query) === "NON_LEADERSHIP";
+}
+
+const ENGINEERING_TITLE = /\b(engineer|engineering|developer|scientist|researcher|swe|sde|programmer|architect|technical staff|mts|ml|machine learning|infrastructure|platform|sre|devops|research)\b/i;
+const NON_IC_TITLE = /\b(co-?founder|founder|ceo|cto|coo|cfo|chief|vp|vice president|president|head of|director|board|partner|investor|advisor|recruiter|talent|sales|marketing|account|operations|hr|people partner)\b/i;
+
+/** Rank for IC sourcing: 0 = engineering IC, 1 = unknown/other, 2 = exec/board/non-technical. */
+export function icTitleRank(title: string | null | undefined): number {
+  const t = title || "";
+  if (!t) return 1;
+  if (NON_IC_TITLE.test(t)) return 2;
+  return ENGINEERING_TITLE.test(t) ? 0 : 1;
 }
 
 export interface AirscaleEmailInput {

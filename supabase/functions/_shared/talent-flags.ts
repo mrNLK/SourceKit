@@ -13,7 +13,7 @@ export const GEM_MIN_OWN_STARS = 100;
 export const UNGETTABLE_FOLLOWERS = 10_000;
 
 /** Current executive/founder titles. "Founding engineer" is not matched. */
-const EXEC_TITLE = /\b(co-?founder|founder|ceo|chief [a-z]+ officer|cto|coo|cfo|vp|vice president|managing partner|general partner|venture partner|president)\b/i;
+const EXEC_TITLE = /\b(co-?founder|founder|ceo|chief [a-z]+ officer|cto|coo|cfo|vp|vice president|managing partner|general partner|venture partner|president|board member|board director|member of the board|board of directors|board advisor|advisory board member|non-executive director|chair(?:man|woman|person)? of the board)\b/i;
 /** Past-tense context right before the title: "ex-CTO", "former founder of", "previously VP". */
 const PAST_CONTEXT = /\b(ex|former(ly)?|previously|prev|past)[\s-]+(a\s+|an\s+)?$/i;
 

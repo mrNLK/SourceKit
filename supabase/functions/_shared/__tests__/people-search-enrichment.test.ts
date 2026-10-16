@@ -20,7 +20,9 @@ describe("keyword extraction for long queries", () => {
     expect(buildHarmonicCompanyQueries("x", { companies: ["Acme"] })).toEqual(["Acme"]);
   });
   it("builds GitHub repo queries", () => {
-    expect(buildGithubRepoQueries("CUDA kernel developer")).toEqual(["CUDA kernel in:name,description,topics"]);
+    expect(buildGithubRepoQueries("CUDA kernel developer", {}, new Date("2026-10-16T00:00:00Z")))
+      .toEqual(["CUDA kernel in:name,description,topics stars:>=500 pushed:>=2025-10-16"]);
+    expect(buildGithubRepoQueries("senior ML infrastructure engineer, PyTorch, distributed training")).toHaveLength(3); // one per keyword
   });
 });
 
@@ -91,7 +93,7 @@ describe("GitHub sources", () => {
     const mk = (company: string) => vi.fn(async (url: string) => url.includes("/search/users")
       ? ok({ total_count: 1, items: [{ login: "jdoe" }] })
       : ok({ login: "jdoe", company, followers: 12 }));
-    expect(await githubHandleByNameCompany("t", "Jane Doe", "Acme AI", mk("@acme") as never)).toEqual({ login: "jdoe", followers: 12 });
+    expect(await githubHandleByNameCompany("t", "Jane Doe", "Acme AI", mk("@acme") as never)).toEqual({ login: "jdoe", followers: 12, via: "company" });
     expect(await githubHandleByNameCompany("t", "Jane Doe", "Acme AI", mk("Globex") as never)).toBeNull();
     expect(await githubHandleByNameCompany("t", "Jane", "Acme", mk("@acme") as never)).toBeNull(); // single name: too ambiguous
   });

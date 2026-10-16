@@ -140,7 +140,7 @@ serve(async (req) => {
     // Free GitHub handle lookup (name + company) for top web-profile results without one.
     const nameTargets = all.filter((c) => !c.githubLogin && c.currentCompany && c.sources.some((h) => h.provider === "exa"))
       .sort((a, b) => (a.sources[0]?.rank ?? 99) - (b.sources[0]?.rank ?? 99)).slice(0, GITHUB_NAME_LOOKUPS);
-    const handles = await Promise.allSettled(nameTargets.map((c) => githubHandleByNameCompany(getEnv("GITHUB_TOKEN"), c.fullName, c.currentCompany!)));
+    const handles = await Promise.allSettled(nameTargets.map((c) => githubHandleByNameCompany(getEnv("GITHUB_TOKEN"), c.fullName, c.currentCompany!, fetch, c.location)));
     handles.forEach((r, i) => {
       if (r.status === "fulfilled" && r.value) {
         nameTargets[i].githubLogin = r.value.login.toLowerCase();
