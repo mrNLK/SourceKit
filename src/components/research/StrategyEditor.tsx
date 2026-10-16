@@ -1,3 +1,4 @@
+import { deriveRoleCategory } from "@/lib/role-category";
 import { useState, useMemo, useEffect } from "react";
 import {
   Search, GitBranch, Target, Sparkles, Briefcase,
@@ -549,7 +550,7 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
                 setWebsetSignals(signals);
                 setEeaSignalSource("model");
               }}
-              roleCategory={jobTitle || s.search_query}
+              roleCategory={deriveRoleCategory(jobTitle, s.search_query)}
             />
             {websetSignals.filter(ws => ws.enabled).length > 0 && (
               <CreateWebsetButton

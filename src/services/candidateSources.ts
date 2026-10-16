@@ -135,6 +135,12 @@ export function getDeepSearchStatus(runId: string): Promise<DeepSearchStatus> {
   return invoke('map-company-talent', { action: 'status', run_id: runId })
 }
 
+/** Which People Search sources are enabled server-side (does not count against search caps). */
+export async function getEnabledSources(): Promise<Partial<Record<SourceKey, boolean>>> {
+  const res = await invoke('source-candidates', { probe: true }) as { enabled?: Partial<Record<SourceKey, boolean>> }
+  return res?.enabled ?? {}
+}
+
 export function enrichEmails(candidateIds: string[]): Promise<{ results: { id: string; status: string; email?: string | null }[]; found: number; est_credits: number }> {
   return invoke('enrich-candidate-emails', { candidate_ids: candidateIds })
 }
