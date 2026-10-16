@@ -1,16 +1,12 @@
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 const DEFAULT_ANTHROPIC_MODEL =
-  Deno.env.get("ANTHROPIC_MODEL")?.trim() || "claude-sonnet-4-20250514";
+  Deno.env.get("ANTHROPIC_MODEL")?.trim() || "claude-sonnet-5-5";
 const FALLBACK_ANTHROPIC_MODELS: string[] = [
-  "claude-sonnet-4-20250514",
-  "claude-3-7-sonnet-20250219",
-  "claude-3-7-sonnet-latest",
-  "claude-3-5-sonnet-20241022",
-  "claude-3-5-sonnet-latest",
-  "claude-3-5-haiku-20241022",
-  "claude-3-5-haiku-latest",
-  "claude-3-haiku-20240307",
+  "claude-sonnet-5-5",
+  "claude-sonnet-5",
+  "claude-sonnet-4-6",
+  "claude-haiku-5-5",
 ];
 
 interface AnthropicOptions {
