@@ -408,7 +408,7 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
     <button onClick={() => toggleSection(id)} className="w-full flex items-center gap-2 py-2 group">
       <Icon className="w-4 h-4 text-primary shrink-0" />
       <span className="font-display text-sm font-semibold text-foreground flex-1 text-left">{title}</span>
-      {count !== undefined && <span className="text-[10px] font-display text-muted-foreground px-1.5 py-0.5 rounded bg-secondary">{count}</span>}
+      {count !== undefined && <span className="text-[11px] font-display text-muted-foreground px-1.5 py-0.5 rounded bg-secondary">{count}</span>}
       {expandedSections.has(id) ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
     </button>
   );
@@ -451,7 +451,7 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
                 <GitBranch className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <input type="text" value={repo.repo} onChange={(e) => updateRepo(idx, "repo", e.target.value)} className="w-full bg-transparent text-sm text-foreground font-display font-medium outline-none" placeholder="owner/repo" />
-                  <input type="text" value={repo.reason} onChange={(e) => updateRepo(idx, "reason", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground font-body outline-none mt-0.5" placeholder="Why this repo matters" />
+                  <textarea rows={Math.max(1, Math.ceil((repo.reason || "").length / 95))} value={repo.reason} onChange={(e) => updateRepo(idx, "reason", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground font-body outline-none mt-0.5 resize-none leading-snug break-words" style={{ fieldSizing: "content" } as React.CSSProperties} placeholder="Why this repo matters" />
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {repo.repo && <a href={`https://github.com/${repo.repo}`} target="_blank" rel="noopener noreferrer" className="p-1 rounded text-muted-foreground hover:text-primary"><ExternalLink className="w-3 h-3" /></a>}
@@ -477,13 +477,13 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
                     <div className="flex items-center gap-2">
                       <input type="text" value={company.name} onChange={(e) => updateCompany(idx, "name", e.target.value)} className="bg-transparent text-sm text-foreground font-display font-medium outline-none flex-1" placeholder="Company name" />
                       <select value={company.category} onChange={(e) => updateCompany(idx, "category", e.target.value)}
-                        className={`text-[10px] font-display font-semibold px-2 py-0.5 rounded-full border cursor-pointer outline-none ${style.bg} ${style.text} ${style.border}`}>
+                        className={`text-[11px] font-display font-semibold px-2 py-0.5 rounded-full border cursor-pointer outline-none ${style.bg} ${style.text} ${style.border}`}>
                         <option value="direct_competitor">Competitor</option>
                         <option value="adjacent">Adjacent</option>
                         <option value="talent_hub">Talent Hub</option>
                       </select>
                     </div>
-                    <input type="text" value={company.reason} onChange={(e) => updateCompany(idx, "reason", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground font-body outline-none mt-0.5" placeholder="Why this company" />
+                    <textarea rows={Math.max(1, Math.ceil((company.reason || "").length / 95))} value={company.reason} onChange={(e) => updateCompany(idx, "reason", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground font-body outline-none mt-0.5 resize-none leading-snug break-words" style={{ fieldSizing: "content" } as React.CSSProperties} placeholder="Why this company" />
                   </div>
                   <button onClick={() => removeCompany(idx)} className="p-1 rounded text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"><X className="w-3 h-3" /></button>
                 </div>

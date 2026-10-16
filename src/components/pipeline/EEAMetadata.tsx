@@ -15,7 +15,7 @@ const EEAMetadata = ({ strength, enrichments, compact = true }: EEAMetadataProps
       <div className="flex items-center gap-1.5">
         {strength && <EEABadge strength={strength} size="sm" />}
         {enrichments && enrichments.filter(e => e.verified).length > 0 && (
-          <span className="text-[9px] font-display text-muted-foreground">
+          <span className="text-[10px] font-display text-muted-foreground">
             {enrichments.filter(e => e.verified).length} verified
           </span>
         )}
@@ -32,7 +32,7 @@ const EEAMetadata = ({ strength, enrichments, compact = true }: EEAMetadataProps
             <div key={idx} className="flex items-start gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1 shrink-0" />
               <div>
-                <p className="text-[10px] font-display text-muted-foreground">{e.signal_name}</p>
+                <p className="text-[11px] font-display text-muted-foreground">{e.signal_name}</p>
                 <p className="text-xs text-foreground font-body">{e.value}</p>
               </div>
             </div>

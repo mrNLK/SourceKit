@@ -66,7 +66,7 @@ const JDInput = ({ state, inputMode, isLoading, validationErrors, onUpdate, onCl
           </div>
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-border" />
-            <span className="text-[10px] font-display text-muted-foreground uppercase tracking-wider">or paste text</span>
+            <span className="text-[11px] font-display text-muted-foreground uppercase tracking-wider">or paste text</span>
             <div className="h-px flex-1 bg-border" />
           </div>
           <textarea id="job-description-text" name="jobDescriptionText" value={state.jdText || ""} onChange={(e) => onUpdate({ jdText: e.target.value })}

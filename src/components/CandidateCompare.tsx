@@ -198,7 +198,7 @@ const CandidateCompare = ({ open, onOpenChange, candidates }: CandidateComparePr
                     {(c.top_languages || []).slice(0, 4).map((l: any) => (
                       <span
                         key={l.name}
-                        className="text-[9px] font-display px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground"
+                        className="text-[10px] font-display px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground"
                       >
                         {l.name}
                       </span>
@@ -249,7 +249,7 @@ const CandidateCompare = ({ open, onOpenChange, candidates }: CandidateComparePr
                     href={c.github_url || `https://github.com/${c.github_username}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[10px] font-display text-primary hover:underline"
+                    className="inline-flex items-center gap-1 text-[11px] font-display text-primary hover:underline"
                   >
                     GitHub <ExternalLink className="w-2.5 h-2.5" />
                   </a>
@@ -258,7 +258,7 @@ const CandidateCompare = ({ open, onOpenChange, candidates }: CandidateComparePr
                       href={c.linkedin_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[10px] font-display text-info hover:underline"
+                      className="inline-flex items-center gap-1 text-[11px] font-display text-info hover:underline"
                     >
                       LinkedIn <ExternalLink className="w-2.5 h-2.5" />
                     </a>
@@ -285,7 +285,7 @@ function CompareRow({
   return (
     <div className={`flex items-start gap-3 px-3 py-2.5 ${last ? "" : "border-b border-border/50"} even:bg-secondary/20`}>
       <div className="w-20 shrink-0">
-        <span className="text-[10px] font-display font-semibold text-muted-foreground uppercase tracking-wider">
+        <span className="text-[11px] font-display font-semibold text-muted-foreground uppercase tracking-wider">
           {label}
         </span>
       </div>

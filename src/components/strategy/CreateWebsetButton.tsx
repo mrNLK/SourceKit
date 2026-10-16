@@ -78,7 +78,7 @@ const CreateWebsetButton = ({ role, company, skills, signals, onNavigateToWebset
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <label className="text-[10px] font-display text-muted-foreground">Count</label>
+            <label className="text-[11px] font-display text-muted-foreground">Count</label>
             <input
               type="number"
               value={searchCount}

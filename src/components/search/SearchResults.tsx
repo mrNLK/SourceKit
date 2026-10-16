@@ -81,7 +81,7 @@ const SearchResults = ({
             onCardClick={(d) => onCardClick(d)}
           />
           {dev.skillMatch >= 0 && (
-            <div className={`absolute bottom-3 right-3 text-[10px] font-display font-bold px-2 py-0.5 rounded-full border ${
+            <div className={`absolute bottom-3 right-3 text-[11px] font-display font-bold px-2 py-0.5 rounded-full border ${
               dev.skillMatch >= 70 ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" :
               dev.skillMatch >= 40 ? "bg-amber-500/15 text-amber-400 border-amber-500/30" :
               "bg-secondary text-secondary-foreground border-border"

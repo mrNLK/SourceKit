@@ -143,7 +143,7 @@ const OutreachTemplateEditor = ({ developer, onUseMessage }: OutreachTemplateEdi
               <button
                 key={v.key}
                 onClick={() => setDraftBody((prev) => prev + `{{${v.key}}}`)}
-                className="text-[10px] font-display px-2 py-0.5 rounded-full border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+                className="text-[11px] font-display px-2 py-0.5 rounded-full border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
                 title={`Insert {{${v.key}}} — e.g. "${v.example}"`}
               >
                 {`{{${v.key}}}`}

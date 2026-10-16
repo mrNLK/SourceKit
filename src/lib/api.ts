@@ -171,6 +171,31 @@ export async function searchDevelopersStreaming(
   return result;
 }
 
+type ParsedCriteria = SearchResponse['parsedCriteria'];
+/** Rebuild the criteria shown on replay from the saved search_history metadata. */
+export function criteriaFromHistoryMeta(meta: any): { parsedCriteria: ParsedCriteria; reposSearched: string[] } {
+  const m = meta && typeof meta === 'object' ? meta : {};
+  const reposSearched: string[] = Array.isArray(m.repos_searched) ? m.repos_searched.filter((r: unknown) => typeof r === 'string') : [];
+  return {
+    parsedCriteria: {
+      repos: reposSearched.map((r) => { const [owner, name] = r.split('/'); return { owner, name }; }),
+      skills: Array.isArray(m.skills) ? m.skills.filter((s: unknown) => typeof s === 'string' && s.trim()) : [],
+      location: typeof m.location === 'string' && m.location.trim() ? m.location : null,
+      seniority: typeof m.seniority === 'string' && m.seniority.trim() ? m.seniority : null,
+    } as ParsedCriteria,
+    reposSearched,
+  };
+}
+
+async function loadHistoryCriteria(searchId: string) {
+  try {
+    const { data } = await supabase.from('search_history').select('metadata').eq('id', searchId).maybeSingle();
+    return criteriaFromHistoryMeta((data as any)?.metadata);
+  } catch {
+    return criteriaFromHistoryMeta(null);
+  }
+}
+
 // BUG-001: Load cached search results from junction table (history replay)
 export async function loadSearchResults(searchId: string): Promise<SearchResponse> {
   const { data, error } = await supabase
@@ -191,8 +216,9 @@ export async function loadSearchResults(searchId: string): Promise<SearchRespons
     .order('rank', { ascending: true });
 
   if (error) throw new Error(error.message);
+  const saved = await loadHistoryCriteria(searchId);
   if (!data || data.length === 0) {
-    return { results: [], searchId, parsedCriteria: { repos: [], skills: [], location: null, seniority: null }, reposSearched: [] };
+    return { results: [], searchId, ...saved };
   }
 
   const results = data.map((row: any) => {
@@ -237,8 +263,7 @@ export async function loadSearchResults(searchId: string): Promise<SearchRespons
   return {
     results,
     searchId,
-    parsedCriteria: { repos: [], skills: [], location: null, seniority: null },
-    reposSearched: [],
+    ...saved,
   };
 }
 

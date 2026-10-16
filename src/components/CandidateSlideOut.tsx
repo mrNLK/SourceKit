@@ -424,7 +424,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
                   {tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 text-[10px] font-display px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20"
+                      className="inline-flex items-center gap-1 text-[11px] font-display px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20"
                     >
                       {tag}
                       <button
@@ -540,7 +540,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
               <div className="flex items-center gap-1 bg-secondary/60 rounded-lg p-0.5">
                 <button
                   onClick={() => setOutreachMode("ai")}
-                  className={`text-[10px] font-display px-2.5 py-1 rounded-md transition-colors ${
+                  className={`text-[11px] font-display px-2.5 py-1 rounded-md transition-colors ${
                     outreachMode === "ai" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -548,7 +548,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
                 </button>
                 <button
                   onClick={() => setOutreachMode("template")}
-                  className={`text-[10px] font-display px-2.5 py-1 rounded-md transition-colors ${
+                  className={`text-[11px] font-display px-2.5 py-1 rounded-md transition-colors ${
                     outreachMode === "template" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -572,7 +572,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
             <div className="flex items-center justify-between mb-3">
               <div className="relative">
                 <button onClick={() => setToneOpen(!toneOpen)}
-                  className="flex items-center gap-1 text-[10px] font-display px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground transition-colors">
+                  className="flex items-center gap-1 text-[11px] font-display px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground transition-colors">
                   {OUTREACH_TONES.find(t => t.id === outreachTone)?.label} <ChevronDown className="w-2.5 h-2.5" />
                 </button>
                 {toneOpen && (
@@ -709,7 +709,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
               ].map(stat => (
                 <div key={stat.label} className="text-center p-2 rounded-lg bg-secondary/50 border border-border">
                   <div className="font-display text-sm font-bold text-foreground">{typeof stat.value === "number" && stat.label !== "Since" ? stat.value.toLocaleString() : stat.value}</div>
-                  <div className="text-[10px] font-display text-muted-foreground">{stat.label}</div>
+                  <div className="text-[11px] font-display text-muted-foreground">{stat.label}</div>
                 </div>
               ))}
             </div>

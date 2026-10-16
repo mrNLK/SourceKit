@@ -37,7 +37,7 @@ export function EEAMini({ developer }: { developer: any }) {
   return (
     <div className="flex items-center gap-1.5">
       <span
-        className={`text-[10px] font-display font-semibold px-1.5 py-0.5 rounded border ${eea.tier.bgColor} ${eea.tier.color} ${eea.tier.borderColor}`}
+        className={`text-[11px] font-display font-semibold px-1.5 py-0.5 rounded border ${eea.tier.bgColor} ${eea.tier.color} ${eea.tier.borderColor}`}
         title="Evidence of Exceptional Ability — measures publications, patents, open-source impact, and top-company experience. 70+ Strong, 40-69 Moderate, <40 Limited."
       >
         EEA {eea.overallScore}
@@ -68,7 +68,7 @@ function DimensionBar({ dim, expanded, onToggle }: { dim: EEADimension; expanded
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-display font-medium text-foreground truncate">{dim.shortLabel}</span>
-            <span className={`text-[10px] font-display font-semibold ${colors.text}`}>
+            <span className={`text-[11px] font-display font-semibold ${colors.text}`}>
               {STRENGTH_LABELS[dim.strength]}
             </span>
           </div>
@@ -103,10 +103,10 @@ function DimensionBar({ dim, expanded, onToggle }: { dim: EEADimension; expanded
             </ul>
           )}
           {dim.needsDocumentation.length > 0 && (
-            <div className="mt-1.5 p-2 rounded-md bg-amber-500/5 border border-amber-500/15">
+            <div className="mt-1.5 p-2 rounded-md bg-craft-wash border border-craft-line">
               <div className="flex items-center gap-1 mb-1">
                 <FileText className="w-3 h-3 text-amber-400" />
-                <span className="text-[10px] font-display font-semibold text-amber-400">Needs Documentation</span>
+                <span className="text-[11px] font-display font-semibold text-amber-400">Needs Documentation</span>
               </div>
               <ul className="space-y-0.5">
                 {dim.needsDocumentation.map((nd, i) => (
@@ -131,11 +131,11 @@ function CompactDimensionRow({ dim }: { dim: EEADimension }) {
   return (
     <div className="flex items-center gap-2">
       {dim.icon && <span className="text-xs leading-none w-4 text-center">{dim.icon}</span>}
-      <span className="text-[10px] font-display text-foreground w-24 truncate">{dim.shortLabel}</span>
+      <span className="text-[11px] font-display text-foreground w-24 truncate">{dim.shortLabel}</span>
       <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
         <div className={`h-full rounded-full ${colors.bar}`} style={{ width: `${widthPercent}%` }} />
       </div>
-      <span className={`text-[9px] font-display font-semibold w-16 text-right ${colors.text}`}>
+      <span className={`text-[10px] font-display font-semibold w-16 text-right ${colors.text}`}>
         {STRENGTH_LABELS[dim.strength]}
       </span>
     </div>
@@ -156,7 +156,7 @@ export function EEAPopover({ developer }: { developer: any }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xs font-display font-semibold text-foreground">EEA Breakdown</span>
-          <span className={`text-[9px] font-display font-bold px-1.5 py-0.5 rounded-full border ${eea.tier.bgColor} ${eea.tier.color} ${eea.tier.borderColor}`}>
+          <span className={`text-[10px] font-display font-bold px-1.5 py-0.5 rounded-full border ${eea.tier.bgColor} ${eea.tier.color} ${eea.tier.borderColor}`}>
             {eea.tier.label}
           </span>
         </div>
@@ -167,7 +167,7 @@ export function EEAPopover({ developer }: { developer: any }) {
 
       {/* USCIS Criteria */}
       <div>
-        <span className="text-[9px] font-display font-semibold text-muted-foreground uppercase tracking-wider">USCIS Criteria</span>
+        <span className="text-[10px] font-display font-semibold text-muted-foreground uppercase tracking-wider">USCIS Criteria</span>
         <div className="mt-1.5 space-y-1.5">
           {uscisDims.map(dim => <CompactDimensionRow key={dim.id} dim={dim} />)}
         </div>
@@ -175,7 +175,7 @@ export function EEAPopover({ developer }: { developer: any }) {
 
       {/* Supplementary */}
       <div>
-        <span className="text-[9px] font-display font-semibold text-muted-foreground uppercase tracking-wider">Supplementary</span>
+        <span className="text-[10px] font-display font-semibold text-muted-foreground uppercase tracking-wider">Supplementary</span>
         <div className="mt-1.5 space-y-1.5">
           {suppDims.map(dim => <CompactDimensionRow key={dim.id} dim={dim} />)}
         </div>
@@ -216,10 +216,10 @@ export function EEAFull({ developer }: { developer: any }) {
           <h2 className="font-display text-sm font-semibold text-foreground" title="EEA measures signals like publications, patents, open-source impact, and top-company experience based on USCIS O-1A visa criteria.">Evidence of Exceptional Ability</h2>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`text-[10px] font-display font-bold px-2 py-0.5 rounded-full border ${eea.tier.bgColor} ${eea.tier.color} ${eea.tier.borderColor}`}>
+          <span className={`text-[11px] font-display font-bold px-2 py-0.5 rounded-full border ${eea.tier.bgColor} ${eea.tier.color} ${eea.tier.borderColor}`}>
             {eea.tier.label}
           </span>
-          <span className="text-[10px] font-display text-muted-foreground">
+          <span className="text-[11px] font-display text-muted-foreground">
             {eea.strongCount} strong signal{eea.strongCount !== 1 ? 's' : ''}
           </span>
           <div className={`ml-auto w-9 h-9 rounded-lg flex items-center justify-center font-display text-sm font-bold border ${eea.tier.bgColor} ${eea.tier.color} ${eea.tier.borderColor}`}>
@@ -231,7 +231,7 @@ export function EEAFull({ developer }: { developer: any }) {
       {/* USCIS Criteria */}
       <div>
         <div className="flex items-center gap-1.5 mb-3">
-          <span className="text-[10px] font-display font-semibold text-muted-foreground uppercase tracking-wider">USCIS Criteria</span>
+          <span className="text-[11px] font-display font-semibold text-muted-foreground uppercase tracking-wider">USCIS Criteria</span>
           <span className="flex-1 h-px bg-border" />
         </div>
         <div className="space-y-3">
@@ -249,7 +249,7 @@ export function EEAFull({ developer }: { developer: any }) {
       {/* Supplementary Signals */}
       <div>
         <div className="flex items-center gap-1.5 mb-3">
-          <span className="text-[10px] font-display font-semibold text-muted-foreground uppercase tracking-wider">Supplementary Signals</span>
+          <span className="text-[11px] font-display font-semibold text-muted-foreground uppercase tracking-wider">Supplementary Signals</span>
           <span className="flex-1 h-px bg-border" />
         </div>
         <div className="space-y-3">
@@ -266,20 +266,20 @@ export function EEAFull({ developer }: { developer: any }) {
 
       {/* Documentation Gaps */}
       {eea.documentationGaps.length > 0 && (
-        <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/15">
+        <div className="p-3 rounded-lg bg-craft-wash border border-craft-line">
           <div className="flex items-center gap-1.5 mb-2">
-            <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-xs font-display font-semibold text-amber-400">Top Documentation Gaps</span>
+            <AlertCircle className="w-3.5 h-3.5 text-craft-section" />
+            <span className="text-xs font-display font-semibold text-craft-section">Top Documentation Gaps</span>
           </div>
           <ul className="space-y-1">
             {eea.documentationGaps.map((gap, i) => (
-              <li key={i} className="text-[11px] text-amber-400/80 flex items-start gap-1.5">
-                <span className="text-amber-400/50 mt-0.5">-</span>
+              <li key={i} className="text-[11px] text-craft-body flex items-start gap-1.5">
+                <span className="text-craft-muted mt-0.5">-</span>
                 {gap}
               </li>
             ))}
           </ul>
-          <p className="text-[10px] text-muted-foreground mt-2 italic">
+          <p className="text-[11px] text-craft-muted mt-2">
             Automated scoring uses GitHub public data only. Supplement with documentation for a complete EEA case.
           </p>
         </div>
