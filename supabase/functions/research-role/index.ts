@@ -200,6 +200,16 @@ serve(async (req) => {
         emit('companies', 'Enriching target companies with Harmonic data');
         try {
           // Helper: enrich a single company via Harmonic
+          const norm = (v: string) => (v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\b(inc|llc|ltd|corp|corporation|co|ai|labs|technologies|the)\b/g, ' ').replace(/\s+/g, ' ').trim();
+          function namesAgree(a: string, b: string) {
+            const x = norm(a), y = norm(b);
+            if (!x || !y) return false;
+            return x === y || y.startsWith(x) || x.startsWith(y) || x.replace(/ /g, '') === y.replace(/ /g, '');
+          }
+          const IRRELEVANT_ENTITY = /\b(secretar[ií]a|ministry|ministerio|government|gobierno|department of|agency|embassy|municipal|city of|county|university|universidad|college|school|church|foundation|fundaci[oó]n|association|asociaci[oó]n|council|federation|chamber of commerce|united nations|integraci[oó]n econ[oó]mica|nonprofit|non-profit)\b|\.(gov|gob|mil|edu|int)(\.[a-z]{2})?$/i;
+          const isIrrelevantEntity = (c: any) => IRRELEVANT_ENTITY.test(c?.name || '') || IRRELEVANT_ENTITY.test(c?.domain || '') ||
+            (c?.industry_tags || []).some((t: string) => /government|public administration|non-?profit|religious|civic/i.test(t || ''));
+
           async function enrichCompany(name: string, category: string, reason: string, source: string) {
             const domain = name.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com';
             const url = new URL('https://api.harmonic.ai/companies');
@@ -211,6 +221,9 @@ serve(async (req) => {
             });
             if (!res.ok) return null;
             const data = await res.json();
+            // Guessed domains can resolve to an unrelated entity (e.g. an acronym collision with a government body).
+            // Only trust the Harmonic match when its name agrees with the suggested company.
+            if (data?.name && !namesAgree(name, data.name)) return null;
 
             // Compute poachability
             const tm = data.traction_metrics;
@@ -319,6 +332,7 @@ serve(async (req) => {
           const seen = new Set<string>();
           const deduped: any[] = [];
           for (const c of allCompanies) {
+            if (isIrrelevantEntity(c)) continue;
             const key = (c.domain || c.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
             if (seen.has(key)) continue;
             seen.add(key);

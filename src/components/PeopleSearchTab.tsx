@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Globe, Loader2, Mail, Search, Telescope, ExternalLink, Github, Linkedin } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { supabase } from '@/integrations/supabase/client'
 import {
   enrichEmails, getEnabledSources, pollDeepSearch, providerBadges, sourceCandidates, splitList, startDeepSearch, withTalentFlags,
   type SourceKey, type SourcedCandidate,
@@ -107,6 +108,12 @@ const PeopleSearchTab = () => {
   const abortRef = useRef<AbortController | null>(null)
   useEffect(() => () => abortRef.current?.abort(), [])
 
+  const recordHistory = useCallback(async (label: string, count: number, meta: Record<string, unknown>) => {
+    try {
+      await supabase.from('search_history').insert({ query: label, action_type: 'people_search', result_count: count, metadata: meta } as never)
+    } catch { /* history is best-effort */ }
+  }, [])
+
   const runSearch = useCallback(async () => {
     if (!query.trim() && !titles && !companies) return
     setLoading(true)
@@ -120,6 +127,7 @@ const PeopleSearchTab = () => {
       })
       setResults(res.candidates)
       setSourceStats(res.sources)
+      void recordHistory(query.trim() || [titles, companies].filter(Boolean).join(' · '), res.candidates.length, { source: 'people_search', titles, locations, skills, companies, status: res.candidates.length ? 'success' : 'no_results' })
       const failed = Object.entries(res.sources).filter(([, s]) => s.error).map(([k]) => k)
       if (failed.length) toast({ title: 'Some sources failed', description: failed.join(', ') })
     } catch (e) {
@@ -127,7 +135,7 @@ const PeopleSearchTab = () => {
     } finally {
       setLoading(false)
     }
-  }, [query, titles, locations, skills, companies, sources, enabledSources])
+  }, [query, titles, locations, skills, companies, sources, enabledSources, recordHistory])
 
   const runDeepSearch = useCallback(async () => {
     if (!dsRole.trim()) return
@@ -230,7 +238,7 @@ const PeopleSearchTab = () => {
             </div>
             <button onClick={runEnrich} disabled={!selected.size || enriching} title="Select up to 25 candidates, then look up their work emails" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs disabled:opacity-50">
               {enriching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
-              {selected.size ? `Find emails for ${selected.size} selected` : 'Select candidates to find emails'}
+              {enriching ? `Finding emails for ${selected.size}…` : selected.size ? `Find emails for ${selected.size} selected` : 'Select candidates to find emails'}
               <span className="text-muted-foreground">(max 25)</span>
             </button>
           </div>

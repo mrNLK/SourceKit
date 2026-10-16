@@ -707,7 +707,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
                 { label: "Since", value: dev.joinedYear || "N/A" },
               ].map(stat => (
                 <div key={stat.label} className="text-center p-2 rounded-lg bg-secondary/50 border border-border">
-                  <div className="font-display text-sm font-bold text-foreground">{typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}</div>
+                  <div className="font-display text-sm font-bold text-foreground">{typeof stat.value === "number" && stat.label !== "Since" ? stat.value.toLocaleString() : stat.value}</div>
                   <div className="text-[10px] font-display text-muted-foreground">{stat.label}</div>
                 </div>
               ))}
