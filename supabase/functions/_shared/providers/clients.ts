@@ -123,22 +123,30 @@ export async function harmonicPersonByLinkedin(cfg: HarmonicConfig, linkedinUrl:
  */
 export async function harmonicCompanyFirstPeople(
   cfg: HarmonicConfig,
-  companyQuery: string,
+  companyQuery: string | string[],
   opts: { companies?: number; perCompany?: number; group?: string } = {},
   f: FetchLike = fetch,
-): Promise<{ candidates: UnifiedCandidate[]; companyUrns: string[] }> {
+): Promise<{ candidates: UnifiedCandidate[]; companyUrns: string[]; queryUsed: string | null; attempts: number }> {
   const nCompanies = Math.max(1, Math.min(10, opts.companies ?? 5));
   const perCompany = Math.max(1, Math.min(50, opts.perCompany ?? 10));
-  const q = new URLSearchParams({ query: companyQuery, size: String(nCompanies) });
-  const search = await json("harmonic", await f(`${cfg.baseUrl}/search/search_agent?${q}`, { headers: hHeaders(cfg) }));
-  const companyUrns = extractUrns(search, "company").slice(0, nCompanies);
+  const queries = (Array.isArray(companyQuery) ? companyQuery : [companyQuery]).filter(Boolean).slice(0, 3);
+  let companyUrns: string[] = [];
+  let queryUsed: string | null = null;
+  let attempts = 0;
+  for (const cq of queries) {
+    attempts++;
+    const q = new URLSearchParams({ query: cq, size: String(nCompanies) });
+    const search = await json("harmonic", await f(`${cfg.baseUrl}/search/search_agent?${q}`, { headers: hHeaders(cfg) }));
+    companyUrns = extractUrns(search, "company").slice(0, nCompanies);
+    if (companyUrns.length) { queryUsed = cq; break; }
+  }
   const employeeLists = await Promise.allSettled(companyUrns.map(async (urn) => {
     const eq = new URLSearchParams({ employee_group_type: opts.group ?? "ALL", employee_status: "ACTIVE", size: String(perCompany), page: "0" });
     const data = await json("harmonic", await f(`${cfg.baseUrl}/companies/${encodeURIComponent(urn)}/employees?${eq}`, { headers: hHeaders(cfg) }));
     return extractUrns(data, "person").slice(0, perCompany);
   }));
   const personUrns = [...new Set(employeeLists.flatMap((r) => (r.status === "fulfilled" ? r.value : [])))];
-  return { candidates: await harmonicPersonsByUrns(cfg, personUrns, f), companyUrns };
+  return { candidates: await harmonicPersonsByUrns(cfg, personUrns, f), companyUrns, queryUsed, attempts };
 }
 
 // ---------- Airscale (email enrichment) ----------
@@ -160,6 +168,65 @@ export async function githubUserSearch(token: string | undefined, q: string, per
   if (token) headers.Authorization = `Bearer ${token}`;
   const data = await json("github", await f(`https://api.github.com/search/users?q=${encodeURIComponent(q)}&per_page=${perPage}`, { headers }));
   return compact((data.items || []).map((u: any, i: number) => fromGithubUser(u, i + 1)));
+}
+
+function ghHeaders(token?: string): Record<string, string> {
+  const h: Record<string, string> = { Accept: "application/vnd.github+json", "User-Agent": "SourceKit" };
+  if (token) h.Authorization = `Bearer ${token}`;
+  return h;
+}
+
+/**
+ * Keyword -> people via repositories: search repos by topic keywords, take the top repos'
+ * top human contributors, then load their profiles. Free (GitHub token), ~1 + repos + users calls.
+ */
+export async function githubContributorSearch(
+  token: string | undefined,
+  repoQueries: string[],
+  opts: { repos?: number; perRepo?: number; maxUsers?: number } = {},
+  f: FetchLike = fetch,
+): Promise<{ candidates: UnifiedCandidate[]; repos: string[] }> {
+  const headers = ghHeaders(token);
+  let repos: string[] = [];
+  for (const q of repoQueries.slice(0, 2)) {
+    const data = await json("github", await f(`https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=${opts.repos ?? 3}`, { headers }));
+    repos = (data.items || []).map((r: any) => r.full_name).filter(Boolean);
+    if (repos.length) break;
+  }
+  const perRepo = opts.perRepo ?? 10;
+  const lists = await Promise.allSettled(repos.map(async (full) => {
+    const data = await json("github", await f(`https://api.github.com/repos/${full}/contributors?per_page=${perRepo + 5}`, { headers }));
+    return (Array.isArray(data) ? data : []).filter((u: any) => u?.type !== "Bot" && !/\[bot\]$|bot$/i.test(u?.login || "")).slice(0, perRepo).map((u: any) => u.login as string);
+  }));
+  const logins = [...new Set(lists.flatMap((r) => (r.status === "fulfilled" ? r.value : [])))].slice(0, opts.maxUsers ?? 25);
+  const users = await Promise.allSettled(logins.map(async (l) => json("github", await f(`https://api.github.com/users/${encodeURIComponent(l)}`, { headers }))));
+  const candidates = compact(users.map((r, i) => (r.status === "fulfilled" ? fromGithubUser(r.value, i + 1) : null)));
+  return { candidates, repos };
+}
+
+/**
+ * Find a GitHub handle for a named person at a known company (free). Only accepts a match whose
+ * GitHub profile company/bio mentions the candidate's company, to avoid same-name false positives.
+ */
+export async function githubHandleByNameCompany(
+  token: string | undefined,
+  fullName: string,
+  company: string,
+  f: FetchLike = fetch,
+): Promise<{ login: string; followers: number | null } | null> {
+  const name = fullName.replace(/[,(].*$/, "").replace(/\b(ph\.?d|mba|md)\.?\b/gi, "").trim();
+  const co = company.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ")[0];
+  if (name.split(/\s+/).length < 2 || !co || co.length < 2) return null;
+  const headers = ghHeaders(token);
+  const data = await json("github", await f(`https://api.github.com/search/users?q=${encodeURIComponent(`fullname:"${name}" type:user`)}&per_page=5`, { headers }));
+  const items = (data.items || []).slice(0, 3);
+  if (!items.length || (data.total_count ?? items.length) > 5) return null;
+  for (const it of items) {
+    const u = await json("github", await f(`https://api.github.com/users/${encodeURIComponent(it.login)}`, { headers }));
+    const hay = `${u.company || ""} ${u.bio || ""}`.toLowerCase();
+    if (hay.includes(co)) return { login: u.login, followers: typeof u.followers === "number" ? u.followers : null };
+  }
+  return null;
 }
 
 // ---------- Deep search (async) ----------

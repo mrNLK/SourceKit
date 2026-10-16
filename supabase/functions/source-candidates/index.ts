@@ -6,11 +6,11 @@ import { githubFetch } from "../_shared/github.ts";
 import { classifyPerson } from "../_shared/talent-flags.ts";
 import { requireAuth, authErrorResponse } from "../_shared/auth.ts";
 import {
-  exaPeopleSearch, githubUserSearch, harmonicCompanyFirstPeople, harmonicPeopleByName, harmonicPersonByLinkedin,
+  exaPeopleSearch, githubContributorSearch, githubHandleByNameCompany, harmonicCompanyFirstPeople, harmonicPeopleByName, harmonicPersonByLinkedin,
   parallelEntitySearchPeople, type HarmonicConfig,
 } from "../_shared/providers/clients.ts";
 import {
-  buildHarmonicCompanyQuery, buildPeopleQuery, hasFilters, harmonicEmployeeGroup, sanitizeFilters,
+  buildGithubRepoQueries, buildHarmonicCompanyQueries, buildPeopleQuery, extractSearchTerms, hasFilters, harmonicEmployeeGroup, sanitizeFilters,
 } from "../_shared/providers/requests.ts";
 import { clamp, exaMaxResults, harmonicBaseUrl, isHarmonicEnabled, isParallelPeopleEnabled } from "../_shared/providers/flags.ts";
 import { COST } from "../_shared/providers/persist.ts";
@@ -27,7 +27,8 @@ import type { UnifiedCandidate } from "../_shared/providers/candidate.ts";
  */
 type SourceName = "exa" | "parallel" | "harmonic" | "github";
 const HARMONIC_ENRICH_TOP = 10;
-const GITHUB_FLAG_LOOKUPS = 25; // free GitHub /users lookups for follower counts (hidden gem / ungettable)
+const GITHUB_FLAG_LOOKUPS = 25;
+const GITHUB_NAME_LOOKUPS = 10; // free name+company -> GitHub handle lookups for top Exa results // free GitHub /users lookups for follower counts (hidden gem / ungettable)
 
 /** Attach hidden_gem / ungettable flags (and GitHub follower counts) and drop bot accounts. */
 async function addTalentFlags(rows: any[]): Promise<any[]> {
@@ -76,7 +77,7 @@ serve(async (req) => {
     };
 
     const nl = buildPeopleQuery(query, filters);
-    const tasks: { source: SourceName; run: () => Promise<{ candidates: UnifiedCandidate[]; cost: number; total?: number | null }> }[] = [];
+    const tasks: { source: SourceName; run: () => Promise<{ candidates: UnifiedCandidate[]; cost: number; total?: number | null; detail?: Record<string, unknown> }> }[] = [];
     if (requested.has("exa") && enabled.exa) {
       const n = Math.min(exaMaxResults(getEnv), limit);
       tasks.push({ source: "exa", run: async () => ({ candidates: await exaPeopleSearch(getEnv("EXA_API_KEY")!, nl, { numResults: n }), cost: COST.exaSearch(n) }) });
@@ -91,17 +92,20 @@ serve(async (req) => {
         const found: UnifiedCandidate[] = [];
         if (personName) found.push(...await harmonicPeopleByName(harmonicCfg, personName, 10));
         if (query || hasFilters(filters)) {
-          const r = await harmonicCompanyFirstPeople(harmonicCfg, buildHarmonicCompanyQuery(query, filters), {
+          const r = await harmonicCompanyFirstPeople(harmonicCfg, buildHarmonicCompanyQueries(query, filters), {
             companies: 5, perCompany: Math.max(5, Math.min(20, Math.ceil(limit / 5))), group: harmonicEmployeeGroup(filters, query),
           });
           found.push(...r.candidates);
+          return { candidates: found, cost: 0, detail: { company_query: r.queryUsed, companies: r.companyUrns.length, attempts: r.attempts } };
         }
         return { candidates: found, cost: 0 };
       } });
     }
     if (requested.has("github") && enabled.github) {
-      const ghq = [query, ...(filters.locations || []).slice(0, 1).map((l) => `location:"${l.split(",")[0]}"`)].join(" ");
-      tasks.push({ source: "github", run: async () => ({ candidates: await githubUserSearch(getEnv("GITHUB_TOKEN"), ghq, Math.min(30, limit)), cost: 0 }) });
+      tasks.push({ source: "github", run: async () => {
+        const r = await githubContributorSearch(getEnv("GITHUB_TOKEN"), buildGithubRepoQueries(query, filters), { repos: 3, perRepo: 10, maxUsers: Math.min(30, limit) });
+        return { candidates: r.candidates, cost: 0, detail: { repos: r.repos } };
+      } });
     }
 
     if (!tasks.length) {
@@ -109,14 +113,14 @@ serve(async (req) => {
     }
 
     const settled = await Promise.allSettled(tasks.map((t) => t.run()));
-    const sources: Record<string, { count: number; est_cost_usd: number; total?: number | null; error?: string }> = {};
+    const sources: Record<string, { count: number; est_cost_usd: number; total?: number | null; error?: string; detail?: Record<string, unknown> }> = {};
     // Order = merge priority for field conflicts: structured sources first.
     const priority: SourceName[] = ["harmonic", "github", "exa", "parallel"];
     const bySource = new Map<SourceName, UnifiedCandidate[]>();
     settled.forEach((r, i) => {
       const s = tasks[i].source;
       if (r.status === "fulfilled") {
-        sources[s] = { count: r.value.candidates.length, est_cost_usd: Number(r.value.cost.toFixed(4)), total: r.value.total };
+        sources[s] = { count: r.value.candidates.length, est_cost_usd: Number(r.value.cost.toFixed(4)), total: r.value.total, ...(r.value.detail ? { detail: r.value.detail } : {}) };
         bySource.set(s, r.value.candidates);
       } else {
         const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
@@ -132,6 +136,18 @@ serve(async (req) => {
       const enriched = await Promise.allSettled(targets.map((c) => harmonicPersonByLinkedin(harmonicCfg, c.linkedinUrl!)));
       for (const r of enriched) if (r.status === "fulfilled" && r.value) all.push(r.value);
     }
+
+    // Free GitHub handle lookup (name + company) for top web-profile results without one.
+    const nameTargets = all.filter((c) => !c.githubLogin && c.currentCompany && c.sources.some((h) => h.provider === "exa"))
+      .sort((a, b) => (a.sources[0]?.rank ?? 99) - (b.sources[0]?.rank ?? 99)).slice(0, GITHUB_NAME_LOOKUPS);
+    const handles = await Promise.allSettled(nameTargets.map((c) => githubHandleByNameCompany(getEnv("GITHUB_TOKEN"), c.fullName, c.currentCompany!)));
+    handles.forEach((r, i) => {
+      if (r.status === "fulfilled" && r.value) {
+        nameTargets[i].githubLogin = r.value.login.toLowerCase();
+        nameTargets[i].profileUrls.push(`https://github.com/${r.value.login}`);
+      }
+    });
+    const githubMatched = handles.filter((r) => r.status === "fulfilled" && r.value).length;
 
     const supabase = createClient(getEnv("SUPABASE_URL")!, getEnv("SUPABASE_SERVICE_ROLE_KEY")!);
     const persist = body.persist !== false;
@@ -151,6 +167,8 @@ serve(async (req) => {
       sources,
       enabled,
       raw_count: all.length,
+      keywords: extractSearchTerms(query, filters).keywords,
+      github_name_matches: githubMatched,
       est_cost_usd: Number(Object.values(sources).reduce((a, s) => a + s.est_cost_usd, 0).toFixed(4)),
     }), { headers });
   } catch (e) {

@@ -117,7 +117,7 @@ describe("request builders match current docs", () => {
   });
   it("harmonic + airscale builders", () => {
     expect(buildHarmonicCompanyQuery("ml infra", { companies: ["Acme", "Globex"] })).toBe("Acme, Globex");
-    expect(buildHarmonicCompanyQuery("ml infra", { skills: ["cuda"] })).toBe("companies building cuda");
+    expect(buildHarmonicCompanyQuery("ml infra", { skills: ["cuda"] })).toBe("ml infra cuda");
     expect(harmonicEmployeeGroup({}, "founding engineer")).toBe("ALL");
     expect(harmonicEmployeeGroup({ titles: ["VP Engineering"] }, "")).toBe("LEADERSHIP");
     expect(harmonicEmployeeGroup({}, "ex-founder CEO")).toBe("FOUNDERS_AND_CEO");

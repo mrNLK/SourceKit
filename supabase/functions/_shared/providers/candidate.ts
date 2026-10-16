@@ -119,22 +119,44 @@ export function parseProfileTitle(title: string | null | undefined): { name: str
 
 // ---------- provider mappers ----------
 
+/** Best-effort "Title at Company" / headline parse from free text (LinkedIn highlights). */
+export function parseHeadlineText(text: string | null | undefined): { title?: string; company?: string; location?: string } {
+  const t = (text || "").replace(/\s+/g, " ").trim();
+  if (!t) return {};
+  const at = t.match(/(?:^|[.\n|•·]\s*)([A-Z][A-Za-z0-9/&+,.' -]{2,80}?)\s+(?:at|@)\s+([A-Z0-9][A-Za-z0-9&.' -]{1,60}?)(?=\s*(?:[|•·,.(\n]|\s-\s|$))/);
+  const loc = t.match(/\b(?:Location|Based in|located in)[:\s]+([A-Z][A-Za-z .'-]+(?:,\s*[A-Z][A-Za-z .'-]+){0,2})/);
+  return { title: at?.[1]?.trim(), company: at?.[2]?.trim(), location: loc?.[1]?.trim() };
+}
+
+const GITHUB_IN_TEXT = /github\.com\/([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))(?![A-Za-z0-9-]*\/[A-Za-z0-9])/i;
+
+/** Exa people result: prefer the structured person entity (workHistory/location), then title, then highlights. */
 export function fromExaResult(r: Record<string, any>, rank: number, provider: Provider = "exa"): UnifiedCandidate | null {
   const url = typeof r.url === "string" ? r.url : null;
+  const person = (Array.isArray(r.entities) ? r.entities : []).find((e: any) => e?.type === "person")?.properties || null;
   const parsed = parseProfileTitle(r.title || r.author);
-  if (!parsed.name) return null;
-  const c = emptyCandidate(parsed.name, {
+  const name = person?.name || parsed.name;
+  if (!name) return null;
+  const highlights: string[] = Array.isArray(r.highlights) ? r.highlights.map(String) : [];
+  const c = emptyCandidate(name, {
     provider,
     url,
     externalId: r.id ?? url,
     rank,
     rawScore: typeof r.score === "number" ? r.score : null,
-    snippet: Array.isArray(r.highlights) && r.highlights.length ? String(r.highlights[0]) : (r.summary || r.text || "").slice(0, 300) || null,
+    snippet: highlights.length ? highlights[0] : (r.summary || r.text || "").slice(0, 300) || null,
   });
-  c.currentTitle = parsed.title ?? null;
-  c.currentCompany = parsed.company ?? null;
-  c.summary = r.summary || (typeof r.text === "string" ? r.text.slice(0, 1000) : null);
+  const work: any[] = Array.isArray(person?.workHistory) ? person.workHistory : [];
+  const current = work.find((w) => w && w.dates && !w.dates.to) || work.find((w) => w?.title) || null;
+  const hl = parseHeadlineText([r.title, ...highlights, r.summary, typeof r.text === "string" ? r.text.slice(0, 600) : ""].filter(Boolean).join(" | "));
+  c.currentTitle = current?.title ?? parsed.title ?? hl.title ?? null;
+  c.currentCompany = current?.company?.name ?? parsed.company ?? hl.company ?? null;
+  c.location = person?.location ?? current?.location ?? hl.location ?? null;
+  c.headline = [c.currentTitle, c.currentCompany].filter(Boolean).join(" at ") || (highlights[0] ? highlights[0].slice(0, 160) : null);
+  c.summary = r.summary || (typeof r.text === "string" ? r.text.slice(0, 1000) : null) || (highlights.join(" … ").slice(0, 1000) || null);
   c.avatarUrl = r.image || null;
+  const gh = [r.text, ...highlights, r.summary].filter(Boolean).join(" ").match(GITHUB_IN_TEXT);
+  if (gh) c.profileUrls.push(`https://github.com/${gh[1]}`);
   return deriveIdentities(c);
 }
 
@@ -218,6 +240,7 @@ export function fromGithubUser(u: Record<string, any>, rank: number): UnifiedCan
   c.location = u.location ?? null;
   c.currentCompany = u.company ? String(u.company).replace(/^@/, "") : null;
   c.summary = u.bio ?? null;
+  c.headline = u.bio ?? null;
   c.avatarUrl = u.avatar_url ?? null;
   if (u.email) c.emails.push(u.email);
   if (u.blog) c.profileUrls.push(u.blog);

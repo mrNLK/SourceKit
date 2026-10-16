@@ -133,11 +133,53 @@ export function hasFilters(f: CandidateFilters): boolean {
   return !!(f.titles?.length || f.seniorities?.length || f.locations?.length || f.companyDomains?.length || f.companies?.length || f.keywords || f.skills?.length);
 }
 
-/** Natural-language company query for Harmonic search_agent (company-first sourcing). */
+// ---------- keyword extraction (free, deterministic) ----------
+// Long role descriptions ("senior ML infrastructure engineer, PyTorch, distributed training")
+// return 0 results from Harmonic search_agent and GitHub search, which need short topical keywords.
+
+const SENIORITY = /\b(senior|sr\.?|staff|principal|lead|junior|jr\.?|mid[- ]level|entry[- ]level|head of|experienced|expert|top|great|strong|world[- ]class)\b/gi;
+const ROLE_NOUNS = /\b(engineers?|developers?|scientists?|researchers?|programmers?|architects?|specialists?|managers?|leads?|swe|sde|ic|people|candidates?|folks|someone|talent|hires?|roles?)\b/gi;
+const FILLER = /\b(with|who|that|has|have|having|knows?|experience|experienced|background|skills?|in|on|of|for|at|the|a|an|and|or|plus|including|using|like|looking|find|me|years?|\d+\+?)\b/gi;
+
+export interface SearchTerms {
+  /** Topical keyword phrases, most important first ("ML infrastructure", "PyTorch", "distributed training"). */
+  keywords: string[];
+}
+
+export function extractSearchTerms(query: string, f: CandidateFilters = {}): SearchTerms {
+  const raw = [query, f.keywords || "", ...(f.skills || [])].join(", ");
+  const phrases = raw.split(/[,;/|()\n]+|\s+(?:and|or|with|plus)\s+/i)
+    .map((p) => p.replace(SENIORITY, " ").replace(ROLE_NOUNS, " ").replace(FILLER, " ").replace(/[^\w+#.\- ]/g, " ").replace(/\s+/g, " ").trim())
+    .filter((p) => p.length > 1);
+  const seen = new Set<string>();
+  const keywords = phrases.filter((p) => !seen.has(p.toLowerCase()) && seen.add(p.toLowerCase())).slice(0, 6);
+  return { keywords };
+}
+
+/**
+ * Company queries for Harmonic search_agent, tried in order until one returns companies.
+ * Verified live (Oct 2026): "companies building senior ML infrastructure engineer, PyTorch, distributed training"
+ * returns count 0, while "distributed training infrastructure" returns thousands.
+ */
+export function buildHarmonicCompanyQueries(query: string, f: CandidateFilters = {}): string[] {
+  if (f.companies?.length) return [f.companies.slice(0, 5).join(", ")];
+  const { keywords } = extractSearchTerms(query, f);
+  const out = [keywords.slice(0, 3).join(" "), keywords.slice(0, 2).join(" "), keywords[keywords.length > 1 ? 1 : 0], keywords[0]]
+    .filter((q): q is string => !!q && q.trim().length > 1);
+  if (!out.length && query.trim()) out.push(query.trim().slice(0, 80));
+  return [...new Set(out)].slice(0, 3);
+}
+
+/** Back-compat: first Harmonic company query. */
 export function buildHarmonicCompanyQuery(query: string, f: CandidateFilters = {}): string {
-  if (f.companies?.length) return f.companies.slice(0, 5).join(", ");
-  const kw = [f.keywords, ...(f.skills || []).slice(0, 3)].filter(Boolean).join(" ");
-  return `companies building ${kw || query}`.trim();
+  return buildHarmonicCompanyQueries(query, f)[0] ?? query;
+}
+
+/** GitHub repository search query from keywords (GitHub user search only matches login/name/email). */
+export function buildGithubRepoQueries(query: string, f: CandidateFilters = {}): string[] {
+  const { keywords } = extractSearchTerms(query, f);
+  const out = [keywords.slice(0, 2).join(" "), keywords[0]].filter((q): q is string => !!q);
+  return [...new Set(out)].map((q) => `${q} in:name,description,topics`);
 }
 
 /** Harmonic employee group filter: leadership roles -> LEADERSHIP, else NON_LEADERSHIP-inclusive ALL. */
