@@ -246,7 +246,7 @@ export default function PersonDetail({ person, onBack }: Props) {
                       {dim.value !== null ? dim.value.toFixed(1) : "-"}
                     </p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">{dim.label}</p>
-                    <p className="text-[9px] text-muted-foreground/60">{dim.weight}</p>
+                    <p className="text-[9px] text-muted-foreground">{dim.weight}</p>
                   </div>
                 ))}
               </div>
@@ -289,7 +289,7 @@ export default function PersonDetail({ person, onBack }: Props) {
                             Signal: {ev.signalStrength.toFixed(1)}
                           </span>
                         )}
-                        <span className="text-[10px] text-muted-foreground/60">{formatDate(ev.createdAt)}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatDate(ev.createdAt)}</span>
                       </div>
                     </div>
                   </div>
@@ -317,7 +317,7 @@ export default function PersonDetail({ person, onBack }: Props) {
                           {eng.direction === "outbound" ? "Sent" : "Received"}
                         </span>
                         {eng.sentAt && (
-                          <span className="text-[10px] text-muted-foreground/60">{formatDate(eng.sentAt)}</span>
+                          <span className="text-[10px] text-muted-foreground">{formatDate(eng.sentAt)}</span>
                         )}
                       </div>
                       {eng.subject && (

@@ -1,4 +1,5 @@
 import { upsertPipelineCandidate, notifyPipelineAdded } from "@/lib/pipeline-add";
+import { craftSeries } from "@/lib/constants";
 import { useState, useEffect, useCallback } from "react";
 import {
   X, Star, MapPin, Clock, MessageSquare, Loader2, Sparkles, Copy, ClipboardCheck,
@@ -399,7 +400,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
                 <StickyNote className="w-3.5 h-3.5 text-muted-foreground" />
                 <h3 className="font-display text-xs font-semibold text-foreground">
                   Notes
-                  {!addedToPipeline && <span className="text-muted-foreground/60 font-normal ml-1">(saved locally)</span>}
+                  {!addedToPipeline && <span className="text-muted-foreground font-normal ml-1">(saved locally)</span>}
                 </h3>
               </div>
               <textarea
@@ -435,7 +436,7 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
                     </span>
                   ))}
                   {tags.length === 0 && !tagInput && (
-                    <span className="text-[10px] text-muted-foreground/60 font-display">No tags yet</span>
+                    <span className="text-[10px] text-muted-foreground font-display">No tags yet</span>
                   )}
                 </div>
                 <form
@@ -486,8 +487,8 @@ const CandidateSlideOut = ({ developer, onClose }: CandidateSlideOutProps) => {
                 ))}
               </div>
               <div className="flex gap-0.5 h-1.5 rounded-full overflow-hidden">
-                {topLanguages.map((lang: any) => (
-                  <div key={lang.name} style={{ width: `${lang.percentage}%`, backgroundColor: lang.color }} className="rounded-full" />
+                {topLanguages.map((lang: any, i: number) => (
+                  <div key={lang.name} style={{ width: `${lang.percentage}%`, backgroundColor: craftSeries(i) }} className="rounded-full" />
                 ))}
               </div>
             </div>

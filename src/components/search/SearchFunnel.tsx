@@ -17,19 +17,19 @@ const SearchFunnel = ({ counts, locationFilter }: SearchFunnelProps) => (
     <div className="flex items-center gap-1 px-2 py-1 rounded bg-secondary border border-border shrink-0">
       <span className="font-bold text-foreground">{counts.total}</span> found
     </div>
-    <ArrowRight className="w-3 h-3 shrink-0 text-muted-foreground/50" />
+    <ArrowRight className="w-3 h-3 shrink-0 text-muted-foreground" />
     <div className="flex items-center gap-1 px-2 py-1 rounded bg-secondary border border-border shrink-0">
       <span className="font-bold text-foreground">{counts.afterFiltered}</span> filtered
     </div>
     {locationFilter && (
       <>
-        <ArrowRight className="w-3 h-3 shrink-0 text-muted-foreground/50" />
+        <ArrowRight className="w-3 h-3 shrink-0 text-muted-foreground" />
         <div className="flex items-center gap-1 px-2 py-1 rounded bg-secondary border border-border shrink-0">
           <span className="font-bold text-foreground">{counts.afterLocation}</span> location
         </div>
       </>
     )}
-    <ArrowRight className="w-3 h-3 shrink-0 text-muted-foreground/50" />
+    <ArrowRight className="w-3 h-3 shrink-0 text-muted-foreground" />
     <div className="flex items-center gap-1 px-2 py-1 rounded bg-primary/10 border border-primary/20 text-primary shrink-0">
       <span className="font-bold">{counts.final}</span> results
     </div>

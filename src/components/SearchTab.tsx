@@ -335,7 +335,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
                     <div key={s.id} className="group flex items-center gap-1 bg-primary/10 border border-primary/20 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-primary/20 transition-colors" onClick={() => handleLoadSaved(s)}>
                       <Bookmark className="w-3 h-3 text-primary shrink-0" />
                       <span className="text-xs font-display text-foreground truncate max-w-[200px]">{s.name}</span>
-                      <button onClick={(e) => { e.stopPropagation(); handleDeleteSaved(s.id); }} className="ml-1 p-0.5 rounded text-muted-foreground/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity" title="Remove">
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteSaved(s.id); }} className="ml-1 p-0.5 rounded text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity" title="Remove">
                         <X className="w-3 h-3" />
                       </button>
                     </div>
@@ -409,7 +409,7 @@ const SearchTab = ({ initialQuery, initialExpandedQuery, initialStrategy, initia
               <span className="font-display text-xs font-semibold text-foreground">AI-Parsed Search Criteria</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {parsedCriteria.skills.map((s: string) => (<span key={s} title={s} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-display max-w-[200px] truncate">{s}</span>))}
+              {parsedCriteria.skills.map((s: string) => (<span key={s} title={s} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-display break-words">{s}</span>))}
               {parsedCriteria.location && (<span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground border border-border font-display">{parsedCriteria.location}</span>)}
               {parsedCriteria.seniority !== 'any' && (<span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground border border-border font-display">{parsedCriteria.seniority}</span>)}
             </div>

@@ -1,4 +1,5 @@
 import { upsertPipelineCandidate, notifyPipelineAdded } from "@/lib/pipeline-add";
+import { craftSeries } from "@/lib/constants";
 import { Star, GitFork, MapPin, Gem, Bookmark, BookmarkCheck, Linkedin, Loader2, UserPlus, Check, Copy, ClipboardCheck, Github, Mail, Twitter, AlertTriangle, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -196,14 +197,14 @@ const DeveloperCard = ({ developer, isShortlisted, onToggleShortlist, showPipeli
             {developer.topLanguages.length > 0 && (
               <>
                 <div className="flex gap-0.5 h-1.5 rounded-full overflow-hidden mb-3">
-                  {developer.topLanguages.map((lang) => (
-                    <div key={lang.name} style={{ width: `${lang.percentage}%`, backgroundColor: lang.color }} className="rounded-full" />
+                  {developer.topLanguages.map((lang, i) => (
+                    <div key={lang.name} style={{ width: `${lang.percentage}%`, backgroundColor: craftSeries(i) }} className="rounded-full" />
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {developer.topLanguages.slice(0, 3).map((lang) => (
+                  {developer.topLanguages.slice(0, 3).map((lang, i) => (
                     <span key={lang.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: lang.color }} />
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: craftSeries(i) }} />
                       {lang.name}
                     </span>
                   ))}

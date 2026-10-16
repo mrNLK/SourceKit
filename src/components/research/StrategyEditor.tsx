@@ -287,9 +287,9 @@ function buildSuggestedEEASignals(
 }
 
 const CATEGORY_STYLES: Record<string, { label: string; bg: string; text: string; border: string }> = {
-  direct_competitor: { label: "Competitor", bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/25" },
-  adjacent: { label: "Adjacent", bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/25" },
-  talent_hub: { label: "Talent Hub", bg: "bg-sky-500/10", text: "text-sky-400", border: "border-sky-500/25" },
+  direct_competitor: { label: "Competitor", bg: "bg-craft-wash", text: "text-craft-title", border: "border-craft-section/30" },
+  adjacent: { label: "Adjacent", bg: "bg-craft-wash", text: "text-craft-section", border: "border-craft-line" },
+  talent_hub: { label: "Talent Hub", bg: "bg-white", text: "text-craft-section", border: "border-craft-line" },
 };
 
 // ---------------------------------------------------------------------------
@@ -505,7 +505,7 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
                 {s.skills.must_have.map((skill, idx) => (
                   <div key={idx} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 group">
                     <input type="text" value={skill} onChange={(e) => updateSkill("must_have", idx, e.target.value)}
-                      className="bg-transparent text-xs text-emerald-400 font-display outline-none w-auto min-w-[60px]" style={{ width: `${Math.max(60, skill.length * 7)}px` }} placeholder="Skill" />
+                      className="bg-transparent text-xs text-emerald-400 font-display outline-none w-auto min-w-[60px]" style={{ width: `${Math.max(6, skill.length + 2)}ch` }} placeholder="Skill" />
                     <button onClick={() => removeSkill("must_have", idx)} className="text-emerald-400/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
                   </div>
                 ))}
@@ -518,7 +518,7 @@ const StrategyEditor = ({ strategy: s, jobTitle, companyName, onStrategyChange, 
                 {s.skills.nice_to_have.map((skill, idx) => (
                   <div key={idx} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 group">
                     <input type="text" value={skill} onChange={(e) => updateSkill("nice_to_have", idx, e.target.value)}
-                      className="bg-transparent text-xs text-amber-400 font-display outline-none w-auto min-w-[60px]" style={{ width: `${Math.max(60, skill.length * 7)}px` }} placeholder="Skill" />
+                      className="bg-transparent text-xs text-amber-400 font-display outline-none w-auto min-w-[60px]" style={{ width: `${Math.max(6, skill.length + 2)}ch` }} placeholder="Skill" />
                     <button onClick={() => removeSkill("nice_to_have", idx)} className="text-amber-400/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
                   </div>
                 ))}

@@ -202,7 +202,7 @@ const WatchlistTab = ({ onNavigateToSearch }: WatchlistTabProps) => {
               : "Bookmark candidates from Search or Pipeline to track them for later."}
           </p>
           {!filterText && (
-            <p className="text-xs text-muted-foreground/70 mb-4">
+            <p className="text-xs text-muted-foreground mb-4">
               <span className="font-medium text-foreground/80">Watchlist</span> = tracking for later.{" "}
               <span className="font-medium text-foreground/80">Pipeline</span> = active recruiting.
             </p>

@@ -30,7 +30,8 @@ export default {
         body: ['Inter', 'DM Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
-        emerald: craftGreen, green: craftGreen, lime: craftGreen, teal: craftGreen,
+        // Green is reserved for true status (use craft-success); legacy green accents render section blue.
+        emerald: craftBlue, green: craftBlue, lime: craftBlue, teal: craftBlue,
         red: craftRed, rose: craftRed, pink: craftRed,
         amber: craftMuted, yellow: craftMuted, orange: craftMuted,
         purple: craftBlue, violet: craftBlue, fuchsia: craftBlue, indigo: craftBlue, sky: craftBlue, cyan: craftBlue, blue: craftBlue,

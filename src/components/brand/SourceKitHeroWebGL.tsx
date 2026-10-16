@@ -81,7 +81,7 @@ export default function SourceKitHeroWebGL() {
       style={{
         width: "100%",
         height: "420px",
-        background: "#0A0A0F",
+        background: "#F6F7F9",
       }}
     >
       <Canvas camera={{ position: [0, 0, 7] }}>
