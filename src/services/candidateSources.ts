@@ -42,7 +42,7 @@ export interface CandidateFiltersInput {
 
 export interface SourceCandidatesResponse {
   candidates: SourcedCandidate[]
-  sources: Record<string, { count: number; est_cost_usd: number; error?: string }>
+  sources: Record<string, { count: number; est_cost_usd: number; ms?: number; error?: string }>
   enabled: Record<SourceKey, boolean>
   raw_count: number
   est_cost_usd: number
@@ -92,10 +92,18 @@ export function splitList(v: string): string[] {
   return v.split(/[,\n]/).map((s) => s.trim()).filter(Boolean)
 }
 
-async function invoke<T>(name: string, body: Record<string, unknown>): Promise<T> {
+/** Client-side cap for a People Search request (server caps each source at 30s). */
+export const PEOPLE_SEARCH_TIMEOUT_MS = 100_000
+
+async function invoke<T>(name: string, body: Record<string, unknown>, opts: { timeoutMs?: number } = {}): Promise<T> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.access_token) throw new Error('Authentication required – please sign in.')
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
+  const ctrl = opts.timeoutMs ? new AbortController() : null
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), opts.timeoutMs) : undefined
+  let res: Response
+  try {
+    res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
+    signal: ctrl?.signal,
     method: 'POST',
     headers: {
       apikey: SUPABASE_KEY,
@@ -104,6 +112,12 @@ async function invoke<T>(name: string, body: Record<string, unknown>): Promise<T
     },
     body: JSON.stringify(body),
   })
+  } catch (e) {
+    if (ctrl?.signal.aborted) throw new Error(`Search timed out after ${Math.round((opts.timeoutMs || 0) / 1000)}s. Try fewer sources or a narrower query.`)
+    throw new Error(`Network error: ${e instanceof Error ? e.message : String(e)}`)
+  } finally {
+    clearTimeout(timer)
+  }
   const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
   if (!res.ok || data?.error) {
     throw new Error(data?.message || data?.error || `HTTP ${res.status}`)
@@ -119,7 +133,7 @@ export function sourceCandidates(input: {
   person_name?: string
   harmonic_enrich?: boolean
 }): Promise<SourceCandidatesResponse> {
-  return invoke('source-candidates', input)
+  return invoke('source-candidates', input, { timeoutMs: PEOPLE_SEARCH_TIMEOUT_MS })
 }
 
 export function startDeepSearch(input: {
