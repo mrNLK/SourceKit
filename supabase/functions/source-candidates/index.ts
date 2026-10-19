@@ -38,7 +38,7 @@ async function addTalentFlags(rows: any[]): Promise<any[]> {
   const logins = [...new Set(rows.map(login).filter(Boolean))].slice(0, GITHUB_FLAG_LOOKUPS) as string[];
   const gh = new Map<string, any>();
   await Promise.allSettled(logins.map(async (l) => {
-    const u = await githubFetch(`https://api.github.com/users/${encodeURIComponent(l)}`);
+    const u = await withTimeout(githubFetch(`https://api.github.com/users/${encodeURIComponent(l)}`), POST_STEP_TIMEOUT_MS, "github user lookup timed out");
     if (u?.login) gh.set(l.toLowerCase(), u);
   }));
   return rows.map((c) => {
@@ -192,6 +192,7 @@ serve(async (req) => {
     // Free GitHub handle lookup (name + company) for top web-profile results without one.
     const nameTargets = all.filter((c) => !c.githubLogin && c.currentCompany && c.sources.some((h) => h.provider === "exa"))
       .sort((a, b) => (a.sources[0]?.rank ?? 99) - (b.sources[0]?.rank ?? 99)).slice(0, GITHUB_NAME_LOOKUPS);
+    const tNames = Date.now();
     const handles = await Promise.allSettled(nameTargets.map((c) => withTimeout(githubHandleByNameCompany(getEnv("GITHUB_TOKEN"), c.fullName, c.currentCompany!, fetch, c.location), POST_STEP_TIMEOUT_MS, "github lookup timed out")));
     handles.forEach((r, i) => {
       if (r.status === "fulfilled" && r.value) {
@@ -199,11 +200,13 @@ serve(async (req) => {
         nameTargets[i].profileUrls.push(`https://github.com/${r.value.login}`);
       }
     });
+    timings.github_name_lookup = Date.now() - tNames;
     const githubMatched = handles.filter((r) => r.status === "fulfilled" && r.value).length;
 
     const supabase = createClient(getEnv("SUPABASE_URL")!, getEnv("SUPABASE_SERVICE_ROLE_KEY")!);
     const persist = body.persist !== false;
     let candidates: unknown[];
+    const tPersist = Date.now();
     if (persist) {
       candidates = (await persistCandidates(supabase, user.id, all, { query: query || nl })).slice(0, limit);
     } else {
@@ -212,7 +215,10 @@ serve(async (req) => {
         .sort((a, b) => b.sourcing_score - a.sourcing_score).slice(0, limit);
     }
 
+    timings.persist = Date.now() - tPersist;
+    const tFlags = Date.now();
     candidates = await addTalentFlags(candidates as any[]);
+    timings.talent_flags = Date.now() - tFlags;
 
     // Firecrawl profile enrichment: scrape a few personal sites/blogs for scoring evidence (fail soft, capped).
     if (enabled.firecrawl && requested.has("firecrawl")) {
@@ -241,6 +247,7 @@ serve(async (req) => {
       sources,
       enabled,
       raw_count: all.length,
+      timings_ms: timings,
       keywords: extractSearchTerms(query, filters).keywords,
       github_name_matches: githubMatched,
       est_cost_usd: Number(Object.values(sources).reduce((a, s) => a + s.est_cost_usd, 0).toFixed(4)),
