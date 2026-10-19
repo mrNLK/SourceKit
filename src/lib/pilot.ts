@@ -1,5 +1,5 @@
 /**
- * Pilot mode (VITE_PILOT_MODE=true): free, invite-only pilot.
+ * Pilot mode (VITE_PILOT_MODE=true): free pilot for @aifundpc.com and invited users.
  * Hides SellKit, /recruiter, the AI Fund dashboard, and Stripe upgrade prompts.
  */
 export function isPilotMode(env: Record<string, unknown> = import.meta.env): boolean {

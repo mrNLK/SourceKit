@@ -41,7 +41,7 @@ export async function checkSearchGate(authHeader: string | null): Promise<GateRe
     return { allowed: false, userId: null, plan: null, error: 'invalid_token' };
   }
 
-  // Pilot mode: allowlist + daily search cap replace the trial/Stripe limits.
+  // Pilot mode: @aifundpc.com/allowlist access + daily search cap replace the trial/Stripe limits.
   if (isPilotEnforced((n) => Deno.env.get(n))) {
     const pilot = await checkPilotAccess(user.id, 'search');
     if (!pilot.allowed) {
