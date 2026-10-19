@@ -55,6 +55,19 @@ async function addTalentFlags(rows: any[]): Promise<any[]> {
   }).filter((c) => !c.is_bot && c.gh_type !== "Organization"); // orgs (e.g. README owners) are not people
 }
 
+/** Per-source wall-clock budget: a slow provider becomes a per-source error instead of hanging the search. */
+const SOURCE_TIMEOUT_MS = 30_000;
+/** Budget for each optional post-processing call (enrich, GitHub handle lookup, site scrape). */
+const POST_STEP_TIMEOUT_MS = 8_000;
+
+function withTimeout<T>(p: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms); }),
+  ]).finally(() => clearTimeout(timer));
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
   const headers = { ...getCorsHeaders(req), "Content-Type": "application/json" };
@@ -143,20 +156,28 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "No enabled people sources for this request", enabled }), { status: 422, headers });
     }
 
-    const settled = await Promise.allSettled(tasks.map((t) => t.run()));
-    const sources: Record<string, { count: number; est_cost_usd: number; total?: number | null; error?: string; detail?: Record<string, unknown> }> = {};
+    const timings: Record<string, number> = {};
+    const settled = await Promise.allSettled(tasks.map(async (t) => {
+      const t0 = Date.now();
+      try {
+        return await withTimeout(t.run(), SOURCE_TIMEOUT_MS, `${t.source} timed out after ${SOURCE_TIMEOUT_MS / 1000}s`);
+      } finally {
+        timings[t.source] = Date.now() - t0;
+      }
+    }));
+    const sources: Record<string, { count: number; est_cost_usd: number; total?: number | null; ms?: number; error?: string; detail?: Record<string, unknown> }> = {};
     // Order = merge priority for field conflicts: structured sources first.
     const priority: SourceName[] = ["harmonic", "github", "exa", "parallel", "firecrawl"];
     const bySource = new Map<SourceName, UnifiedCandidate[]>();
     settled.forEach((r, i) => {
       const s = tasks[i].source;
       if (r.status === "fulfilled") {
-        sources[s] = { count: r.value.candidates.length, est_cost_usd: Number(r.value.cost.toFixed(4)), total: r.value.total, ...(r.value.detail ? { detail: r.value.detail } : {}) };
+        sources[s] = { count: r.value.candidates.length, est_cost_usd: Number(r.value.cost.toFixed(4)), total: r.value.total, ms: timings[s], ...(r.value.detail ? { detail: r.value.detail } : {}) };
         bySource.set(s, r.value.candidates);
       } else {
         const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
         console.error(`source ${s} failed:`, msg);
-        sources[s] = { count: 0, est_cost_usd: 0, error: msg.slice(0, 200) };
+        sources[s] = { count: 0, est_cost_usd: 0, ms: timings[s], error: msg.slice(0, 200) };
       }
     });
     const all = priority.flatMap((s) => bySource.get(s) || []);
@@ -164,14 +185,14 @@ serve(async (req) => {
     // Optional: resolve top LinkedIn candidates to Harmonic people so they dedup by Harmonic URN.
     if (harmonicCfg && body.harmonic_enrich === true) {
       const targets = all.filter((c) => c.linkedinUrl && !c.harmonicUrn).slice(0, HARMONIC_ENRICH_TOP);
-      const enriched = await Promise.allSettled(targets.map((c) => harmonicPersonByLinkedin(harmonicCfg, c.linkedinUrl!)));
+      const enriched = await Promise.allSettled(targets.map((c) => withTimeout(harmonicPersonByLinkedin(harmonicCfg, c.linkedinUrl!), POST_STEP_TIMEOUT_MS, "harmonic enrich timed out")));
       for (const r of enriched) if (r.status === "fulfilled" && r.value) all.push(r.value);
     }
 
     // Free GitHub handle lookup (name + company) for top web-profile results without one.
     const nameTargets = all.filter((c) => !c.githubLogin && c.currentCompany && c.sources.some((h) => h.provider === "exa"))
       .sort((a, b) => (a.sources[0]?.rank ?? 99) - (b.sources[0]?.rank ?? 99)).slice(0, GITHUB_NAME_LOOKUPS);
-    const handles = await Promise.allSettled(nameTargets.map((c) => githubHandleByNameCompany(getEnv("GITHUB_TOKEN"), c.fullName, c.currentCompany!, fetch, c.location)));
+    const handles = await Promise.allSettled(nameTargets.map((c) => withTimeout(githubHandleByNameCompany(getEnv("GITHUB_TOKEN"), c.fullName, c.currentCompany!, fetch, c.location), POST_STEP_TIMEOUT_MS, "github lookup timed out")));
     handles.forEach((r, i) => {
       if (r.status === "fulfilled" && r.value) {
         nameTargets[i].githubLogin = r.value.login.toLowerCase();
@@ -197,7 +218,7 @@ serve(async (req) => {
     if (enabled.firecrawl && requested.has("firecrawl")) {
       const kw = extractSearchTerms(query, filters).keywords;
       const targets = (candidates as any[]).filter((c) => isPersonalSiteUrl(c.blog_url)).slice(0, FIRECRAWL_LIMITS.scrapes);
-      const ev = await Promise.allSettled(targets.map((c) => firecrawlScrapeEvidence(getEnv("FIRECRAWL_API_KEY")!, String(c.blog_url).startsWith("http") ? c.blog_url : `https://${c.blog_url}`)));
+      const ev = await Promise.allSettled(targets.map((c) => withTimeout(firecrawlScrapeEvidence(getEnv("FIRECRAWL_API_KEY")!, String(c.blog_url).startsWith("http") ? c.blog_url : `https://${c.blog_url}`), POST_STEP_TIMEOUT_MS, "firecrawl scrape timed out")));
       let scraped = 0;
       ev.forEach((r, i) => {
         const text = r.status === "fulfilled" ? r.value : null;

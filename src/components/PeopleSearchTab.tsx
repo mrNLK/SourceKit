@@ -89,11 +89,19 @@ const PeopleSearchTab = () => {
       if (!alive) return
       setEnabledSources(e)
       if (e.parallel) setSources((cur) => new Set([...cur, 'parallel']))
-      if (e.firecrawl) setSources((cur) => new Set([...cur, 'firecrawl']))
+      // Firecrawl is opt-in (slowest source); it is only enabled for selection, not auto-checked.
     }).catch(() => { /* keep Parallel disabled if the probe fails */ })
     return () => { alive = false }
   }, [])
   const [loading, setLoading] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    if (!loading) return
+    setElapsed(0)
+    const t0 = Date.now()
+    const id = setInterval(() => setElapsed(Math.round((Date.now() - t0) / 1000)), 1000)
+    return () => clearInterval(id)
+  }, [loading])
   const [results, setResults] = useState<SourcedCandidate[]>([])
   const [sourceStats, setSourceStats] = useState<Record<string, { count: number; error?: string }>>({})
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -130,8 +138,9 @@ const PeopleSearchTab = () => {
       setResults(res.candidates)
       setSourceStats(res.sources)
       void recordHistory(query.trim() || [titles, companies].filter(Boolean).join(' · '), res.candidates.length, { source: 'people_search', titles, locations, skills, companies, status: res.candidates.length ? 'success' : 'no_results' })
-      const failed = Object.entries(res.sources).filter(([, s]) => s.error).map(([k]) => k)
-      if (failed.length) toast({ title: 'Some sources failed', description: failed.join(', ') })
+      const failed = Object.entries(res.sources).filter(([, s]) => s.error)
+      if (failed.length) toast({ title: 'Some sources failed', description: failed.map(([k, s]) => `${k}: ${s.error}`).join(' · '), variant: res.candidates.length ? undefined : 'destructive' })
+      else if (!res.candidates.length) toast({ title: 'No results', description: 'Try a broader query or more sources.' })
     } catch (e) {
       toast({ title: 'Search failed', description: e instanceof Error ? e.message : String(e), variant: 'destructive' })
     } finally {
@@ -208,7 +217,7 @@ const PeopleSearchTab = () => {
         <div className="flex gap-2">
           <input aria-label="people query" className={inputCls} placeholder="e.g. senior ML infrastructure engineers with CUDA experience" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && runSearch()} />
           <button onClick={runSearch} disabled={loading} className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}Search
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}{loading ? `Searching… ${elapsed}s` : 'Search'}
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
