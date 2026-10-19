@@ -5,7 +5,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
-const appUrl = process.env.SELLKIT_GUIDE_APP_URL || "http://127.0.0.1:5173";
+const appUrl = process.env.SELLKIT_GUIDE_APP_URL || "https://sellkit-mu.vercel.app";
+const appPath = process.env.SELLKIT_GUIDE_APP_PATH ?? "/";
+const appHomeUrl = new URL(appPath, appUrl).toString().replace(/\/$/, "");
 const screenshotDir = join(repoRoot, "output", "guide-screenshots", "sellkit");
 const outputPdfDir = join(repoRoot, "output", "pdf");
 const guideHtmlPath = join(__dirname, "sellkit-user-guide.html");
@@ -52,7 +54,7 @@ const screenshots = [
   {
     file: "01-sign-in.png",
     title: "Sign in to SellKit",
-    caption: "SellKit has its own sign-in. Use the approved account and land back on /sellkit after authentication.",
+    caption: "SellKit has its own sign-in. Use the approved account and land back in the app after authentication.",
   },
   {
     file: "02-onboarding.png",
@@ -67,7 +69,7 @@ const screenshots = [
   {
     file: "04-icp-preview-lab.png",
     title: "Test an ICP in the Preview Lab",
-    caption: "Describe an ICP and run a fast lookup or a capped 10-match preview before any full list-building spend.",
+    caption: "Describe an ICP and run a fast lookup or a capped 10-match preview before a broader list build.",
   },
   {
     file: "05-queue-and-providers.png",
@@ -140,7 +142,7 @@ async function createAuthedPage(browser) {
   const page = await browser.newPage();
   await page.setViewport({ width: 1440, height: 1040, deviceScaleFactor: 1 });
   await installFakeSession(page);
-  await page.goto(`${appUrl}/sellkit`, { waitUntil: "networkidle0", timeout: 45000 });
+  await page.goto(appHomeUrl, { waitUntil: "networkidle0", timeout: 45000 });
   await page.waitForSelector(".sellkit-v2", { timeout: 15000 });
   return page;
 }
@@ -160,7 +162,7 @@ async function captureScreenshots() {
   try {
     const authPage = await browser.newPage();
     await authPage.setViewport({ width: 1440, height: 980, deviceScaleFactor: 1 });
-    await authPage.goto(`${appUrl}/auth?redirect=%2Fsellkit`, { waitUntil: "networkidle0", timeout: 45000 });
+    await authPage.goto(appHomeUrl, { waitUntil: "networkidle0", timeout: 45000 });
     await authPage.screenshot({ path: join(screenshotDir, "01-sign-in.png") });
     await authPage.close();
 
@@ -186,7 +188,7 @@ async function captureScreenshots() {
     await radarPage.close();
 
     const icpPage = await createAuthedPage(browser);
-    await scrollToText(icpPage, "Test an ICP cheaply");
+    await scrollToText(icpPage, "Test an ICP quickly");
     await icpPage.screenshot({ path: join(screenshotDir, "04-icp-preview-lab.png") });
     await icpPage.close();
 
@@ -245,14 +247,26 @@ function buildGuideHtml() {
   <style>
     @page { margin: 0.55in; }
     :root {
-      --ink: #102129;
-      --muted: #5e7178;
-      --line: #c4d2d5;
-      --surface: #f8fbfa;
-      --paper: #e7eeee;
-      --teal: #0f766e;
-      --teal-dark: #0b3a40;
-      --amber: #b45309;
+      --brand-primary: #7C3AED;
+      --brand-primary-hover: #6D28D9;
+      --brand-dark: #10213A;
+      --brand-slate: #415A77;
+      --brand-muted: #A0AEC0;
+      --brand-surface: #F1F3F2;
+      --brand-background: #FAFBFC;
+      --brand-white: #FFFFFF;
+      --brand-border: #DCE3EC;
+      --brand-success: #18C29C;
+      --brand-warning: #F59E0B;
+      --brand-error: #DC2626;
+      --ink: var(--brand-dark);
+      --muted: var(--brand-slate);
+      --line: var(--brand-border);
+      --surface: var(--brand-white);
+      --paper: var(--brand-background);
+      --accent: var(--brand-primary);
+      --accent-dark: var(--brand-dark);
+      --amber: var(--brand-warning);
     }
     * { box-sizing: border-box; }
     body {
@@ -271,15 +285,34 @@ function buildGuideHtml() {
       border: 1px solid var(--line);
       border-radius: 18px;
       padding: 32px;
-      background:
-        radial-gradient(circle at 85% 0%, rgba(245,158,11,0.14), transparent 30%),
-        linear-gradient(135deg, #0b1824, #0d3d44 52%, #0f766e);
-      color: #ecfeff;
-      box-shadow: 0 24px 70px rgba(16,33,41,0.18);
+      background: var(--brand-white);
+      color: var(--ink);
+      box-shadow: 0 24px 70px rgba(16,33,58,0.1);
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .logo-mark {
+      width: 42px;
+      height: 42px;
+      color: var(--brand-primary);
+      flex: none;
+    }
+    .wordmark {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--brand-dark);
+    }
+    .wordmark span {
+      color: var(--brand-primary);
     }
     .kicker {
       margin: 0 0 10px;
-      color: #99f6e4;
+      color: var(--brand-primary);
       font-size: 12px;
       font-weight: 800;
       letter-spacing: 0.16em;
@@ -290,7 +323,7 @@ function buildGuideHtml() {
     h2 { font-size: 24px; margin-top: 34px; }
     h3 { font-size: 18px; margin-top: 24px; }
     p { margin: 10px 0 0; }
-    .cover p { color: #cde7e7; max-width: 780px; }
+    .cover p { color: var(--muted); max-width: 780px; }
     .meta {
       display: flex;
       flex-wrap: wrap;
@@ -298,11 +331,11 @@ function buildGuideHtml() {
       margin-top: 22px;
     }
     .pill {
-      border: 1px solid rgba(236,253,245,0.24);
+      border: 1px solid rgba(124,58,237,0.2);
       border-radius: 999px;
       padding: 7px 11px;
-      background: rgba(236,253,245,0.1);
-      color: #ecfeff;
+      background: rgba(124,58,237,0.08);
+      color: var(--brand-primary);
       font-size: 12px;
       font-weight: 700;
     }
@@ -311,8 +344,8 @@ function buildGuideHtml() {
       border-radius: 14px;
       margin-top: 16px;
       padding: 18px;
-      background: rgba(248,251,250,0.86);
-      box-shadow: 0 12px 34px rgba(16,33,41,0.08);
+      background: var(--brand-white);
+      box-shadow: 0 12px 34px rgba(16,33,58,0.06);
     }
     .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
     .section-lede {
@@ -321,13 +354,11 @@ function buildGuideHtml() {
       font-size: 15px;
     }
     .onboarding-panel {
-      border: 1px solid #9fbec1;
+      border: 1px solid var(--line);
       border-radius: 18px;
       margin-top: 18px;
       padding: 14px;
-      background:
-        linear-gradient(135deg, rgba(8,56,62,0.06), rgba(15,118,110,0.03)),
-        rgba(255,255,255,0.66);
+      background: var(--brand-surface);
     }
     .onboarding-rail {
       display: grid;
@@ -339,14 +370,14 @@ function buildGuideHtml() {
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 10px;
-      background: rgba(255,255,255,0.72);
+      background: var(--brand-white);
       color: var(--muted);
       font-size: 12px;
       font-weight: 700;
     }
     .rail-step span {
       display: block;
-      color: var(--teal-dark);
+      color: var(--brand-primary);
       font-size: 11px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -355,17 +386,17 @@ function buildGuideHtml() {
       border: 1px solid var(--line);
       border-radius: 16px;
       margin-top: 10px;
-      background: rgba(255,255,255,0.86);
+      background: var(--brand-white);
       overflow: hidden;
       transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
     }
     .onboarding-card[open] {
-      border-color: #76aaa7;
-      box-shadow: 0 18px 44px rgba(16,33,41,0.1);
+      border-color: rgba(124,58,237,0.45);
+      box-shadow: 0 18px 44px rgba(16,33,58,0.09);
     }
     .onboarding-card:hover {
       transform: translateY(-1px);
-      border-color: #76aaa7;
+      border-color: rgba(124,58,237,0.45);
     }
     .onboarding-card summary {
       display: grid;
@@ -384,8 +415,8 @@ function buildGuideHtml() {
       width: 38px;
       height: 38px;
       border-radius: 999px;
-      background: var(--teal-dark);
-      color: #ecfeff;
+      background: var(--brand-primary);
+      color: var(--brand-white);
       font-size: 15px;
       font-weight: 900;
     }
@@ -401,7 +432,7 @@ function buildGuideHtml() {
       font-size: 13px;
     }
     .summary-icon {
-      color: var(--teal-dark);
+      color: var(--accent-dark);
       font-size: 18px;
       font-weight: 900;
     }
@@ -409,7 +440,7 @@ function buildGuideHtml() {
     .onboarding-body {
       border-top: 1px solid var(--line);
       padding: 16px;
-      background: linear-gradient(180deg, rgba(236,253,245,0.5), rgba(255,255,255,0.86));
+      background: var(--brand-background);
     }
     .answer-grid {
       display: grid;
@@ -420,11 +451,11 @@ function buildGuideHtml() {
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 13px;
-      background: rgba(248,251,250,0.9);
+      background: var(--brand-white);
     }
     .answer-block h3 {
       margin-top: 0;
-      color: var(--teal-dark);
+      color: var(--accent-dark);
       font-size: 14px;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -440,20 +471,20 @@ function buildGuideHtml() {
       margin-top: 10px;
     }
     .chip {
-      border: 1px solid #a8c7c9;
+      border: 1px solid rgba(124,58,237,0.25);
       border-radius: 999px;
       padding: 5px 8px;
-      background: #f3fbfa;
-      color: var(--teal-dark);
+      background: rgba(124,58,237,0.08);
+      color: var(--brand-primary);
       font-size: 12px;
       font-weight: 700;
     }
     .sample-answer {
-      border-left: 4px solid var(--teal);
+      border-left: 4px solid var(--accent);
       border-radius: 12px;
       margin-top: 12px;
       padding: 12px 13px;
-      background: #ecfdf5;
+      background: rgba(124,58,237,0.08);
       color: var(--ink);
       font-size: 14px;
     }
@@ -479,8 +510,8 @@ function buildGuideHtml() {
       vertical-align: top;
     }
     .matrix th {
-      background: #e6f3f1;
-      color: var(--teal-dark);
+      background: var(--brand-surface);
+      color: var(--accent-dark);
       font-size: 12px;
       letter-spacing: 0.05em;
       text-transform: uppercase;
@@ -490,14 +521,14 @@ function buildGuideHtml() {
     }
     ol, ul { margin: 12px 0 0 22px; padding: 0; }
     li { margin: 7px 0; }
-    strong { color: var(--teal-dark); }
-    a { color: var(--teal-dark); font-weight: 700; }
+    strong { color: var(--accent-dark); }
+    a { color: var(--accent-dark); font-weight: 700; }
     code {
       border: 1px solid var(--line);
       border-radius: 7px;
       padding: 2px 5px;
-      background: #eef5f4;
-      color: var(--teal-dark);
+      background: var(--brand-surface);
+      color: var(--accent-dark);
       font-size: 0.92em;
     }
     figure {
@@ -512,7 +543,7 @@ function buildGuideHtml() {
       display: block;
       width: 100%;
       border-radius: 10px;
-      border: 1px solid #d5e0e2;
+      border: 1px solid var(--line);
     }
     figcaption {
       color: var(--muted);
@@ -520,8 +551,8 @@ function buildGuideHtml() {
       margin: 10px 4px 2px;
     }
     .callout {
-      border-left: 4px solid var(--teal);
-      background: #ecfdf5;
+      border-left: 4px solid var(--accent);
+      background: rgba(124,58,237,0.08);
       padding: 14px 16px;
       border-radius: 12px;
       margin-top: 16px;
@@ -603,7 +634,7 @@ function buildGuideHtml() {
       .matrix td:last-child { border-bottom: 0; }
       .matrix td::before {
         content: attr(data-label);
-        color: var(--teal-dark);
+        color: var(--accent-dark);
         font-size: 11px;
         font-weight: 800;
         letter-spacing: 0.05em;
@@ -621,9 +652,16 @@ function buildGuideHtml() {
 <body>
   <main>
     <section class="cover">
+      <div class="brand-row" aria-label="SellKit">
+        <svg class="logo-mark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M16.75 6.25H10a4.25 4.25 0 0 0 0 8.5h1.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7.25 17.75H14a4.25 4.25 0 0 0 0-8.5h-1.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="wordmark">Sell<span>Kit</span></div>
+      </div>
       <p class="kicker">SellKit onboarding</p>
       <h1>SellKit User Onboarding and Guide</h1>
-      <p>The operating guide for Mariah Rubino: sign in, complete setup, review the Signal Radar, test ICPs cheaply, work the scored queue with buying-committee context, approve manual outreach drafts, track conversions by hand, and let the dashboard learn which signals and personas actually convert. Nothing sends automatically.</p>
+      <p>The operating guide for Mariah Rubino: sign in, complete setup, review the Signal Radar, test ICPs quickly, work the scored queue with buying-committee context, approve manual outreach drafts, track conversions by hand, and let the dashboard learn which signals and personas actually convert. Nothing sends automatically.</p>
       <div class="meta">
         <span class="pill">Audience: Mariah Rubino</span>
         <span class="pill">Mode: manual-first</span>
@@ -635,15 +673,15 @@ function buildGuideHtml() {
       <h2>What SellKit Does</h2>
       <p>SellKit helps Mariah review account and buyer recommendations before outreach. One page combines six surfaces:</p>
       <ul>
-        <li><strong>Signal Radar:</strong> fresh account signals (new leadership, hiring spikes, cloud cost pressure) waiting for a Review / Add to queue / Ignore decision.</li>
-        <li><strong>ICP Preview Lab:</strong> type an ICP and test it with a fast lookup or a capped 10-match preview before any full list-building run.</li>
+        <li><strong>Signal Radar:</strong> fresh account signals (new leadership, hiring spikes, cloud efficiency pressure) waiting for a Review / Add to queue / Ignore decision.</li>
+        <li><strong>ICP Preview Lab:</strong> type an ICP and test it with a fast lookup or a capped 10-match preview before a broader list build.</li>
         <li><strong>Review queue:</strong> scored targets with signal evidence, a five-seat buying committee map, and draft copy.</li>
         <li><strong>Enrichment gate:</strong> Apollo work-email enrichment unlocks only at score 75+, by manual click, with a visible batch cap.</li>
         <li><strong>Manual handoff:</strong> approved drafts become copyable email text, a downloadable .eml, and a CRM CSV. Nothing is sent or written for you.</li>
         <li><strong>Conversion learning:</strong> tracked outcomes roll up into signal-level and persona-level rates, and the Signal Discovery Agent suggests new signals to test each week.</li>
       </ul>
       <div class="callout">
-        <strong>No automatic send.</strong> SellKit prepares drafts and exports. Mariah reviews and approves before anything is copied, downloaded, or imported elsewhere. No email, LinkedIn, Salesforce, or paid enrichment runs without a click.
+        <strong>No automatic send.</strong> SellKit prepares drafts and exports. Mariah reviews and approves before anything is copied, downloaded, or imported elsewhere. No email, LinkedIn, Salesforce, or enrichment runs without a click.
       </div>
     </section>
 
@@ -696,7 +734,7 @@ function buildGuideHtml() {
                 <p>Enterprise software or big-tech teams with 2,000+ employees, US first, active platform, AI, data, cloud, or product operating model initiatives. Avoid small startups unless they just hired a senior transformation leader.</p>
               </div>
             </div>
-            <div class="sample-answer"><strong>Good SellKit input:</strong> "Large engineering/product orgs dealing with AI adoption, platform modernization, cloud cost pressure, or post-reorg change. Prioritize teams that would value former Google, HP, MongoDB, or enterprise SaaS operators."</div>
+            <div class="sample-answer"><strong>Good SellKit input:</strong> "Large engineering/product orgs dealing with AI adoption, platform modernization, cloud efficiency pressure, or post-reorg change. Prioritize teams that would value former Google, HP, MongoDB, or enterprise SaaS operators."</div>
           </div>
         </details>
 
@@ -743,7 +781,7 @@ function buildGuideHtml() {
                   <span class="chip">Dev productivity</span>
                   <span class="chip">Product operating model</span>
                   <span class="chip">Platform scale</span>
-                  <span class="chip">Cloud cost</span>
+                  <span class="chip">Cloud efficiency</span>
                 </div>
               </div>
               <div class="answer-block">
@@ -768,14 +806,14 @@ function buildGuideHtml() {
             <div class="answer-grid">
               <div class="answer-block">
                 <h3>High-intent triggers</h3>
-                <p>New CTO/CIO/VP Eng, major reorg, AI platform launch, hiring spike for platform/data/product ops, cloud cost initiative, acquisition integration, enterprise transformation program, or public roadmap shift.</p>
+                <p>New CTO/CIO/VP Eng, major reorg, AI platform launch, hiring spike for platform/data/product ops, cloud efficiency initiative, acquisition integration, enterprise transformation program, or public roadmap shift.</p>
               </div>
               <div class="answer-block">
                 <h3>What good looks like</h3>
                 <p>A visible initiative plus an owner. Example: "new VP Engineering hired in the last 90 days and the company is hiring platform productivity leaders."</p>
               </div>
             </div>
-            <div class="sample-answer"><strong>Good SellKit input:</strong> "Strongest signals: new product/engineering leadership, AI/data platform rollout, change management after reorg, cloud or infra cost pressure, and senior hiring for platform/product ops."</div>
+            <div class="sample-answer"><strong>Good SellKit input:</strong> "Strongest signals: new product/engineering leadership, AI/data platform rollout, change management after reorg, cloud or infra efficiency pressure, and senior hiring for platform/product ops."</div>
           </div>
         </details>
 
@@ -831,18 +869,18 @@ function buildGuideHtml() {
         <li><strong>Add to queue</strong> promotes the account toward the review queue. This is the only path from radar to outreach, and it is always a manual click.</li>
         <li><strong>Ignore</strong> parks the signal. Ignored signals can be re-reviewed if circumstances change.</li>
       </ul>
-      <p class="small">Radar decisions save to Mariah's account. No outreach, enrichment, or provider spend ever starts from this surface.</p>
+      <p class="small">Radar decisions save to Mariah's account. No outreach, enrichment, or provider action ever starts from this surface.</p>
       ${screenshotFigure(screenshots[2])}
     </section>
 
     <section class="card">
       <h2>ICP Preview Lab</h2>
-      <p>Use the lab to tune targeting criteria before paying for a full run. Describe the ICP in plain language and pick a mode:</p>
+      <p>Use the lab to tune targeting criteria before a broader list build. Describe the ICP in plain language and pick a mode:</p>
       <ul class="compact">
         <li><strong>Fast lookup</strong> (Parallel Entity Search): instant candidate set for quick gut checks.</li>
         <li><strong>Preview run</strong> (Parallel FindAll Preview): up to 10 sample matches with match reasons. A full FindAll run never starts from here.</li>
       </ul>
-      <p class="small">Each match shows the company, match reason, provider, and confidence, with an <em>Add to Signal Radar</em> action. If the provider is unavailable, SellKit shows a clearly-labeled sample set with no provider spend.</p>
+      <p class="small">Each match shows the company, match reason, provider, and confidence, with an <em>Add to Signal Radar</em> action. If the provider is unavailable, SellKit shows a clearly-labeled sample set.</p>
       ${screenshotFigure(screenshots[3])}
     </section>
 
@@ -877,7 +915,7 @@ function buildGuideHtml() {
 
     <section class="card">
       <h2>Sign-In Reference</h2>
-      <p>If SellKit sends you to the sign-in page, use the approved account and return to <code>/sellkit</code>. The sign-in page is SellKit-branded; after authenticating you land back where you started.</p>
+      <p>If SellKit sends you to the sign-in page, use the approved account and return to <code>https://sellkit-mu.vercel.app</code>. The sign-in page is SellKit-branded; after authenticating you land back where you started.</p>
       ${screenshotFigure(screenshots[0])}
     </section>
 
@@ -910,12 +948,12 @@ function buildGuideHtml() {
             <td data-label="Stage">Interactive lookup</td>
             <td data-label="Provider">Parallel Entity Search</td>
             <td data-label="Use it for">Fast people/company results when Mariah types a natural-language search.</td>
-            <td data-label="Guardrail">Use for candidate sets only. It is fast and cheap, but not a cited enrichment run.</td>
+            <td data-label="Guardrail">Use for candidate sets only. It is fast, but not a cited enrichment run.</td>
           </tr>
           <tr>
             <td data-label="Stage">ICP test</td>
             <td data-label="Provider">Parallel FindAll Preview</td>
-            <td data-label="Use it for">Cheaply evaluate about 10 candidates before paying for a full run.</td>
+            <td data-label="Use it for">Quickly evaluate about 10 candidates before a broader list build.</td>
             <td data-label="Guardrail">Always preview first, read matched and unmatched candidates, then adjust match conditions.</td>
           </tr>
           <tr>
@@ -957,7 +995,7 @@ function buildGuideHtml() {
         <li><strong>Email confidence:</strong> show Apollo status separately from the score and keep raw enrichment output server-side.</li>
       </ul>
 
-      <h3>Cost Controls</h3>
+      <h3>Usage Controls</h3>
       <ul class="compact">
         <li>Debounce interactive searches and cache provider responses by normalized query.</li>
         <li>Use Parallel Entity Search for quick lookups and FindAll Preview before full FindAll runs.</li>
@@ -986,7 +1024,7 @@ function buildGuideHtml() {
         <li><a href="https://exa.ai/docs/reference/agent-api-guide">Exa Agent</a> - deep research, grounded structured JSON, and account dossiers.</li>
         <li><a href="https://exa.ai/docs/websets/api-guide">Exa Websets</a> - verified async list-building and enrichment.</li>
         <li><a href="https://docs.parallel.ai/findall-api/entity-search">Parallel Entity Search</a> - fast synchronous people and company lookup.</li>
-        <li><a href="https://docs.parallel.ai/findall-api/features/findall-preview">Parallel FindAll Preview</a> - cheap validation before full FindAll runs.</li>
+        <li><a href="https://docs.parallel.ai/findall-api/features/findall-preview">Parallel FindAll Preview</a> - quick validation before full FindAll runs.</li>
         <li><a href="https://docs.parallel.ai/findall-api/findall-quickstart">Parallel FindAll</a> - cited, verified, enriched list-building.</li>
         <li><a href="https://docs.apollo.io/reference/people-enrichment">Apollo People Enrichment</a> - verified contact enrichment after scoring.</li>
         <li><a href="https://university.clay.com/docs/http-api-integration-overview">Clay HTTP API</a> and <a href="https://university.clay.com/docs/webhook-integration-guide">Clay Webhooks</a> - manual enrichment workspace and row handoff.</li>
@@ -1001,7 +1039,7 @@ function buildGuideHtml() {
         <li><strong>CRM export is not ready:</strong> approve at least one target. Targets you have tracked (sent, replied, meeting, won) remain in the export.</li>
         <li><strong>Track buttons are disabled:</strong> approve the draft first; each event can only be tracked once per target.</li>
         <li><strong>Enrich work email is blocked:</strong> the target is below the 75-score threshold, already enriched, rejected/suppressed, or the 10-target batch cap is used up. The card states the reason.</li>
-        <li><strong>Radar or preview shows sample data:</strong> the provider was unavailable; the labeled fallback costs nothing. Try again later for live results.</li>
+        <li><strong>Radar or preview shows sample data:</strong> the provider was unavailable; the labeled fallback keeps the workflow moving. Try again later for live results.</li>
         <li><strong>Draft sounds wrong:</strong> update the onboarding email voice field with a real example and Save Progress.</li>
         <li><strong>Score seems unclear:</strong> inspect Evidence-First Scoring and source links before approving.</li>
       </ul>
@@ -1010,7 +1048,7 @@ function buildGuideHtml() {
       </div>
     </section>
 
-    <p class="small">Generated from the local SellKit app at ${escapeHtml(appUrl)}. Screenshots are stored in <code>output/guide-screenshots/sellkit</code>.</p>
+    <p class="small">Generated from SellKit at <code>${escapeHtml(appHomeUrl || appUrl)}</code>. Screenshots are stored in <code>output/guide-screenshots/sellkit</code>.</p>
   </main>
 </body>
 </html>`;

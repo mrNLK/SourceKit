@@ -43,3 +43,9 @@ SourceProof.zip
 # Local nested repos / worktrees
 FounderFinder/
 .claude/worktrees/
+
+# Local-only: internal notes, harness config, generated artifacts
+.claude/
+docs/skills/
+output/
+tmp/
