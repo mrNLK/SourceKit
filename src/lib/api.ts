@@ -25,7 +25,7 @@ async function invokeFunction(name: string, params?: Record<string, string>, bod
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }));
     if (err.error === 'not_invited') {
-      throw new Error(err.message || 'SourceKit is in an invite-only pilot.');
+      throw new Error(err.message || 'SourceKit is in a pilot for @aifundpc.com and invited users.');
     }
     if (err.error === 'daily_cap_reached') {
       throw new Error(err.message || 'Daily usage limit reached. Resets at 00:00 UTC.');
@@ -118,7 +118,7 @@ export async function searchDevelopersStreaming(
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }));
     if (err.error === 'not_invited') {
-      throw new Error(err.message || 'SourceKit is in an invite-only pilot.');
+      throw new Error(err.message || 'SourceKit is in a pilot for @aifundpc.com and invited users.');
     }
     if (err.error === 'daily_cap_reached') {
       throw new Error(err.message || 'Daily usage limit reached. Resets at 00:00 UTC.');

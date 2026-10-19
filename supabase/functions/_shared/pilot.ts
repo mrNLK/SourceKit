@@ -6,8 +6,8 @@ export type { UsageKind } from "./pilot-policy.ts";
 const getEnv = (name: string) => Deno.env.get(name);
 
 /**
- * Invite-only + daily caps. No-op unless PILOT_MODE=true.
- * kind=null only checks the allowlist; otherwise consumes one unit of that kind's daily cap.
+ * @aifundpc.com domain or invite-only allowlist + daily caps (enforced in SQL: pilot_email_allowed / pilot_consume). No-op unless PILOT_MODE=true.
+ * kind=null only checks access; otherwise consumes one unit of that kind's daily cap.
  */
 export async function checkPilotAccess(userId: string, kind: UsageKind | null): Promise<PilotDecision> {
   if (!isPilotEnforced(getEnv)) return { allowed: true, status: 200 };

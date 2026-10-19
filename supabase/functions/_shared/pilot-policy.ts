@@ -56,7 +56,7 @@ export function interpretPilotResult(result: unknown, kind: UsageKind | null): P
     return {
       allowed: false,
       status: 403,
-      body: { error: "not_invited", message: "SourceKit is in an invite-only pilot. Ask Michael for access." },
+      body: { error: "not_invited", message: "SourceKit is in a pilot for @aifundpc.com and invited users. Ask Michael for access." },
     };
   }
   // Unknown/failed result: fail closed.

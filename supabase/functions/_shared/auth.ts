@@ -14,7 +14,7 @@ export interface AuthResult {
  *   const { user } = await requireAuth(req);
  */
 export interface RequireAuthOptions {
-  /** Pilot daily-cap bucket to consume. Omit to only enforce the invite allowlist. */
+  /** Pilot daily-cap bucket to consume. Omit to only enforce pilot access (@aifundpc.com or allowlist). */
   usage?: UsageKind;
 }
 
@@ -46,7 +46,7 @@ export async function requireAuth(req: Request, opts: RequireAuthOptions = {}): 
     throw { status: 401, body: { error: "Invalid or expired token" } };
   }
 
-  // Pilot: invite-only allowlist + per-user daily caps (no-op unless PILOT_MODE=true)
+  // Pilot: @aifundpc.com/allowlist access + per-user daily caps (no-op unless PILOT_MODE=true)
   const pilot = await checkPilotAccess(user.id, opts.usage ?? null);
   if (!pilot.allowed) {
     throw { status: pilot.status, body: pilot.body };
