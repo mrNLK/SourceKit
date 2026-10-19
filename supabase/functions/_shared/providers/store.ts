@@ -28,6 +28,19 @@ export async function loadExisting(supabase: Supa, userId: string, fresh: Unifie
   return data || [];
 }
 
+const PERSIST_CONCURRENCY = 10;
+
+async function mapLimit<T>(items: T[], limit: number, fn: (item: T) => Promise<void>): Promise<void> {
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      await fn(items[i]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+}
+
 export async function persistCandidates(
   supabase: Supa,
   userId: string,
@@ -37,7 +50,8 @@ export async function persistCandidates(
   const existing = await loadExisting(supabase, userId, fresh);
   const merged = mergeWithExisting(userId, fresh, existing);
   const saved: SourcedCandidateRow[] = [];
-  for (const { row, hits } of merged) {
+  // Bounded concurrency: saving rows one by one took ~30s+ for a 4-source search.
+  await mapLimit(merged, PERSIST_CONCURRENCY, async ({ row, hits }) => {
     const payload = { ...row, updated_at: new Date().toISOString() };
     const q = row.id
       ? supabase.from("sourced_candidates").update(payload).eq("id", row.id).eq("user_id", userId).select().single()
@@ -45,7 +59,7 @@ export async function persistCandidates(
     const { data, error } = await q;
     if (error) {
       console.error("persist candidate failed:", error.message);
-      continue;
+      return;
     }
     saved.push(data);
     if (hits.length) {
@@ -62,6 +76,6 @@ export async function persistCandidates(
         sourcing_run_id: ctx.sourcingRunId ?? null,
       })));
     }
-  }
+  });
   return saved.sort((a, b) => b.sourcing_score - a.sourcing_score);
 }
