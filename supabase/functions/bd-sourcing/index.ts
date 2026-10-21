@@ -373,7 +373,7 @@ async function runExaCategorySearch(apiKey: string, category: ExaSearchCategory,
       type: "auto",
       numResults,
       contents: {
-        highlights: true,
+        highlights: { maxCharacters: 500 },
       },
     }),
   });

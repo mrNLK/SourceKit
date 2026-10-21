@@ -7,7 +7,7 @@ import { githubFetch, getTokenCount } from '../_shared/github.ts';
 import { classifyCandidate, contributionsOf } from '../_shared/talent-flags.ts';
 
 const GITHUB_API = "https://api.github.com";
-const EXA_API = "https://api.exa.ai/search";
+import { buildQueryVariants, exaPost, exaSearchVariants } from "../_shared/providers/exa3.ts";
 const CACHE_DAYS = 7;
 
 function getSupabase() {
@@ -164,17 +164,12 @@ async function searchExaForCandidates(query: string): Promise<string[]> {
   if (!exaKey) return [];
 
   try {
-    const res = await fetch('https://api.exa.ai/search', {
-      method: 'POST',
-      headers: { 'x-api-key': exaKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `${query} github profile`,
-        numResults: 10,
-        includeDomains: ['github.com'],
-        type: 'neural',
-      }),
+    const data = await exaPost<any>(exaKey, '/search', {
+      query: `${query} github profile`,
+      numResults: 10,
+      includeDomains: ['github.com'],
+      type: 'auto',
     });
-    const data = await res.json();
     return (data.results || [])
       .map((r: any) => r.url?.match(/github\.com\/([^\/\?\#]+)/)?.[1]?.toLowerCase()) // BUG-003: normalize
       .filter((u: string | undefined) => u && !u.includes('.') && u !== 'topics' && u !== 'search' && u !== 'explore');
@@ -198,25 +193,15 @@ async function searchExa(query: string): Promise<ExaCandidate[]> {
   if (!exaKey) return [];
 
   try {
-    const res = await fetch(EXA_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': exaKey },
-      body: JSON.stringify({
-        query: `${query} software engineer developer`,
-        type: 'neural',
-        useAutoprompt: true,
-        numResults: 25,
-        category: 'person',
-        contents: { text: { maxCharacters: 500 }, highlights: { numSentences: 3 } },
-      }),
+    // Parallel query variants (merged + URL-deduped), Exa 3.0 options, cached.
+    const variants = buildQueryVariants(`${query} software engineer developer`, { signals: ['shipped open-source projects'], max: 3 });
+    const data = await exaSearchVariants(exaKey, variants, {
+      type: 'auto',
+      numResults: 25,
+      category: 'people',
+      contents: { text: { maxCharacters: 500 }, highlights: { maxCharacters: 480 } },
     });
-
-    if (!res.ok) {
-      console.error(`Exa API error: ${res.status}`);
-      return [];
-    }
-
-    const data = await res.json();
+    if (data.errors.length) console.error('Exa variant errors:', data.errors.length);
     return (data.results || []).map((r: any) => ({
       name: r.title || '',
       bio: (r.text || '').slice(0, 300),
