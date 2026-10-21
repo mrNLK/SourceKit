@@ -73,7 +73,8 @@ serve(async (req) => {
         query: searchQuery,
         numResults: 5,
         includeDomains: ['linkedin.com'],
-        type: 'neural',
+        type: 'auto',
+        maxAgeHours: 24 * 30,
         contents: { text: { maxCharacters: 1200 } },
       }),
     });
