@@ -80,7 +80,7 @@ serve(async (req) => {
       body: JSON.stringify({
         url: github_url,
         numResults: num_results || 10,
-        contents: { text: true, highlights: true },
+        contents: { text: { maxCharacters: 4000 }, highlights: { maxCharacters: 500 } },
       }),
     });
 
