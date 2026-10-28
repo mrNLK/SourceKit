@@ -2,6 +2,8 @@
 
 AI-powered GitHub talent sourcing for technical recruiting. Find engineers by what they've actually built — their open-source contributions, repositories, and shipped code — not just their LinkedIn headlines.
 
+Built by Mike Rubino, Head of Talent at AI Fund. [LinkedIn](https://www.linkedin.com/in/mikerubino-ai-fund)
+
 ## What It Does
 
 SourceKit turns GitHub's open-source graph into a recruiting pipeline:
