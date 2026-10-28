@@ -1,4 +1,4 @@
-import type { BdSignalType, BdTargetView } from "@/types/bd-sourcing";
+import type { BdSignalType, BdTargetLifecycleState, BdTargetView } from "@/types/bd-sourcing";
 import { buyerPersonaLabel, inferBuyerPersona, type BdBuyerPersona } from "@/lib/bd-sourcing/personas";
 
 export type BdConversionEventType =
@@ -131,6 +131,32 @@ const positiveReplyEvents = new Set<BdConversionEventType>(["positive_reply"]);
 const meetingEvents = new Set<BdConversionEventType>(["meeting_booked", "opportunity_created", "won"]);
 const wonEvents = new Set<BdConversionEventType>(["won"]);
 
+const lifecycleRank: Record<BdTargetLifecycleState, number> = {
+  discovered: 0,
+  scored: 1,
+  qualified: 2,
+  sfdc_checked: 3,
+  queued: 4,
+  approved: 5,
+  emailed: 6,
+  li_drafted: 6,
+  opened: 7,
+  li_sent: 7,
+  replied: 8,
+  connected: 8,
+  meeting: 9,
+  won: 10,
+  lost: 10,
+  suppressed: 10,
+};
+
+function laterLifecycleState(
+  current: BdTargetLifecycleState,
+  next: BdTargetLifecycleState,
+): BdTargetLifecycleState {
+  return lifecycleRank[next] > lifecycleRank[current] ? next : current;
+}
+
 export function conversionAreaForEvent(eventType: BdConversionEventType): BdConversionArea {
   if (eventType === "target_approved") return "signal";
   if (eventType === "manual_email_sent" || eventType === "linkedin_note_sent") return "outreach";
@@ -167,6 +193,37 @@ export function conversionEventLabel(eventType: BdConversionEventType): string {
     disqualified: "Disqualified",
   };
   return labels[eventType];
+}
+
+export function lifecycleForConversionEvent(
+  eventType: BdConversionEventType,
+  current: BdTargetLifecycleState,
+): BdTargetLifecycleState {
+  if (eventType === "lost") return "lost";
+  if (eventType === "disqualified") return "suppressed";
+  if (eventType === "won") return "won";
+  if (eventType === "meeting_booked" || eventType === "opportunity_created") {
+    return laterLifecycleState(current, "meeting");
+  }
+  if (eventType === "reply_received" || eventType === "positive_reply") {
+    return laterLifecycleState(current, "replied");
+  }
+  if (eventType === "linkedin_note_sent") return laterLifecycleState(current, "li_sent");
+  if (eventType === "manual_email_sent") return laterLifecycleState(current, "emailed");
+  if (eventType === "target_approved") return laterLifecycleState(current, "approved");
+  return current;
+}
+
+export function deriveLifecycleFromConversionEvents(
+  events: Pick<BdConversionEvent, "eventType" | "occurredAt">[],
+  fallbackState: BdTargetLifecycleState,
+): BdTargetLifecycleState {
+  return [...events]
+    .sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt))
+    .reduce(
+      (state, event) => lifecycleForConversionEvent(event.eventType, state),
+      fallbackState,
+    );
 }
 
 export function buildManualConversionEvent(

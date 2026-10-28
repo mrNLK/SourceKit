@@ -54,9 +54,10 @@ export default function IcpPreviewLab({ onAddToRadar }: IcpPreviewLabProps) {
             : "Provider action is stubbed or unavailable. Showing a deterministic sample preview instead.",
         );
       }
-    } catch {
+    } catch (error) {
       setMatches(buildStubIcpPreviewMatches(trimmed, mode));
-      setResultNote("Provider is unavailable right now. Showing a stubbed preview - no provider spend happened.");
+      const message = error instanceof Error ? error.message : "Provider is unavailable right now.";
+      setResultNote(`${message} Showing a stubbed preview instead.`);
     } finally {
       setRunning(false);
     }

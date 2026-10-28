@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   buildManualConversionEvent,
+  deriveLifecycleFromConversionEvents,
+  lifecycleForConversionEvent,
   summarizeConversionEvents,
   type BdConversionEvent,
 } from "@/lib/bd-sourcing/conversions";
@@ -57,6 +59,8 @@ function event(
     occurredAt: "2026-06-10T12:00:00Z",
     source: "manual",
     notes: "",
+    externalWrites: [],
+    ...overrides,
   };
 }
 
@@ -120,5 +124,24 @@ describe("SellKit conversion tracking", () => {
       externalWrites: [],
     });
     expect(conversionEvent.signalTitle).toBe("New Head of AI");
+  });
+
+  it("hydrates target lifecycle from persisted conversion history after reload", () => {
+    const events: BdConversionEvent[] = [
+      event("e3", "t1", "reply_received", { occurredAt: "2026-06-10T12:20:00Z" }),
+      event("e1", "t1", "target_approved", {
+        channel: null,
+        conversionArea: "signal",
+        occurredAt: "2026-06-10T12:00:00Z",
+      }),
+      event("e2", "t1", "manual_email_sent", { occurredAt: "2026-06-10T12:10:00Z" }),
+    ];
+
+    expect(deriveLifecycleFromConversionEvents(events, "queued")).toBe("replied");
+  });
+
+  it("does not move an advanced lifecycle backwards when approval events arrive later", () => {
+    expect(lifecycleForConversionEvent("target_approved", "replied")).toBe("replied");
+    expect(lifecycleForConversionEvent("manual_email_sent", "meeting")).toBe("meeting");
   });
 });

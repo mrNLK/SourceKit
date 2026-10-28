@@ -42,6 +42,23 @@ const PARALLEL_FINDALL_RUNS_URL = "https://api.parallel.ai/v1beta/findall/runs";
 const EXA_SEARCH_URL = "https://api.exa.ai/search";
 const EXA_AGENT_RUNS_URL = "https://api.exa.ai/agent/runs";
 const EXA_AGENT_BETA_HEADER = "agent-2026-05-07";
+const APOLLO_PEOPLE_API_SEARCH_URL = "https://api.apollo.io/api/v1/mixed_people/api_search";
+const APOLLO_PEOPLE_MATCH_URL = "https://api.apollo.io/api/v1/people/match";
+const PERSONAL_EMAIL_DOMAINS = new Set([
+  "aol.com",
+  "gmail.com",
+  "googlemail.com",
+  "hotmail.com",
+  "icloud.com",
+  "live.com",
+  "mac.com",
+  "me.com",
+  "msn.com",
+  "outlook.com",
+  "proton.me",
+  "protonmail.com",
+  "yahoo.com",
+]);
 
 function jsonResponse(req: Request, status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -53,6 +70,11 @@ function jsonResponse(req: Request, status: number, body: Record<string, unknown
 function readString(payload: Record<string, unknown>, key: string): string {
   const value = payload[key];
   return typeof value === "string" ? value.trim() : "";
+}
+
+function readSecret(name: string): string | null {
+  const value = Deno.env.get(name)?.trim().replace(/[^\x20-\x7E]/g, "") ?? "";
+  return value || null;
 }
 
 function readEntityType(payload: Record<string, unknown>): EntityType | null {
@@ -111,7 +133,7 @@ function readMatchConditions(payload: Record<string, unknown>, objective: string
 }
 
 async function parallelEntitySearch(req: Request, payload: Record<string, unknown>) {
-  const apiKey = Deno.env.get("PARALLEL_API_KEY");
+  const apiKey = readSecret("PARALLEL_API_KEY");
   if (!apiKey) {
     return jsonResponse(req, 500, {
       ok: false,
@@ -177,7 +199,7 @@ async function parallelEntitySearch(req: Request, payload: Record<string, unknow
 }
 
 async function parallelFindAllPreview(req: Request, payload: Record<string, unknown>) {
-  const apiKey = Deno.env.get("PARALLEL_API_KEY");
+  const apiKey = readSecret("PARALLEL_API_KEY");
   if (!apiKey) {
     return jsonResponse(req, 500, {
       ok: false,
@@ -297,6 +319,106 @@ function firstString(...values: unknown[]): string | null {
   return null;
 }
 
+function normalizeDomain(value: string | null): string | null {
+  if (!value) return null;
+
+  const withoutProtocol = value
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "");
+  const domain = withoutProtocol.split(/[/?#]/)[0]?.replace(/:\d+$/, "") ?? "";
+
+  return domain.includes(".") ? domain : null;
+}
+
+function normalizeEmail(value: string | null): string | null {
+  if (!value) return null;
+
+  const email = value.trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+}
+
+function emailDomain(email: string): string {
+  return email.split("@")[1]?.toLowerCase() ?? "";
+}
+
+function isPersonalEmail(email: string): boolean {
+  return PERSONAL_EMAIL_DOMAINS.has(emailDomain(email));
+}
+
+function emailMatchesCompanyDomain(email: string, companyDomain: string | null): boolean {
+  if (!companyDomain) return false;
+
+  const normalizedCompanyDomain = normalizeDomain(companyDomain);
+  const normalizedEmailDomain = normalizeDomain(emailDomain(email));
+  if (!normalizedCompanyDomain || !normalizedEmailDomain) return false;
+
+  return (
+    normalizedEmailDomain === normalizedCompanyDomain ||
+    normalizedEmailDomain.endsWith(`.${normalizedCompanyDomain}`)
+  );
+}
+
+function readStringField(record: Record<string, unknown>, ...keys: string[]): string | null {
+  for (const key of keys) {
+    const value = firstString(record[key]);
+    if (value) return value;
+  }
+
+  return null;
+}
+
+function addApolloParam(params: URLSearchParams, key: string, value: string | null) {
+  if (value) params.set(key, value);
+}
+
+function apolloErrorMessage(data: Record<string, unknown>): string {
+  const error = readRecord(data.error);
+  return firstString(error.message, data.message, data.error) ?? "Apollo people enrichment failed.";
+}
+
+async function apolloPeopleApiSearch(
+  apiKey: string,
+  details: {
+    fullName: string | null;
+    title: string | null;
+    organizationName: string | null;
+    domain: string | null;
+  },
+) {
+  const url = new URL(APOLLO_PEOPLE_API_SEARCH_URL);
+  const keywords = [details.fullName, details.organizationName].filter(Boolean).join(" ");
+  addApolloParam(url.searchParams, "q_keywords", keywords || details.fullName);
+  addApolloParam(url.searchParams, "person_titles[]", details.title);
+  addApolloParam(url.searchParams, "q_organization_domains_list[]", details.domain);
+  url.searchParams.set("page", "1");
+  url.searchParams.set("per_page", "1");
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "X-Api-Key": apiKey,
+    },
+  });
+  const data = await response.json().catch(() => ({}));
+  const people = readRecordArray(data.people).length > 0
+    ? readRecordArray(data.people)
+    : readRecordArray(data.contacts);
+  const person = people[0] ?? {};
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    person,
+    personId: readStringField(person, "id", "person_id", "personId"),
+    hasEmail: person.has_email === true || person.email_status === "verified" || person.contact_email_status === "verified",
+    message: apolloErrorMessage(data),
+  };
+}
+
 function firstEntityProperties(result: Record<string, unknown>, type: string): Record<string, unknown> {
   const entity = readRecordArray(result.entities).find((item) => item.type === type);
   return readRecord(entity?.properties);
@@ -398,7 +520,7 @@ function exaApiKeyResponse(req: Request, action: string) {
 }
 
 async function exaCompanySearch(req: Request, payload: Record<string, unknown>) {
-  const apiKey = Deno.env.get("EXA_API_KEY");
+  const apiKey = readSecret("EXA_API_KEY");
   if (!apiKey) return exaApiKeyResponse(req, "exa_company_search");
 
   const query = readString(payload, "query");
@@ -450,7 +572,7 @@ async function exaCompanySearch(req: Request, payload: Record<string, unknown>) 
 }
 
 async function exaPeopleSearch(req: Request, payload: Record<string, unknown>) {
-  const apiKey = Deno.env.get("EXA_API_KEY");
+  const apiKey = readSecret("EXA_API_KEY");
   if (!apiKey) return exaApiKeyResponse(req, "exa_people_search");
 
   const query = readString(payload, "query");
@@ -529,7 +651,7 @@ function buildExaAgentOutputSchema(maxItems: number) {
 }
 
 async function exaAgentRun(req: Request, payload: Record<string, unknown>) {
-  const apiKey = Deno.env.get("EXA_API_KEY");
+  const apiKey = readSecret("EXA_API_KEY");
   if (!apiKey) return exaApiKeyResponse(req, "exa_agent_run");
 
   const query = readString(payload, "query");
@@ -579,7 +701,7 @@ async function exaAgentRun(req: Request, payload: Record<string, unknown>) {
 }
 
 async function exaAgentGetRun(req: Request, payload: Record<string, unknown>) {
-  const apiKey = Deno.env.get("EXA_API_KEY");
+  const apiKey = readSecret("EXA_API_KEY");
   if (!apiKey) return exaApiKeyResponse(req, "exa_agent_get_run");
 
   const runId = readString(payload, "runId");
@@ -616,6 +738,166 @@ async function exaAgentGetRun(req: Request, payload: Record<string, unknown>) {
     status: "completed",
     message: `Exa Agent run status: ${data.status ?? "unknown"}.`,
     data,
+  });
+}
+
+async function apolloWorkEmailEnrichment(req: Request, payload: Record<string, unknown>) {
+  const apiKey = readSecret("APOLLO_API_KEY");
+  if (!apiKey) {
+    return jsonResponse(req, 500, {
+      ok: false,
+      action: "enrich",
+      status: "blocked",
+      message: "APOLLO_API_KEY is not configured server-side.",
+    });
+  }
+
+  const targetId = readString(payload, "targetId") || readString(payload, "target_id");
+  const fullName = readStringField(payload, "fullName", "full_name", "name");
+  const firstName = readStringField(payload, "firstName", "first_name");
+  const lastName = readStringField(payload, "lastName", "last_name");
+  const title = readStringField(payload, "title", "jobTitle", "job_title");
+  const organizationName = readStringField(payload, "companyName", "company_name", "organizationName", "organization_name");
+  const domain = normalizeDomain(
+    readStringField(payload, "companyDomain", "company_domain", "domain", "websiteUrl", "website_url"),
+  );
+  const linkedinUrl = readStringField(payload, "linkedinUrl", "linkedin_url", "profileUrl", "profile_url");
+
+  const hasPersonIdentifier = Boolean(fullName || firstName || lastName || linkedinUrl);
+  const hasCompanyIdentifier = Boolean(domain || organizationName);
+  if (!targetId || !hasPersonIdentifier || !hasCompanyIdentifier) {
+    return jsonResponse(req, 400, {
+      ok: false,
+      action: "enrich",
+      status: "blocked",
+      message: "Apollo work-email enrichment requires a target ID plus person and company identifiers.",
+    });
+  }
+
+  const url = new URL(APOLLO_PEOPLE_MATCH_URL);
+  addApolloParam(url.searchParams, "name", fullName);
+  addApolloParam(url.searchParams, "first_name", firstName);
+  addApolloParam(url.searchParams, "last_name", lastName);
+  addApolloParam(url.searchParams, "title", title);
+  addApolloParam(url.searchParams, "organization_name", organizationName);
+  addApolloParam(url.searchParams, "domain", domain);
+  addApolloParam(url.searchParams, "linkedin_url", linkedinUrl);
+  url.searchParams.set("reveal_personal_emails", "false");
+  url.searchParams.set("reveal_phone_number", "false");
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "X-Api-Key": apiKey,
+    },
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    if (response.status === 401) {
+      const search = await apolloPeopleApiSearch(apiKey, { fullName, title, organizationName, domain });
+      if (search.ok) {
+        return jsonResponse(req, 403, {
+          ok: false,
+          action: "enrich",
+          status: "blocked",
+          message: search.person
+            ? "Apollo People API Search is live and found a matching profile, but People Enrichment/People Match is not enabled for the configured Apollo key."
+            : "Apollo People API Search is live, but People Enrichment/People Match is not enabled for the configured Apollo key.",
+          data: {
+            provider: "apollo",
+            targetId,
+            peopleApiSearch: "completed",
+            apolloPersonId: search.personId,
+            hasEmail: search.hasEmail,
+            enrichmentEndpointStatus: response.status,
+          },
+        });
+      }
+    }
+
+    return jsonResponse(req, response.status, {
+      ok: false,
+      action: "enrich",
+      status: "blocked",
+      message: apolloErrorMessage(data),
+      data: {
+        provider: "apollo",
+        targetId,
+      },
+    });
+  }
+
+  const person = readRecord(data.person ?? data.contact ?? data);
+  const rawEmail = readStringField(person, "email", "work_email", "workEmail");
+  const workEmail = normalizeEmail(rawEmail);
+  const emailStatus = readStringField(person, "email_status", "emailStatus", "email_verification_status");
+  const apolloPersonId = readStringField(person, "id", "person_id", "personId");
+
+  if (!workEmail) {
+    return jsonResponse(req, 404, {
+      ok: false,
+      action: "enrich",
+      status: "blocked",
+      message: "Apollo matched the request but did not return a work email for this target.",
+      data: {
+        provider: "apollo",
+        targetId,
+        emailStatus,
+        apolloPersonId,
+      },
+    });
+  }
+
+  if (isPersonalEmail(workEmail)) {
+    return jsonResponse(req, 422, {
+      ok: false,
+      action: "enrich",
+      status: "blocked",
+      message: "Apollo returned a personal-looking email domain, so SellKit did not accept it.",
+      data: {
+        provider: "apollo",
+        targetId,
+        emailDomain: emailDomain(workEmail),
+        emailStatus,
+        apolloPersonId,
+      },
+    });
+  }
+
+  if (domain && !emailMatchesCompanyDomain(workEmail, domain)) {
+    return jsonResponse(req, 422, {
+      ok: false,
+      action: "enrich",
+      status: "blocked",
+      message: `Apollo returned a work email on ${emailDomain(workEmail)}, not ${domain}, so SellKit did not accept it.`,
+      data: {
+        provider: "apollo",
+        targetId,
+        expectedDomain: domain,
+        emailDomain: emailDomain(workEmail),
+        emailStatus,
+        apolloPersonId,
+      },
+    });
+  }
+
+  return jsonResponse(req, 200, {
+    ok: true,
+    action: "enrich",
+    status: "completed",
+    message: `Apollo returned a work email (${workEmail})${emailStatus ? ` with status ${emailStatus}` : ""}.`,
+    data: {
+      provider: "apollo",
+      targetId,
+      workEmail,
+      emailStatus,
+      apolloPersonId,
+      requestedFields: ["work_email"],
+      revealPersonalEmails: false,
+      revealPhoneNumber: false,
+    },
   });
 }
 
@@ -659,6 +941,14 @@ serve(async (req) => {
 
     if (action === "exa_agent_get_run") {
       return await exaAgentGetRun(req, payload);
+    }
+
+    if (
+      action === "enrich" &&
+      (payload.provider === "apollo" ||
+        (Array.isArray(payload.fields) && payload.fields.includes("work_email")))
+    ) {
+      return await apolloWorkEmailEnrichment(req, payload);
     }
 
     if (action === "send_email" || action === "sync_salesforce" || action === "create_outlook_draft") {

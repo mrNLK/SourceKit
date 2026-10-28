@@ -71,6 +71,8 @@ import {
 import {
   buildManualConversionEvent,
   conversionEventLabel,
+  deriveLifecycleFromConversionEvents,
+  lifecycleForConversionEvent,
   summarizeConversionEvents,
   type BdConversionEvent,
   type BdConversionEventType,
@@ -144,7 +146,6 @@ const approvedOrLaterStates = new Set<BdTargetLifecycleState>([
   "connected",
   "meeting",
   "won",
-  "lost",
 ]);
 
 const onboardingFields: Array<{
@@ -818,19 +819,10 @@ function isApprovedOrLater(state: BdTargetLifecycleState): boolean {
   return approvedOrLaterStates.has(state);
 }
 
-function lifecycleForConversion(
-  eventType: BdConversionEventType,
-  current: BdTargetLifecycleState,
-): BdTargetLifecycleState {
-  if (eventType === "target_approved") return "approved";
-  if (eventType === "manual_email_sent") return "emailed";
-  if (eventType === "linkedin_note_sent") return current === "queued" ? "li_sent" : current;
-  if (eventType === "reply_received" || eventType === "positive_reply") return "replied";
-  if (eventType === "meeting_booked" || eventType === "opportunity_created") return "meeting";
-  if (eventType === "won") return "won";
-  if (eventType === "lost") return "lost";
-  if (eventType === "disqualified") return "suppressed";
-  return current;
+function statusForLifecycle(state: BdTargetLifecycleState): QueueStatus {
+  if (state === "lost" || state === "suppressed") return "Rejected";
+  if (isApprovedOrLater(state)) return "Reviewed";
+  return "New";
 }
 
 function statusClass(status: QueueStatus): string {
@@ -993,6 +985,35 @@ export default function BdSourcingTab({ userId }: BdSourcingTabProps = {}) {
   useEffect(() => {
     saveConversionEventsLocally(conversionStorageKeyFor(userId), conversionEvents);
   }, [conversionEvents, userId]);
+
+  useEffect(() => {
+    const eventsByTargetId = new Map<string, BdConversionEvent[]>();
+    for (const event of conversionEvents) {
+      const currentEvents = eventsByTargetId.get(event.targetId) ?? [];
+      currentEvents.push(event);
+      eventsByTargetId.set(event.targetId, currentEvents);
+    }
+
+    setTargets((currentTargets) => {
+      let changed = false;
+      const hydratedTargets = currentTargets.map((target) => {
+        const targetEvents = eventsByTargetId.get(target.id);
+        if (!targetEvents || targetEvents.length === 0) return target;
+
+        const lifecycleState = deriveLifecycleFromConversionEvents(targetEvents, target.lifecycleState);
+        if (lifecycleState === target.lifecycleState) return target;
+
+        changed = true;
+        return {
+          ...target,
+          lifecycleState,
+          statusLabel: statusForLifecycle(lifecycleState),
+        };
+      });
+
+      return changed ? hydratedTargets : currentTargets;
+    });
+  }, [conversionEvents]);
 
   useEffect(() => {
     const storageKey = radarStorageKeyFor(userId);
@@ -1197,7 +1218,7 @@ export default function BdSourcingTab({ userId }: BdSourcingTabProps = {}) {
     const added = appendConversionEvent(event);
     if (!added) return;
 
-    const nextLifecycleState = lifecycleForConversion(eventType, selected.lifecycleState);
+    const nextLifecycleState = lifecycleForConversionEvent(eventType, selected.lifecycleState);
     if (nextLifecycleState !== selected.lifecycleState) {
       setTargets((current) =>
         current.map((target) =>
@@ -1205,7 +1226,7 @@ export default function BdSourcingTab({ userId }: BdSourcingTabProps = {}) {
             ? {
                 ...target,
                 lifecycleState: nextLifecycleState,
-                statusLabel: nextLifecycleState === "suppressed" || nextLifecycleState === "lost" ? "Rejected" : "Reviewed",
+                statusLabel: statusForLifecycle(nextLifecycleState),
               }
             : target,
         ),
@@ -1385,24 +1406,28 @@ export default function BdSourcingTab({ userId }: BdSourcingTabProps = {}) {
 
     let resultMessage: string;
     try {
-      const response = await bdSourcingApi.enrichWorkEmail(selected.id);
+      const response = await bdSourcingApi.enrichWorkEmail(selected);
+      resultMessage = response.message;
+      setEnrichedTargetIds((current) => new Set(current).add(selected.id));
+      setEnrichmentBatchUsed((count) => count + 1);
+      toast({
+        title: "Work email enriched",
+        description: "Manual click only. Apollo returned company-matched work-email data; no phone or personal email fields were requested.",
+      });
+    } catch (error) {
       resultMessage =
-        response.status === "completed"
-          ? response.message
-          : `Apollo adapter is stubbed server-side: ${response.message}`;
-    } catch {
-      resultMessage =
-        "Apollo is not connected yet. This target is recorded as ready for Apollo work-email enrichment - no provider spend happened.";
+        error instanceof Error
+          ? error.message
+          : "Apollo work-email enrichment did not complete for this target.";
+      toast({
+        title: "Work email enrichment blocked",
+        description: resultMessage,
+        variant: "destructive",
+      });
     }
 
-    setEnrichedTargetIds((current) => new Set(current).add(selected.id));
-    setEnrichmentBatchUsed((count) => count + 1);
     setEnrichmentResults((current) => ({ ...current, [selected.id]: resultMessage }));
     setEnriching(false);
-    toast({
-      title: "Work email enrichment recorded",
-      description: "Manual click only. Work email only - no phone or personal email fields were requested.",
-    });
   };
 
   const addRadarCriteria = (recommendation: BdSignalDiscoveryRecommendation) => {
@@ -2532,7 +2557,7 @@ export default function BdSourcingTab({ userId }: BdSourcingTabProps = {}) {
                 <div className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
                   {[
                     ["Draft", emailDraft.ok && senderFooterReady],
-                    ["Approval", selected.lifecycleState === "approved"],
+                    ["Approval", selectedApproved],
                     ["Export", approvedCount > 0],
                   ].map(([label, ready]) => (
                     <div key={String(label)} className={`rounded-md border px-2 py-2 ${ready ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
