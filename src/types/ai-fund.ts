@@ -129,6 +129,16 @@ export interface AiFundEvaluationScore {
   productInstinct: number | null;
   leadershipPotential: number | null;
   compositeScore: number | null;
+  qualityScore10: number | null;
+  closabilityProbabilityPct: number | null;
+  expectedValue: number | null;
+  inboundIntentScore: number | null;
+  companyMobilityScore: number | null;
+  veModelFitScore: number | null;
+  compReachabilityScore: number | null;
+  outreachBlocked: boolean;
+  closabilityReasons: Record<string, string[]> | null;
+  closabilityVersion: string | null;
   notes: string | null;
   scoredAt: string;
 }
@@ -333,6 +343,16 @@ export interface AiFundEvaluationScoreRow {
   product_instinct: number | null;
   leadership_potential: number | null;
   composite_score: number | null;
+  quality_score_10: number | null;
+  closability_probability_pct: number | null;
+  expected_value: number | null;
+  inbound_intent_score: number | null;
+  company_mobility_score: number | null;
+  ve_model_fit_score: number | null;
+  comp_reachability_score: number | null;
+  outreach_blocked: boolean | null;
+  closability_reasons: Record<string, string[]> | null;
+  closability_version: string | null;
   notes: string | null;
   scored_at: string;
 }
@@ -484,6 +504,16 @@ export function scoreFromRow(row: AiFundEvaluationScoreRow): AiFundEvaluationSco
     productInstinct: row.product_instinct,
     leadershipPotential: row.leadership_potential,
     compositeScore: row.composite_score,
+    qualityScore10: row.quality_score_10,
+    closabilityProbabilityPct: row.closability_probability_pct,
+    expectedValue: row.expected_value,
+    inboundIntentScore: row.inbound_intent_score,
+    companyMobilityScore: row.company_mobility_score,
+    veModelFitScore: row.ve_model_fit_score,
+    compReachabilityScore: row.comp_reachability_score,
+    outreachBlocked: Boolean(row.outreach_blocked),
+    closabilityReasons: row.closability_reasons,
+    closabilityVersion: row.closability_version,
     notes: row.notes,
     scoredAt: row.scored_at,
   };

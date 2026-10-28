@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, ExternalLink, Filter } from "lucide-react";
-import type { AiFundWorkspace, AiFundPerson, ProcessStage, PersonType } from "@/types/ai-fund";
-import { scoreColor, scoreLabel } from "@/lib/aifund-scoring";
+import type { AiFundWorkspace, AiFundPerson, AiFundEvaluationScore, ProcessStage, PersonType } from "@/types/ai-fund";
+import { comparePriorityScores, scoreColor, scoreLabel } from "@/lib/aifund-scoring";
 import { fetchScoresForPerson } from "@/lib/ai-fund";
 import PersonDetail from "./PersonDetail";
 
@@ -29,7 +29,7 @@ export default function TalentPoolTab({ workspace }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [filterType, setFilterType] = useState<PersonType | "all">("all");
   const [filterStage, setFilterStage] = useState<ProcessStage | "all">("all");
-  const [scores, setScores] = useState<Record<string, number | null>>({});
+  const [scores, setScores] = useState<Record<string, AiFundEvaluationScore | null>>({});
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
 
   // Form state
@@ -43,11 +43,11 @@ export default function TalentPoolTab({ workspace }: Props) {
   // Load latest composite scores
   useEffect(() => {
     const loadScores = async () => {
-      const scoreMap: Record<string, number | null> = {};
+      const scoreMap: Record<string, AiFundEvaluationScore | null> = {};
       for (const person of people) {
         try {
           const personScores = await fetchScoresForPerson(person.id);
-          scoreMap[person.id] = personScores.length > 0 ? personScores[0].compositeScore : null;
+          scoreMap[person.id] = personScores.length > 0 ? personScores[0] : null;
         } catch {
           scoreMap[person.id] = null;
         }
@@ -76,11 +76,17 @@ export default function TalentPoolTab({ workspace }: Props) {
     setShowForm(false);
   };
 
-  const filtered = people.filter((p) => {
-    if (filterType !== "all" && p.personType !== filterType) return false;
-    if (filterStage !== "all" && p.processStage !== filterStage) return false;
-    return true;
-  });
+  const filtered = people
+    .filter((p) => {
+      if (filterType !== "all" && p.personType !== filterType) return false;
+      if (filterStage !== "all" && p.processStage !== filterStage) return false;
+      return true;
+    })
+    .sort((left: AiFundPerson, right: AiFundPerson) => {
+      const scoreOrder = comparePriorityScores(scores[left.id] || null, scores[right.id] || null);
+      if (scoreOrder !== 0) return scoreOrder;
+      return (left.fullName || "").localeCompare(right.fullName || "");
+    });
 
   // Detail view
   const selectedPerson = selectedPersonId ? people.find((p) => p.id === selectedPersonId) : null;
@@ -255,9 +261,23 @@ export default function TalentPoolTab({ workspace }: Props) {
                 {PROCESS_STAGE_LABELS[person.processStage]}
               </span>
               {scores[person.id] !== undefined && (
-                <span className={`text-xs font-semibold shrink-0 ${scoreColor(scores[person.id])}`}>
-                  {scores[person.id] !== null ? `${scores[person.id]?.toFixed(1)} - ${scoreLabel(scores[person.id])}` : "Unscored"}
-                </span>
+                <div className="shrink-0 text-right">
+                  <p className={`text-xs font-semibold ${scoreColor(scores[person.id]?.compositeScore ?? null)}`}>
+                    {scores[person.id]?.expectedValue != null
+                      ? `EV ${scores[person.id]?.expectedValue?.toFixed(2)}`
+                      : "EV -"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {scores[person.id]?.closabilityProbabilityPct != null
+                      ? `Prob ${scores[person.id]?.closabilityProbabilityPct?.toFixed(1)}%`
+                      : "Prob -"}
+                  </p>
+                  <p className={`text-[10px] ${scoreColor(scores[person.id]?.compositeScore ?? null)}`}>
+                    {scores[person.id]?.compositeScore != null
+                      ? `${scores[person.id]?.compositeScore?.toFixed(1)} ${scoreLabel(scores[person.id]?.compositeScore ?? null)}`
+                      : "Unscored"}
+                  </p>
+                </div>
               )}
             </button>
           ))}
